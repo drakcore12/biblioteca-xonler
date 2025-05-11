@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redireccionando...</title>
+    <meta http-equiv="refresh" content="0; url=../../admin/login.html">
+    <script>
+        // Redirección inmediata con JavaScript como respaldo
+        window.location.href = "../../admin/login.html";
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f8f9fa;
+        }
+        .redirect-message {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .loader {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="redirect-message">
+        <h2>Redireccionando...</h2>
+        <div class="loader"></div>
+        <p>Estamos redireccionándote a la página de inicio de sesión del administrador.</p>
+        <p>Si no eres redireccionado automáticamente, <a href="../../admin/login.html">haz clic aquí</a>.</p>
+    </div>
+</body>
+</html>
