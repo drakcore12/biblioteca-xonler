@@ -82,10 +82,43 @@ async function eliminarBiblioteca(req, res) {
   }
 }
 
+// Nueva función para obtener los libros de una biblioteca concreta
+async function obtenerLibrosPorBiblioteca(req, res) {
+  try {
+    const { id } = req.params;
+    const disponibilidad = req.query.disponibilidad;
+    const result = await pool.query(
+      `SELECT 
+         l.id, 
+         l.titulo, 
+         l.autor, 
+         l.isbn, 
+         l.imagen_url, 
+         COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestados 
+       FROM biblioteca_libros bl 
+       JOIN libros         l ON bl.libro_id = l.id 
+       LEFT JOIN prestamos p ON p.biblioteca_libro_id = bl.id 
+       WHERE bl.biblioteca_id = $1 
+       GROUP BY l.id, bl.id 
+       ${disponibilidad === 'disponibles' 
+         ? 'HAVING COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) = 0' 
+         : ''} 
+       ORDER BY l.titulo`,
+      [id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener libros por biblioteca:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+}
+
+// Exporta todas tus funciones, incluyendo la nueva
 module.exports = {
   obtenerBibliotecas,
   obtenerBibliotecaPorId,
   crearBiblioteca,
   actualizarBiblioteca,
-  eliminarBiblioteca
+  eliminarBiblioteca,
+  obtenerLibrosPorBiblioteca
 };

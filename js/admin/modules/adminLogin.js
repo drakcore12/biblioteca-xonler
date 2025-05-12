@@ -1,37 +1,42 @@
-// Módulo para el login de administrador
-export default function initAdminLogin() {
-  const adminLoginForm = document.getElementById('adminLoginForm');
-  if (!adminLoginForm) return;
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('adminLoginForm');
+  if (!form) return;
 
-  adminLoginForm.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
-
-    const email = document.getElementById('adminEmail').value;
+    const email = document.getElementById('adminEmail').value.trim().toLowerCase();
     const password = document.getElementById('adminPassword').value;
 
-    console.log('Intentando iniciar sesión como administrador:', { email });
+    // Limpia mensajes anteriores
+    let errorDiv = document.getElementById('adminLoginError');
+    if (!errorDiv) {
+      errorDiv = document.createElement('div');
+      errorDiv.id = 'adminLoginError';
+      errorDiv.className = 'alert alert-danger mt-3';
+      form.appendChild(errorDiv);
+    }
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
 
-    // Petición al backend para autenticar
     try {
       const response = await fetch('/api/usuarios/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
       const data = await response.json();
-
       if (data.success && data.usuario && data.usuario.rol === 'admin') {
-        alert('Inicio de sesión administrativo exitoso.');
-        window.location.href = 'index.html';
+        window.location.href = '/admin/index.html';
       } else if (data.success) {
-        alert('No tienes permisos de administrador.');
+        errorDiv.textContent = 'No tienes permisos de administrador.';
+        errorDiv.style.display = 'block';
       } else {
-        alert(data.error || 'Credenciales incorrectas');
+        errorDiv.textContent = data.error || 'Credenciales incorrectas';
+        errorDiv.style.display = 'block';
       }
-    } catch (error) {
-      alert('Error al conectar con el servidor.');
+    } catch (err) {
+      errorDiv.textContent = 'Error al conectar con el servidor.';
+      errorDiv.style.display = 'block';
     }
   });
-}
+});
