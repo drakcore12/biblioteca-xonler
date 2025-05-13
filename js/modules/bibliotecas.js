@@ -4,32 +4,34 @@ export default function initBibliotecasPage() {
   initBibliotecasSearch();
 }
 
-function cargarBibliotecas() {
-  const bibliotecasList = document.getElementById('bibliotecasList');
-  if (!bibliotecasList) return;
-
-  bibliotecasList.innerHTML = '<div class="text-center my-3">Cargando bibliotecas...</div>';
-
-  fetch('/api/bibliotecas')
-    .then(response => response.json())
-    .then(bibliotecas => {
-      if (!Array.isArray(bibliotecas) || bibliotecas.length === 0) {
-        bibliotecasList.innerHTML = '<div class="alert alert-warning">No se encontraron bibliotecas.</div>';
-        return;
-      }
-      // Renderizar las bibliotecas
-      bibliotecasList.innerHTML = bibliotecas.map(b => `
-        <li class="list-group-item" data-id="${b.id}">
-          <h5>${b.nombre}</h5>
-          <p>${b.direccion}</p>
-          <small class="text-muted">${b.colegio}</small>
-        </li>
-      `).join('');
-      initBibliotecasList();
-    })
-    .catch(() => {
-      bibliotecasList.innerHTML = '<div class="alert alert-danger">Error al cargar las bibliotecas.</div>';
-    });
+export async function cargaBibliotecas() {
+    const res = await fetch('/api/bibliotecas');
+    const data = await res.json();
+    const bibliotecasList = document.getElementById('bibliotecasList');
+    if (!bibliotecasList) return;
+    
+    bibliotecasList.innerHTML = '<div class="text-center my-3">Cargando bibliotecas...</div>';
+    
+    fetch('/api/bibliotecas')
+      .then(response => response.json())
+      .then(bibliotecas => {
+        if (!Array.isArray(bibliotecas) || bibliotecas.length === 0) {
+          bibliotecasList.innerHTML = '<div class="alert alert-warning">No se encontraron bibliotecas.</div>';
+          return;
+        }
+        // Renderizar las bibliotecas
+        bibliotecasList.innerHTML = bibliotecas.map(b => `
+          <li class="list-group-item" data-id="${b.id}">
+            <h5>${b.nombre}</h5>
+            <p>${b.direccion}</p>
+            <small class="text-muted">${b.colegio}</small>
+          </li>
+        `).join('');
+        initBibliotecasList();
+      })
+      .catch(() => {
+        bibliotecasList.innerHTML = '<div class="alert alert-danger">Error al cargar las bibliotecas.</div>';
+      });
 }
 
 function initBibliotecasList() {
