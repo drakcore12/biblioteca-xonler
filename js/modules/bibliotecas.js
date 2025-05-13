@@ -1,11 +1,9 @@
-// Módulo para la página de bibliotecas
 export default function initBibliotecasPage() {
   console.log('Página de bibliotecas inicializada');
   cargarBibliotecas();
   initBibliotecasSearch();
 }
 
-// Función para cargar bibliotecas desde el backend y mostrarlas
 function cargarBibliotecas() {
   const bibliotecasList = document.getElementById('bibliotecasList');
   if (!bibliotecasList) return;
@@ -34,7 +32,6 @@ function cargarBibliotecas() {
     });
 }
 
-// Función para inicializar la lista de bibliotecas y cargar libros
 function initBibliotecasList() {
   const bibliotecasList = document.getElementById('bibliotecasList');
   const container = document.getElementById('bibliotecaLibros');
@@ -68,7 +65,6 @@ function initBibliotecasList() {
   }
 }
 
-// Función para cargar libros de una biblioteca dada
 async function cargarLibros(item, container) {
   const bibliotecaId = item.dataset.id;
   console.log('↪ Cargando libros para biblioteca ID:', bibliotecaId);
@@ -112,7 +108,6 @@ async function cargarLibros(item, container) {
   }
 }
 
-// Función para inicializar la búsqueda de bibliotecas
 function initBibliotecasSearch() {
   const searchBtn = document.getElementById('searchBtn');
   if (!searchBtn) return;
