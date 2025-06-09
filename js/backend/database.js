@@ -1,7 +1,15 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const useSSL = process.env.DB_SSL === 'true';
+const sslEnv = (process.env.DB_SSL || '').toLowerCase();
+const useSSL = ['true', '1', 'yes'].includes(sslEnv);
+
+// Validar variables requeridas
+const required = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const missing = required.filter(k => !process.env[k]);
+if (missing.length) {
+  console.error('❌ Faltan variables de entorno:', missing.join(', '));
+}
 
 const pool = new Pool({
   host:     process.env.DB_HOST,
