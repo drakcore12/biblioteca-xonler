@@ -1,15 +1,8 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-const sslEnv = (process.env.DB_SSL || '').toLowerCase();
-const useSSL = ['true', '1', 'yes'].includes(sslEnv);
-
-// Validar variables requeridas
-const required = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-const missing = required.filter(k => !process.env[k]);
-if (missing.length) {
-  console.error('❌ Faltan variables de entorno:', missing.join(', '));
-}
+// Convertir DB_SSL a booleano
+const useSSL = process.env.DB_SSL === 'true';
 
 const pool = new Pool({
   host:     process.env.DB_HOST,
@@ -23,16 +16,16 @@ const pool = new Pool({
   ssl: useSSL ? { rejectUnauthorized: false } : false
 });
 
-// 1) Log de configuración
+// Log de configuración
 console.log('PG Pool config:', {
   host: pool.options.host,
   user: pool.options.user,
   database: pool.options.database,
   port: pool.options.port,
-  ssl:  useSSL
+  ssl: useSSL
 });
 
-// 2) Prueba de conexión inmediata
+// Prueba de conexión inmediata
 pool.connect()
   .then(client => {
     console.log('✔️ Conectado a PostgreSQL:', (new Date()).toISOString());
