@@ -29,6 +29,8 @@ El servidor imprimirá la configuración de PostgreSQL e intentará conectarse a
 - `DB_PORT` (por defecto 5432)
 - `DB_SSL`  (`true` o `false`)
 
+Si tu servidor PostgreSQL no admite SSL (p.ej. una instancia local), establece `DB_SSL=false` para desactivar la encriptación.
+
 ## Pruebas
 
 Ejecuta `npm test` para comprobar la conexión a la base de datos.

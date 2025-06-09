@@ -12,7 +12,7 @@ const pool = new Pool({
   max:      10,
   idleTimeoutMillis:     30000,
   connectionTimeoutMillis: 2000,
-  ssl: useSSL ? { rejectUnauthorized: false } : undefined
+  ssl: useSSL ? { rejectUnauthorized: false } : false
 });
 
 // 1) Log de configuración
