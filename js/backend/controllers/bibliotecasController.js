@@ -28,7 +28,7 @@ async function obtenerBibliotecas(req, res) {
         b.nombre,
         b.direccion,
         c.nombre AS colegio_nombre,
-        COUNT(bl.*) - COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS libros_disponibles,
+        COUNT(DISTINCT bl.id) - COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS libros_disponibles,
         COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestamos_activos
       FROM bibliotecas b
       JOIN colegios c ON b.colegio_id = c.id

@@ -1,2 +1,5 @@
-# .gitignore
+# Node artifacts
+node_modules
+
+# Environment variables
 .env
