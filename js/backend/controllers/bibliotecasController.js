@@ -3,13 +3,45 @@ const pool = require('../database');
 // Obtener todas las bibliotecas con su colegio asociado
 async function obtenerBibliotecas(req, res) {
   try {
-    const result = await pool.query(
-      `SELECT b.id, b.nombre, b.direccion, c.nombre AS colegio, c.id AS colegio_id
-       FROM bibliotecas b
-       JOIN colegios c ON b.colegio_id = c.id`
-    );
+    const { nombreBiblioteca, colegio } = req.query;
+    const conditions = [];
+    const values = [];
+    let idx = 1;
+
+    if (nombreBiblioteca) {
+      conditions.push(`LOWER(b.nombre) LIKE LOWER($${idx})`);
+      values.push(`%${nombreBiblioteca}%`);
+      idx++;
+    }
+
+    if (colegio) {
+      conditions.push(`b.colegio_id = $${idx}`);
+      values.push(colegio);
+      idx++;
+    }
+
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const sql = `
+      SELECT
+        b.id,
+        b.nombre,
+        b.direccion,
+        c.nombre AS colegio_nombre,
+        COUNT(bl.*) - COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS libros_disponibles,
+        COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestamos_activos
+      FROM bibliotecas b
+      JOIN colegios c ON b.colegio_id = c.id
+      LEFT JOIN biblioteca_libros bl ON b.id = bl.biblioteca_id
+      LEFT JOIN prestamos p ON p.biblioteca_libro_id = bl.id
+      ${whereClause}
+      GROUP BY b.id, c.nombre
+      ORDER BY b.nombre`;
+
+    const result = await pool.query(sql, values);
     res.json(result.rows);
   } catch (error) {
+    console.error('Error al obtener bibliotecas:', error);
     res.status(500).json({ error: 'Error al obtener bibliotecas' });
   }
 }
@@ -19,7 +51,7 @@ async function obtenerBibliotecaPorId(req, res) {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `SELECT b.id, b.nombre, b.direccion, c.nombre AS colegio, c.id AS colegio_id
+      `SELECT b.id, b.nombre, b.direccion, c.nombre AS colegio_nombre, c.id AS colegio_id
        FROM bibliotecas b
        JOIN colegios c ON b.colegio_id = c.id
        WHERE b.id = $1`, [id]
