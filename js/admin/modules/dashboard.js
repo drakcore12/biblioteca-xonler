@@ -11,9 +11,9 @@ export default async function initDashboard() {
       document.getElementById('totalUsuarios').textContent = usuarios;
     }
 
-    if (Array.isArray(data.prestamosRecientes)) {
-      const tbody = document.getElementById('prestamosRecientesBody');
-      tbody.innerHTML = data.prestamosRecientes.map(p => `
+  if (Array.isArray(data.prestamosRecientes)) {
+    const tbody = document.getElementById('prestamosRecientesBody');
+    tbody.innerHTML = data.prestamosRecientes.map(p => `
         <tr>
           <td>${p.id}</td>
           <td>${p.usuario}</td>
@@ -23,8 +23,21 @@ export default async function initDashboard() {
           <td>${p.fecha_devolucion || ''}</td>
           <td><span class="badge ${p.estado === 'Vencido' ? 'bg-danger' : p.estado === 'Activo' ? 'bg-success' : 'bg-secondary'}">${p.estado}</span></td>
         </tr>
+    `).join('');
+
+    const actList = document.getElementById('actividadRecienteList');
+    if (actList) {
+      actList.innerHTML = data.prestamosRecientes.map(p => `
+        <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+          <div>
+            <p class="mb-0"><strong>Préstamo ${p.estado === 'Devuelto' ? 'devuelto' : 'registrado'}</strong></p>
+            <small class="text-muted">${p.usuario} ${p.estado === 'Devuelto' ? 'devolvió' : 'prestó'} "${p.libro}"</small>
+          </div>
+          <small class="text-muted">${p.fecha_prestamo}</small>
+        </li>
       `).join('');
     }
+  }
   } catch (err) {
     console.error('Error cargando dashboard:', err);
   }
