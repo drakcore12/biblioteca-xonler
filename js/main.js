@@ -1,4 +1,4 @@
-import { cargaBibliotecas } from './modules/bibliotecas.js';
+import { cargarBibliotecas } from './modules/bibliotecas.js';
 import initUtils from './common/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Si página es bibliotecas
     if (path === 'bibliotecas.html' && !isAdmin) {
-        cargaBibliotecas().catch(console.error);
+        cargarBibliotecas().catch(console.error);
     }
 
     // Cargar módulo según página
