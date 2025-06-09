@@ -11,6 +11,7 @@ const bibliotecasRouter  = require('./js/backend/routes/bibliotecas');
 const colegiosRouter = require('./js/backend/routes/colegios');
 const prestamosRouter   = require('./js/backend/routes/prestamos');
 const rolesRouter       = require('./js/backend/routes/roles');
+const dashboardRouter   = require('./js/backend/routes/dashboard');
 
 const app = express();
 const PORT = process.env.PORT || 5500;
@@ -38,6 +39,7 @@ app.use('/api/bibliotecas',  bibliotecasRouter);
 app.use('/api/colegios', colegiosRouter);
 app.use('/api/prestamos',    prestamosRouter);
 app.use('/api/roles',        rolesRouter);
+app.use('/api/dashboard',    dashboardRouter);
 
 // 5) Manejo de rutas no encontradas (opcional)
 app.use((req, res) => {
