@@ -1,6 +1,8 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
+const useSSL = process.env.DB_SSL === 'true';
+
 const pool = new Pool({
   host:     process.env.DB_HOST,
   user:     process.env.DB_USER,
@@ -10,9 +12,7 @@ const pool = new Pool({
   max:      10,
   idleTimeoutMillis:     30000,
   connectionTimeoutMillis: 2000,
-  ssl: {
-    rejectUnauthorized: false // Necesario para Supabase
-  }
+  ssl: useSSL ? { rejectUnauthorized: false } : undefined
 });
 
 // 1) Log de configuración
@@ -20,7 +20,8 @@ console.log('PG Pool config:', {
   host: pool.options.host,
   user: pool.options.user,
   database: pool.options.database,
-  port: pool.options.port
+  port: pool.options.port,
+  ssl:  useSSL
 });
 
 // 2) Prueba de conexión inmediata
