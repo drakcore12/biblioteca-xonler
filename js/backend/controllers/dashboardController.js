@@ -7,12 +7,13 @@ async function obtenerResumen(req, res) {
       pool.query('SELECT COUNT(*) FROM bibliotecas'),
       pool.query('SELECT COUNT(*) FROM prestamos'),
       pool.query('SELECT COUNT(*) FROM usuarios'),
-      pool.query(`\
+      pool.query(`
         SELECT p.id, u.nombre AS usuario, l.titulo AS libro, b.nombre AS biblioteca,
                p.fecha_prestamo, p.fecha_devolucion,
-               CASE WHEN p.fecha_devolucion IS NULL THEN 'Activo'
-                    WHEN p.fecha_devolucion <= CURRENT_DATE THEN 'Vencido'
-                    ELSE 'Devuelto' END AS estado
+               CASE
+                 WHEN p.fecha_devolucion IS NULL THEN 'Activo'
+                 ELSE 'Devuelto'
+               END AS estado
           FROM prestamos p
           JOIN usuarios u ON p.usuario_id = u.id
           JOIN biblioteca_libros bl ON p.biblioteca_libro_id = bl.id
