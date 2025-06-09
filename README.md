@@ -35,3 +35,10 @@ Si tu servidor PostgreSQL no admite SSL (p.ej. una instancia local), establece `
 
 Ejecuta `npm test` para comprobar la conexión a la base de datos.
 
+## Dashboard de administración
+
+El panel en `pages/admin/index.html` ya no usa datos de ejemplo. Al cargarse,
+`js/admin/modules/dashboard.js` solicita información a `/api/dashboard` y
+muestra los totales de libros, bibliotecas, préstamos y usuarios junto con los
+últimos préstamos registrados en la base de datos.
+
