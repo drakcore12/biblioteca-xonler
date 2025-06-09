@@ -28,8 +28,8 @@ async function obtenerBibliotecas(req, res) {
         b.nombre,
         b.direccion,
         c.nombre AS colegio_nombre,
-        COUNT(DISTINCT bl.id) - COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS libros_disponibles,
-        COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestamos_activos
+        COUNT(DISTINCT bl.id) - COUNT(p.id) FILTER (WHERE p.fecha_devolucion IS NULL) AS libros_disponibles,
+        COUNT(p.id) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestamos_activos
       FROM bibliotecas b
       JOIN colegios c ON b.colegio_id = c.id
       LEFT JOIN biblioteca_libros bl ON b.id = bl.biblioteca_id
@@ -126,15 +126,15 @@ async function obtenerLibrosPorBiblioteca(req, res) {
          l.autor, 
          l.isbn, 
          l.imagen_url, 
-         COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestados 
+         COUNT(p.id) FILTER (WHERE p.fecha_devolucion IS NULL) AS prestados
        FROM biblioteca_libros bl 
        JOIN libros         l ON bl.libro_id = l.id 
        LEFT JOIN prestamos p ON p.biblioteca_libro_id = bl.id 
        WHERE bl.biblioteca_id = $1 
        GROUP BY l.id, bl.id 
-       ${disponibilidad === 'disponibles' 
-         ? 'HAVING COUNT(p.*) FILTER (WHERE p.fecha_devolucion IS NULL) = 0' 
-         : ''} 
+       ${disponibilidad === 'disponibles'
+         ? 'HAVING COUNT(p.id) FILTER (WHERE p.fecha_devolucion IS NULL) = 0'
+         : ''}
        ORDER BY l.titulo`,
       [id]
     );
