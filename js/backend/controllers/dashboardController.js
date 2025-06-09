@@ -38,4 +38,33 @@ async function obtenerResumen(req, res) {
   }
 }
 
-module.exports = { obtenerResumen };
+// Devuelve una lista simple de actividad reciente basada en la tabla de préstam
+// os. Esta función es solo un ejemplo para poblar la sección "Actividad Reciente"
+// del dashboard.
+async function obtenerActividadReciente(req, res) {
+  try {
+    const result = await pool.query(`
+      SELECT p.id,
+             u.nombre AS usuario,
+             l.titulo AS libro,
+             b.nombre AS biblioteca,
+             COALESCE(p.fecha_devolucion, p.fecha_prestamo) AS fecha,
+             CASE WHEN p.fecha_devolucion IS NULL
+                  THEN 'Préstamo realizado'
+                  ELSE 'Préstamo devuelto'
+             END AS accion
+        FROM prestamos p
+        JOIN usuarios u ON p.usuario_id = u.id
+        JOIN biblioteca_libros bl ON p.biblioteca_libro_id = bl.id
+        JOIN libros l ON bl.libro_id = l.id
+        JOIN bibliotecas b ON bl.biblioteca_id = b.id
+       ORDER BY fecha DESC
+       LIMIT 5`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error al obtener actividad reciente:', err);
+    res.status(500).json({ error: 'Error interno' });
+  }
+}
+
+module.exports = { obtenerResumen, obtenerActividadReciente };

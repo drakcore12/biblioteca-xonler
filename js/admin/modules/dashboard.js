@@ -25,6 +25,26 @@ export default async function initDashboard() {
         </tr>
       `).join('');
     }
+
+    // Cargar actividad reciente
+    try {
+      const actRes = await fetch('/api/dashboard/actividad');
+      const actividad = await actRes.json();
+      if (Array.isArray(actividad)) {
+        const list = document.getElementById('actividadReciente');
+        list.innerHTML = actividad.map(a => `
+          <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+            <div>
+              <p class="mb-0"><strong>${a.accion}</strong></p>
+              <small class="text-muted">${a.usuario} - ${a.libro} (${a.biblioteca})</small>
+            </div>
+            <small class="text-muted">${new Date(a.fecha).toLocaleDateString()}</small>
+          </li>
+        `).join('');
+      }
+    } catch(e) {
+      console.error('Error cargando actividad:', e);
+    }
   } catch (err) {
     console.error('Error cargando dashboard:', err);
   }
