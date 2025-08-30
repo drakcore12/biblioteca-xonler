@@ -624,3 +624,8 @@ ALTER TABLE ONLY public.usuarios
 
 \unrestrict oLsWrUCzQjQgTkwgpmdhwojbjoifjgPeYdd5zPNl4VEBvncLVijghP3lt3RCLcf
 
+-- Índices para optimización de consultas
+CREATE INDEX IF NOT EXISTS idx_prestamos_bl_activo ON public.prestamos (biblioteca_libro_id) WHERE fecha_devolucion IS NULL;
+CREATE INDEX IF NOT EXISTS idx_prestamos_usuario ON public.prestamos (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_biblib_libro ON public.biblioteca_libros (libro_id);
+

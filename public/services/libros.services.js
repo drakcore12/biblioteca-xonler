@@ -7,7 +7,7 @@ export default function initLibrosPage() {
 }
 
 // ✅ NUEVO: función helper para headers de autenticación
-function authHeaders() {
+export function authHeaders() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token) {
     console.warn('⚠️ No se encontró token de autenticación');

@@ -204,38 +204,28 @@ async function eliminarLibro(req, res) {
   try {
     const { id } = req.params;
 
-    // Verificar si el libro existe
-    const existingLibro = await pool.query(
-      'SELECT id FROM libros WHERE id = $1',
-      [id]
-    );
+    const libro = await pool.query('SELECT id FROM public.libros WHERE id = $1', [id]);
+    if (!libro.rowCount) return res.status(404).json({ error: 'Libro no encontrado' });
 
-    if (existingLibro.rows.length === 0) {
-      return res.status(404).json({ error: 'Libro no encontrado' });
-    }
-
-    // ✅ ARREGLADO: En tu estructura real, no hay biblioteca_libros
-    // Los préstamos van directo a libros, así que verificamos si hay préstamos
-    const prestamosAsociados = await pool.query(`
-      SELECT COUNT(*) as count 
-      FROM prestamos p
-      WHERE p.libro_id = $1
+    // Verifica préstamos asociados (activos o históricos)
+    const prests = await pool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM public.prestamos p
+      JOIN public.biblioteca_libros bl ON bl.id = p.biblioteca_libro_id
+      WHERE bl.libro_id = $1
     `, [id]);
 
-    if (parseInt(prestamosAsociados.rows[0].count) > 0) {
-      return res.status(400).json({ 
-        error: 'No se puede eliminar el libro porque tiene préstamos asociados' 
-      });
+    if (prests.rows[0].count > 0) {
+      return res.status(400).json({ error: 'No se puede eliminar: tiene préstamos asociados' });
     }
 
-    // Eliminar el libro
-    await pool.query('DELETE FROM libros WHERE id = $1', [id]);
+    await pool.query('DELETE FROM public.biblioteca_libros WHERE libro_id = $1', [id]); // por si quedan vínculos
+    await pool.query('DELETE FROM public.libros WHERE id = $1', [id]);
 
-    res.json({ message: 'Libro eliminado exitosamente' });
-
+    return res.json({ message: 'Libro eliminado exitosamente' });
   } catch (error) {
     console.error('Error en eliminarLibro:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    return res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -280,11 +270,159 @@ async function subirImagenLibro(req, res) {
   }
 }
 
+// GET /libros/recomendaciones - Obtener recomendaciones personalizadas
+async function obtenerRecomendaciones(req, res) {
+  try {
+    // 1) Autenticación
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Usuario no autenticado' });
+    }
+    const userId = req.user.id;
+    const limit = 3; // Fijo 3 libros por sección
+
+    // 2) Preferencias del usuario
+    const u = await pool.query(
+      'SELECT preferencias FROM public.usuarios WHERE id = $1',
+      [userId]
+    );
+    if (!u.rowCount) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const prefs = u.rows[0].preferencias || {};
+    const cats = Array.isArray(prefs.categoriasFavoritas)
+      ? prefs.categoriasFavoritas
+          .filter(v => typeof v === 'string')
+          .map(v => v.trim().toLowerCase())
+          .filter(Boolean)
+      : [];
+
+    // 3) Recomendaciones por categorías favoritas
+    console.log('🔍 [DEBUG] Categorías favoritas:', cats);
+    const recomendados = await pool.query(`
+      WITH disponibles AS (
+        SELECT DISTINCT l.id
+        FROM public.libros l
+        JOIN public.biblioteca_libros bl ON bl.libro_id = l.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM public.prestamos p
+          WHERE p.biblioteca_libro_id = bl.id
+            AND p.fecha_devolucion IS NULL
+        )
+        AND (
+          CASE 
+            WHEN cardinality($1::text[]) = 0 THEN true
+            ELSE lower(l.categoria) = ANY(SELECT lower(unnest($1::text[])))
+          END
+        )
+      ),
+      pop AS (
+        SELECT bl.libro_id, COUNT(*) AS total
+        FROM public.prestamos p
+        JOIN public.biblioteca_libros bl ON bl.id = p.biblioteca_libro_id
+        GROUP BY bl.libro_id
+      ),
+      ya_leidos AS (
+        SELECT DISTINCT bl.libro_id
+        FROM public.prestamos p
+        JOIN public.biblioteca_libros bl ON bl.id = p.biblioteca_libro_id
+        WHERE p.usuario_id = $2
+      )
+      SELECT
+        l.*,
+        TRUE AS disponible,
+        10 + COALESCE((SELECT 0.1 * total FROM pop WHERE pop.libro_id = l.id), 0) AS score,
+        EXISTS(SELECT 1 FROM ya_leidos yl WHERE yl.libro_id = l.id) AS ya_leido
+      FROM public.libros l
+      JOIN disponibles d ON d.id = l.id
+      ORDER BY score DESC, RANDOM()
+      LIMIT $3
+    `, [cats, userId, limit]);
+
+    console.log('🔍 [DEBUG] Recomendados encontrados:', {
+      total: recomendados.rows.length,
+      libros: recomendados.rows.map(l => ({ id: l.id, titulo: l.titulo, categoria: l.categoria }))
+    });
+
+    // 4) Descubrimientos (libros de otras categorías)
+    const descubrimientos = await pool.query(`
+      WITH disponibles AS (
+        SELECT DISTINCT l.id
+        FROM public.libros l
+        JOIN public.biblioteca_libros bl ON bl.libro_id = l.id
+        WHERE NOT EXISTS (
+          SELECT 1 FROM public.prestamos p
+          WHERE p.biblioteca_libro_id = bl.id
+            AND p.fecha_devolucion IS NULL
+        )
+        AND NOT (lower(l.categoria) = ANY(SELECT lower(unnest($1::text[]))))
+      ),
+      pop AS (
+        SELECT bl.libro_id, COUNT(*) AS total
+        FROM public.prestamos p
+        JOIN public.biblioteca_libros bl ON bl.id = p.biblioteca_libro_id
+        GROUP BY bl.libro_id
+      ),
+      ya_leidos AS (
+        SELECT DISTINCT bl.libro_id
+        FROM public.prestamos p
+        JOIN public.biblioteca_libros bl ON bl.id = p.biblioteca_libro_id
+        WHERE p.usuario_id = $2
+      )
+      SELECT
+        l.*,
+        TRUE AS disponible,
+        COALESCE((SELECT 0.1 * total FROM pop WHERE pop.libro_id = l.id), 0) AS score,
+        EXISTS(SELECT 1 FROM ya_leidos yl WHERE yl.libro_id = l.id) AS ya_leido
+      FROM public.libros l
+      JOIN disponibles d ON d.id = l.id
+      ORDER BY score DESC, RANDOM()
+      LIMIT $3
+    `, [cats, userId, limit]);
+
+    console.log('🔍 [DEBUG] Descubrimientos encontrados:', {
+      total: descubrimientos.rows.length,
+      libros: descubrimientos.rows.map(l => ({ id: l.id, titulo: l.titulo, categoria: l.categoria }))
+    });
+
+    // 5) Preparar recomendaciones
+    const recomendaciones = {
+      porCategoria: recomendados.rows,
+      nuevosLanzamientos: descubrimientos.rows,
+      metadata: {
+        categoriasPreferidas: cats,
+        totalLibros: recomendados.rows.length + descubrimientos.rows.length
+      }
+    };
+
+    // 6) Respuesta compatible con el frontend
+    return res.json({
+      recomendaciones,
+      preferencias: {
+        categorias: cats,
+        otros: {
+          idioma: prefs.idioma,
+          tamanoFuente: prefs.tamanoFuente
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error en obtenerRecomendaciones:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      stack: error.stack,
+    });
+    return res.status(500).json({ error: 'Error obteniendo recomendaciones' });
+  }
+}
+
 module.exports = {
   obtenerLibros,
   obtenerLibroPorId,
   crearLibro,
   actualizarLibro,
   eliminarLibro,
-  subirImagenLibro
+  subirImagenLibro,
+  obtenerRecomendaciones
 };

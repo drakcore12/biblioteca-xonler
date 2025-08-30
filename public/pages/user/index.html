@@ -53,7 +53,7 @@
   <main class="container my-5">
     <!-- Bienvenida -->
     <section class="mb-4">
-      <h2 class="mb-1">¡Hola, <span id="welcomeName">Usuario</span>! 👋</h2>
+      <h2 class="mb-1">¡Hola, <span id="welcomeName">Usuario</span>!</h2>
       <p class="text-muted">Aquí tienes un resumen rápido de tu actividad en Xonler.</p>
     </section>
 
@@ -83,24 +83,6 @@
             <h6 class="text-muted mb-1">Bibliotecas</h6>
             <div class="display-6 fw-bold" id="statsBibliotecas">0</div>
             <small class="text-muted">convenios activos</small>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Acciones rápidas -->
-    <section class="card shadow-sm mb-4">
-      <div class="card-body">
-        <h4 class="mb-3">Acciones rápidas</h4>
-        <div class="row g-2">
-          <div class="col-12 col-md-auto">
-            <a href="/pages/user/libros.html" class="btn btn-primary w-100">Buscar libros</a>
-          </div>
-          <div class="col-12 col-md-auto">
-            <a href="/pages/user/bibliotecas.html" class="btn btn-outline-primary w-100">Explorar bibliotecas</a>
-          </div>
-          <div class="col-12 col-md-auto">
-            <a href="#" class="btn btn-outline-secondary w-100">Mi historial</a>
           </div>
         </div>
       </div>
@@ -180,67 +162,347 @@
   <script type="module">
           import { requireAuth, requireRole } from '/js/common/guard.js';
     
+    // Función helper para headers de autenticación
+    function authHeaders() {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      if (!token) {
+        console.warn('⚠️ No se encontró token de autenticación');
+        return {};
+      }
+      
+      return { 
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+    }
+    
     async function initPage() {
       await requireAuth();
       requireRole('usuario');
       
       console.log('Usuario autenticado, cargando página principal...');
-      // Aquí puedes agregar tu lógica de inicialización
       setupEventListeners();
-      loadUserData();
-      loadStats();
+      await loadUserData();
+      await loadStats();
+      await loadPrestamosRecientes();
+      await loadLibrosRecomendados();
     }
     
     function setupEventListeners() {
-      // Configurar eventos de la página
       console.log('Configurando eventos...');
       
-      // Evento para cerrar sesión
       document.getElementById('btnLogout').addEventListener('click', function(e) {
         e.preventDefault();
         logout();
       });
       
-                          // Evento para mi perfil
                     document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
                         e.preventDefault();
                         window.location.href = '/pages/user/configuracion.html';
                     });
     }
     
-    function loadUserData() {
-      // Cargar datos del usuario
+    async function loadUserData() {
       console.log('Cargando datos del usuario...');
-      
-      // Ejemplo: cargar nombre del usuario
       const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Usuario';
       document.getElementById('welcomeName').textContent = userName;
       document.getElementById('welcomeNameNav').textContent = userName;
     }
     
-    function loadStats() {
-      // Cargar estadísticas
-      console.log('Cargando estadísticas...');
-      
-      // Aquí puedes hacer llamadas a la API para obtener estadísticas reales
-      // Por ahora usamos datos de ejemplo
-      document.getElementById('statsPrestamosActivos').textContent = '2';
-      document.getElementById('statsLibrosDisponibles').textContent = '15,420';
-      document.getElementById('statsBibliotecas').textContent = '8';
+    async function loadStats() {
+      try {
+        console.log('🔄 Cargando estadísticas...');
+        
+        // Obtener préstamos activos
+        const prestamosResponse = await fetch('/api/prestamos/usuario/actual', {
+          headers: authHeaders()
+        });
+        const prestamosData = await prestamosResponse.json();
+        const prestamosActivos = prestamosData.prestamos.filter(p => !p.fecha_devolucion).length;
+        
+        // Obtener total de libros disponibles
+        const librosResponse = await fetch('/api/libros?disponibilidad=true', {
+          headers: authHeaders()
+        });
+        const librosData = await librosResponse.json();
+        const librosDisponibles = librosData.libros ? librosData.libros.length : 0;
+        
+        // Obtener total de bibliotecas
+        const bibliotecasResponse = await fetch('/api/bibliotecas', {
+          headers: authHeaders()
+        });
+        const bibliotecasData = await bibliotecasResponse.json();
+        const totalBibliotecas = bibliotecasData.bibliotecas ? bibliotecasData.bibliotecas.length : 0;
+        
+        // Actualizar UI
+        document.getElementById('statsPrestamosActivos').textContent = prestamosActivos;
+        document.getElementById('statsLibrosDisponibles').textContent = librosDisponibles.toLocaleString();
+        document.getElementById('statsBibliotecas').textContent = totalBibliotecas;
+        
+        // Mostrar próximo vencimiento si hay préstamos activos
+        if (prestamosActivos > 0) {
+          const prestamosActivos = prestamosData.prestamos.filter(p => !p.fecha_devolucion);
+          if (prestamosActivos.length > 0) {
+            const proximoVencimiento = new Date(Math.min(...prestamosActivos.map(p => new Date(p.fecha_vencimiento))));
+            document.getElementById('statsPrestamosVencen').textContent = 
+              `Próximo vencimiento: ${proximoVencimiento.toLocaleDateString()}`;
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ Error cargando estadísticas:', error);
+        // Mostrar mensaje de error en la UI
+        document.getElementById('statsPrestamosActivos').textContent = '-';
+        document.getElementById('statsLibrosDisponibles').textContent = '-';
+        document.getElementById('statsBibliotecas').textContent = '-';
+      }
+    }
+    
+    async function loadPrestamosRecientes() {
+      try {
+        console.log('🔄 Cargando préstamos recientes...');
+        const response = await fetch('/api/prestamos/usuario/actual', {
+          headers: authHeaders()
+        });
+        
+        if (!response.ok) throw new Error('Error obteniendo préstamos');
+        
+        const data = await response.json();
+        const prestamos = data.prestamos || [];
+        const prestamosContainer = document.getElementById('prestamosRecientes');
+        
+        if (prestamos.length === 0) {
+          prestamosContainer.innerHTML = `
+            <div class="text-center py-4">
+              <p class="text-muted">No tienes préstamos recientes</p>
+              <a href="/pages/user/libros.html" class="btn btn-primary">Buscar libros</a>
+            </div>
+          `;
+          return;
+        }
+        
+        prestamosContainer.innerHTML = `
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>Libro</th>
+                  <th>Fecha préstamo</th>
+                  <th>Estado</th>
+                  <th>Biblioteca</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${prestamos.slice(0, 5).map(prestamo => `
+                  <tr>
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <div>
+                          <h6 class="mb-0">${prestamo.titulo}</h6>
+                          <small class="text-muted">${prestamo.autor}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>${new Date(prestamo.fecha_prestamo).toLocaleDateString()}</td>
+                    <td>
+                      <span class="badge ${prestamo.activo ? 'bg-success' : 'bg-secondary'}">
+                        ${prestamo.activo ? 'Activo' : 'Devuelto'}
+                      </span>
+                    </td>
+                    <td>${prestamo.biblioteca_nombre}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+      } catch (error) {
+        console.error('❌ Error cargando préstamos:', error);
+        document.getElementById('prestamosRecientes').innerHTML = `
+          <div class="alert alert-danger">
+            Error cargando préstamos. Intenta recargar la página.
+          </div>
+        `;
+      }
+    }
+    
+    async function loadLibrosRecomendados() {
+      try {
+        console.log('🔄 Cargando recomendaciones personalizadas...');
+        
+        const response = await fetch('/api/libros/recomendaciones', {
+          headers: authHeaders()
+        });
+        
+        if (!response.ok) throw new Error('Error obteniendo recomendaciones');
+        
+        const data = await response.json();
+        const { recomendaciones, preferencias } = data;
+        
+        console.log('🔍 [DEBUG] Datos recibidos:', {
+          recomendaciones,
+          porCategoria: recomendaciones.porCategoria,
+          nuevosLanzamientos: recomendaciones.nuevosLanzamientos,
+          preferencias
+        });
+        
+        const container = document.getElementById('librosRecomendados');
+        
+        if (!recomendaciones.porCategoria.length && !recomendaciones.nuevosLanzamientos.length) {
+          container.innerHTML = `
+            <div class="col-12 text-center py-4">
+              <p class="text-muted">No hay recomendaciones disponibles</p>
+              <small class="d-block mb-3">
+                Puedes personalizar tus preferencias en la sección de configuración
+              </small>
+              <a href="/pages/user/configuracion.html" class="btn btn-primary btn-sm">
+                Configurar preferencias
+              </a>
+            </div>
+          `;
+          return;
+        }
+        
+        // Construir secciones de recomendaciones
+        let html = '';
+        
+        // Recomendaciones por categorías favoritas
+        if (recomendaciones.porCategoria.length > 0) {
+          html += `
+            <div class="col-12 mb-4">
+              <h5 class="mb-3">
+                <i class="bi bi-bookmark-heart text-primary"></i>
+                Basado en tus categorías favoritas
+                <small class="text-muted">
+                  (${preferencias.categorias.join(', ')})
+                </small>
+              </h5>
+              <div class="row g-3">
+                ${recomendaciones.porCategoria.map(libro => renderLibroCard(libro)).join('')}
+              </div>
+            </div>
+          `;
+        } else {
+          // Mostrar mensaje si no hay recomendaciones por categoría
+          html += `
+            <div class="col-12 mb-4">
+              <h5 class="mb-3">
+                <i class="bi bi-bookmark-heart text-primary"></i>
+                Basado en tus categorías favoritas
+                <small class="text-muted">
+                  (${preferencias.categorias.join(', ')})
+                </small>
+              </h5>
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                No hay libros disponibles en tus categorías favoritas actualmente.
+              </div>
+            </div>
+          `;
+        }
+        
+        // Nuevos lanzamientos y descubrimientos
+        if (recomendaciones.nuevosLanzamientos.length > 0) {
+          html += `
+            <div class="col-12">
+              <h5 class="mb-3">
+                <i class="bi bi-stars text-warning"></i>
+                Descubre algo nuevo
+              </h5>
+              <div class="row g-3">
+                ${recomendaciones.nuevosLanzamientos.map(libro => renderLibroCard(libro)).join('')}
+              </div>
+            </div>
+          `;
+        }
+        
+        container.innerHTML = html;
+        
+        // Inicializar tooltips de Bootstrap
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+        
+      } catch (error) {
+        console.error('❌ Error cargando recomendaciones:', error);
+        document.getElementById('librosRecomendados').innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Error cargando recomendaciones. Intenta recargar la página.
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    function renderLibroCard(libro) {
+      return `
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm">
+            <div class="d-flex">
+              <div class="position-relative" style="width: 150px; min-width: 150px;">
+                <img src="${libro.imagen_url || '/assets/images/libro-placeholder.jpg'}" 
+                     class="h-100" alt="${libro.titulo}"
+                     style="object-fit: cover; width: 150px;">
+                ${libro.en_prestamo ? `
+                  <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-warning" 
+                          data-bs-toggle="tooltip" 
+                          title="Ya tienes este libro en préstamo">
+                      <i class="bi bi-bookmark-check"></i>
+                    </span>
+                  </div>
+                ` : ''}
+              </div>
+              <div class="card-body d-flex flex-column">
+                <h6 class="card-title mb-1">${libro.titulo}</h6>
+                <p class="card-text small text-muted mb-2">${libro.autor}</p>
+                <div class="mb-2">
+                  <span class="badge bg-primary">${libro.categoria}</span>
+                  ${libro.relevance_score === 3 ? `
+                    <span class="badge bg-success" 
+                          data-bs-toggle="tooltip" 
+                          title="Coincide con tus categorías favoritas">
+                      <i class="bi bi-heart-fill"></i>
+                    </span>
+                  ` : ''}
+                </div>
+                ${libro.descripcion ? `
+                  <p class="card-text small flex-grow-1">
+                    ${libro.descripcion.length > 100 
+                      ? libro.descripcion.substring(0, 97) + '...' 
+                      : libro.descripcion}
+                  </p>
+                ` : ''}
+                <div class="mt-auto">
+                  <button class="btn btn-outline-primary btn-sm w-100" 
+                          onclick="verDetalleLibro(${libro.id})"
+                          ${libro.en_prestamo ? 'disabled' : ''}>
+                    ${libro.en_prestamo 
+                      ? '<i class="bi bi-bookmark-check me-1"></i>En préstamo' 
+                      : '<i class="bi bi-book me-1"></i>Ver detalles'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
     }
     
     function logout() {
-      // Limpiar sesión
       localStorage.removeItem('token');
       localStorage.removeItem('role');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userId');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('role');
+      sessionStorage.removeItem('userName');
+      sessionStorage.removeItem('userId');
       
-      // Redirigir al login
       window.location.href = '/pages/guest/login.html';
     }
-    
-        // Función showProfile eliminada - ahora redirige a la página de configuración
     
     initPage();
   </script>

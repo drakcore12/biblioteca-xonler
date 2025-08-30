@@ -202,5 +202,3 @@ module.exports = {
   actualizarBiblioteca,
   eliminarBiblioteca
 };
-
-console.log('✅ Export keys controlador:', Object.keys(module.exports));

@@ -2,6 +2,67 @@
    MEDIA QUERIES - RESPONSIVE
    ======================================== */
 
+/* Ajustes generales para móviles */
+@media (max-width: 575.98px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+
+  .nav-tabs .nav-link {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .form-label {
+    margin-bottom: 0.25rem;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .login-card .card-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .login-card .nav-tabs {
+    margin-bottom: -0.75rem;
+  }
+}
+
+/* Ajustes para tablets */
+@media (min-width: 576px) and (max-width: 991.98px) {
+  .btn {
+    min-width: 120px;
+  }
+
+  .login-card {
+    max-width: 540px;
+    margin: 0 auto;
+  }
+}
+
+/* Ajustes para escritorio */
+@media (min-width: 992px) {
+  .login-card {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  .btn {
+    min-width: 140px;
+  }
+}
+
 /* Responsive para sidebar del admin */
 @media (max-width: 767.98px) {
   .sidebar {
