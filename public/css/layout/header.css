@@ -1,0 +1,16 @@
+/* ========================================
+   HEADER Y NAVEGACIÓN
+   ======================================== */
+header {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.navbar-dark .navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav .nav-link.active {
+  color: #ffffff;
+  border-bottom: 2px solid var(--color-light-accent);
+}

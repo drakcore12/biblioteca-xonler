@@ -1,0 +1,13 @@
+/* ========================================
+   NAVEGACIÓN GENERAL
+   ======================================== */
+
+/* Estilos generales para enlaces de navegación */
+.nav-link {
+  font-weight: 500;
+  color: #333;
+}
+
+.nav-link.active {
+  color: #2470dc;
+}

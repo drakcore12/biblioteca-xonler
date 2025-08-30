@@ -1,0 +1,10 @@
+/* ========================================
+   SOBRESCRITURA DE COLORES BOOTSTRAP
+   ======================================== */
+.bg-dark {
+  background-color: var(--color-dark) !important;
+}
+
+.text-primary {
+  color: var(--color-accent) !important;
+}

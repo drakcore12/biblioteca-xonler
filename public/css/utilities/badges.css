@@ -1,0 +1,14 @@
+/* ========================================
+   COLORES DE BADGES
+   ======================================== */
+.badge.bg-success {
+  background-color: #588157 !important;
+}
+
+.badge.bg-warning {
+  background-color: #dda15e !important;
+}
+
+.badge.bg-danger {
+  background-color: #bc6c25 !important;
+}

@@ -1,0 +1,13 @@
+/* ========================================
+   VARIABLES CSS (COLORES)
+   ======================================== */
+:root {
+  --color-light: #EDEDE9;
+  --color-dark: #463f3a;
+  --color-medium: #8a817c;
+  --color-accent: #7f5539;
+  --color-light-accent: #ddbea9;
+  --primary-accent: #7f5539;
+  --primary-accent-light: #ddbea9;
+  --sidebar-w: 260px; /* Ancho de la sidebar del panel de administración */
+}

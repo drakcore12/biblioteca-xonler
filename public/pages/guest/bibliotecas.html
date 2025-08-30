@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/main.css">
+    <title>Bibliotecas Xonler - Usuario - Biblioteca</title>
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+    <header class="bg-dark text-white py-3">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <h1 class="m-0">Xonler</h1>
+                </div>
+                <div class="col-md-8">
+                    <nav class="navbar navbar-expand-lg navbar-dark">
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="navbarNav">
+                            <ul class="navbar-nav ms-auto">
+                                <li class="nav-item"><a class="nav-link" href="/pages/guest/index.html">Inicio</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/pages/guest/contacto.html">Contacto</a></li>
+                                <li class="nav-item"><a class="nav-link active" href="/pages/guest/bibliotecas.html">Bibliotecas</a></li>
+                                <li class="nav-item"><a class="nav-link" href="/pages/guest/login.html">Iniciar Sesión</a></li>
+                            </ul>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        <h2>Nuestras Bibliotecas</h2>
+        <p class="lead">Encuentra todas las bibliotecas disponibles en nuestra red.</p>
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Buscar Bibliotecas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="searchName" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="searchName" placeholder="Buscar por nombre">
+                        </div>
+                        <div class="mb-3">
+                            <label for="searchLocation" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="searchLocation" placeholder="Ciudad, barrio...">
+                        </div>
+                        <button class="btn btn-primary w-100" id="searchBtn">Buscar</button>
+                    </div>
+                </div>
+
+                <div class="list-group" id="bibliotecasList">
+                    <!-- Lista de bibliotecas (se cargará dinámicamente) -->
+                    <a href="#" class="list-group-item list-group-item-action" data-id="1">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Biblioteca Central</h5>
+                            <small>4.5 km</small>
+                        </div>
+                        <p class="mb-1">Calle Principal #123, Ciudad</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" data-id="2">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Biblioteca Técnica</h5>
+                            <small>2.7 km</small>
+                        </div>
+                        <p class="mb-1">Avenida Técnica #456, Ciudad</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action" data-id="3">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">Biblioteca Literaria</h5>
+                            <small>5.2 km</small>
+                        </div>
+                        <p class="mb-1">Calle Literatura #789, Ciudad</p>
+                    </a>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 id="bibliotecaTitle">Detalles de la Biblioteca</h4>
+                        <div id="bibliotecaDetails">
+                            <!-- Por defecto, mostramos un mensaje -->
+                            <div class="text-center py-5" id="defaultMessage">
+                                <p class="text-muted">Selecciona una biblioteca para ver sus detalles</p>
+                            </div>
+                            
+                            <!-- Detalles de la biblioteca (oculto por defecto) -->
+                            <div id="detailsContent" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Información</h5>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Nombre:</strong> <span id="detailName">Biblioteca Central</span></li>
+                                            <li><strong>Dirección:</strong> <span id="detailAddress">Calle Principal #123, Ciudad</span></li>
+                                            <li><strong>Teléfono:</strong> <span id="detailPhone">(123) 456-7890</span></li>
+                                            <li><strong>Email:</strong> <span id="detailEmail">info@biblioteca.edu</span></li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Horarios</h5>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Lunes - Viernes:</strong> 8:00 AM - 8:00 PM</li>
+                                            <li><strong>Sábados:</strong> 9:00 AM - 5:00 PM</li>
+                                            <li><strong>Domingos:</strong> Cerrado</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Servicios</h5>
+                                        <ul class="list-unstyled">
+                                            <li><i class="bi bi-check-circle text-success"></i> Préstamo de libros</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Sala de estudio</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Internet gratuito</li>
+                                            <li><i class="bi bi-check-circle text-success"></i> Impresión</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>Estadísticas</h5>
+                                        <ul class="list-unstyled">
+                                            <li><strong>Total de libros:</strong> <span id="detailTotalBooks">15,420</span></li>
+                                            <li><strong>Disponibles:</strong> <span id="detailAvailableBooks">12,150</span></li>
+                                            <li><strong>Préstamos activos:</strong> <span id="detailActiveLoans">3,270</span></li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <hr>
+                                
+                                <!-- ✅ NUEVO: Sección de libros de la biblioteca -->
+                                <div class="mb-3">
+                                    <h5>Libros Disponibles</h5>
+                                    <div class="row" id="bibliotecaLibros">
+                                        <!-- Aquí se cargarán los libros dinámicamente -->
+                                        <div class="col-12 text-center py-4">
+                                            <p class="text-muted">Selecciona una biblioteca para ver sus libros</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-4">
+                                    <a href="/pages/user/libros.html" class="btn btn-primary">Ver catálogo completo</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h4>Xonler</h4>
+                    <p>Red de bibliotecas estudiantiles</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Enlaces</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/pages/user/index.html" class="text-white">Inicio</a></li>
+                        <li><a href="/pages/user/bibliotecas.html" class="text-white">Bibliotecas</a></li>
+                        <li><a href="/pages/user/libros.html" class="text-white">Libros</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contacto</h5>
+                    <address>
+                        Email: info@xonler.edu<br>
+                        Teléfono: (123) 456-7890
+                    </address>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <small>&copy; 2025 Xonler - Red de Bibliotecas Estudiantiles</small>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Debug tools (solo en desarrollo) -->
+    <script type="module" src="/js/debug-session.js"></script>
+    
+    <!-- Scripts de autenticación y funcionalidad -->
+    <script type="module">
+        import { requireAuth, requireRole } from '/js/common/guard.js';
+        
+        async function initPage() {
+            await requireAuth();
+            requireRole('usuario');
+            
+            console.log('Usuario autenticado, cargando página de bibliotecas...');
+            // Aquí puedes agregar tu lógica de inicialización
+            setupEventListeners();
+            loadUserData();
+            loadBibliotecas();
+        }
+        
+        function setupEventListeners() {
+            // Configurar eventos de la página
+            console.log('Configurando eventos...');
+            
+            // Evento para cerrar sesión
+            document.getElementById('btnLogout').addEventListener('click', function(e) {
+                e.preventDefault();
+                logout();
+            });
+            
+                                // Evento para mi perfil
+                    document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = '/pages/user/configuracion.html';
+                    });
+            
+            // Evento para mostrar detalles de biblioteca
+            document.getElementById('bibliotecasList').addEventListener('click', function(e) {
+                if (e.target.closest('.list-group-item')) {
+                    const item = e.target.closest('.list-group-item');
+                    const id = item.dataset.id;
+                    showBibliotecaDetails(id);
+                }
+            });
+            
+            // Evento para búsqueda
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                const name = document.getElementById('searchName').value;
+                const location = document.getElementById('searchLocation').value;
+                searchBibliotecas(name, location);
+            });
+        }
+        
+        function loadUserData() {
+            // Cargar datos del usuario
+            console.log('Cargando datos del usuario...');
+            
+            // Ejemplo: cargar nombre del usuario
+            const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Usuario';
+            document.getElementById('welcomeNameNav').textContent = userName;
+        }
+        
+        function loadBibliotecas() {
+            // Cargar bibliotecas usando el servicio
+            console.log('Cargando bibliotecas...');
+            
+            // Importar y usar el servicio de bibliotecas
+            import('/services/bibliotecas.services.js').then(module => {
+                // Inicializar la página de bibliotecas
+                module.default();
+                
+                // Debug de autenticación si está disponible
+                if (module.debugAuth) {
+                    module.debugAuth();
+                }
+            }).catch(error => {
+                console.error('Error cargando servicio de bibliotecas:', error);
+            });
+        }
+        
+        function showBibliotecaDetails(id) {
+            // Mostrar detalles de la biblioteca seleccionada
+            console.log('Mostrando detalles de biblioteca:', id);
+            
+            // Ocultar mensaje por defecto y mostrar detalles
+            document.getElementById('defaultMessage').style.display = 'none';
+            document.getElementById('detailsContent').classList.remove('hidden');
+        }
+        
+        function searchBibliotecas(name, location) {
+            // Buscar bibliotecas
+            console.log('Buscando bibliotecas:', { name, location });
+        }
+        
+        function logout() {
+            // Limpiar sesión
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userName');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('userName');
+            
+            // Redirigir al login
+            window.location.href = '/pages/guest/login.html';
+        }
+        
+        // Función showProfile eliminada - ahora redirige a la página de configuración
+        
+        initPage();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+/* ========================================
+   TARJETAS (CARDS)
+   ======================================== */
+.card {
+  border-radius: 0.5rem;
+  transition: box-shadow 0.2s;
+  border: none;
+}
+
+.card:hover {
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+.card.shadow, 
+.login-card {
+  transition: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+.card.shadow:hover, 
+.login-card:hover {
+  transform: none;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important;
+}
+
+.card-header {
+  background-color: #fff;
+  border-bottom: 1px solid var(--color-light);
+}

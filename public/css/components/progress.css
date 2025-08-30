@@ -1,0 +1,7 @@
+/* ========================================
+   BARRAS DE PROGRESO
+   ======================================== */
+.progress {
+  height: 0.8rem;
+  background-color: #e9ecef;
+}

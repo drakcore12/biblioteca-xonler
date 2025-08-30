@@ -1,0 +1,29 @@
+/* ========================================
+   BOTONES PRINCIPALES
+   ======================================== */
+.btn-primary {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.btn-primary:hover, 
+.btn-primary:focus, 
+.btn-primary:active {
+  background-color: #6b4727 !important;
+  border-color: #6b4727 !important;
+}
+
+/* ========================================
+   BOTONES OUTLINE
+   ======================================== */
+.btn-outline-primary {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.btn-outline-primary:hover, 
+.btn-outline-primary:focus, 
+.btn-outline-primary:active {
+  background-color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
+}

@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Bibliotecas Xonler - Usuario</title>
+
+  <!-- Bootstrap + estilos propios -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/main.css"/>
+
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body data-page="user-index">
+  <!-- Header -->
+  <header class="bg-dark text-white py-3">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-md-4">
+          <h1 class="m-0">Xonler</h1>
+        </div>
+        <div class="col-md-8">
+          <nav class="navbar navbar-expand-lg navbar-dark">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+              <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link active" href="/pages/user/index.html">Inicio</a></li>
+                <li class="nav-item"><a class="nav-link" href="/pages/user/libros.html">Libros</a></li>
+                <li class="nav-item dropdown">
+                  <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span id="welcomeNameNav">Mi cuenta</span>
+                  </a>
+                  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li><a class="dropdown-item" href="#" id="btnMiPerfil">Mi perfil</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" id="btnLogout">Cerrar sesión</a></li>
+                  </ul>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="container my-5">
+    <!-- Bienvenida -->
+    <section class="mb-4">
+      <h2 class="mb-1">¡Hola, <span id="welcomeName">Usuario</span>! 👋</h2>
+      <p class="text-muted">Aquí tienes un resumen rápido de tu actividad en Xonler.</p>
+    </section>
+
+    <!-- KPIs -->
+    <section class="row g-3 mb-4">
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">Préstamos activos</h6>
+            <div class="display-6 fw-bold" id="statsPrestamosActivos">0</div>
+            <small id="statsPrestamosVencen">—</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">Libros disponibles</h6>
+            <div class="display-6 fw-bold" id="statsLibrosDisponibles">0</div>
+            <small class="text-muted">en tu red</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h6 class="text-muted mb-1">Bibliotecas</h6>
+            <div class="display-6 fw-bold" id="statsBibliotecas">0</div>
+            <small class="text-muted">convenios activos</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Acciones rápidas -->
+    <section class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h4 class="mb-3">Acciones rápidas</h4>
+        <div class="row g-2">
+          <div class="col-12 col-md-auto">
+            <a href="/pages/user/libros.html" class="btn btn-primary w-100">Buscar libros</a>
+          </div>
+          <div class="col-12 col-md-auto">
+            <a href="/pages/user/bibliotecas.html" class="btn btn-outline-primary w-100">Explorar bibliotecas</a>
+          </div>
+          <div class="col-12 col-md-auto">
+            <a href="#" class="btn btn-outline-secondary w-100">Mi historial</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Préstamos recientes -->
+    <section class="card shadow-sm mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Préstamos recientes</h4>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ver todos</a>
+      </div>
+      <div class="card-body">
+        <div id="prestamosRecientes">
+          <!-- Se cargarán dinámicamente -->
+          <div class="text-center py-4">
+            <p class="text-muted">No tienes préstamos recientes</p>
+            <a href="/pages/user/libros.html" class="btn btn-primary">Buscar libros</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Libros recomendados -->
+    <section class="card shadow-sm">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Libros recomendados para ti</h4>
+        <a href="/pages/user/libros.html" class="btn btn-sm btn-outline-primary">Ver más</a>
+      </div>
+      <div class="card-body">
+        <div class="row" id="librosRecomendados">
+          <!-- Se cargarán dinámicamente -->
+          <div class="col-12 text-center py-4">
+            <p class="text-muted">Cargando recomendaciones...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white py-4 mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h4>Xonler</h4>
+          <p>Red de bibliotecas estudiantiles</p>
+        </div>
+        <div class="col-md-4">
+          <h5>Enlaces</h5>
+          <ul class="list-unstyled">
+            <li><a href="/pages/user/index.html" class="text-white">Inicio</a></li>
+            <li><a href="/pages/user/libros.html" class="text-white">Libros</a></li>
+          </ul>
+        </div>
+        <div class="col-md-4">
+          <h5>Contacto</h5>
+          <address>
+            Email: info@xonler.edu<br>
+            Teléfono: (123) 456-7890
+          </address>
+        </div>
+      </div>
+      <hr>
+      <div class="text-center">
+        <small>&copy; 2025 Xonler - Red de Bibliotecas Estudiantiles</small>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Debug tools (solo en desarrollo) -->
+  <script type="module" src="/js/debug-session.js"></script>
+  
+  <!-- Scripts de autenticación y funcionalidad -->
+  <script type="module">
+    import { requireAuth, requireRole } from '/js/common/guard.js';
+    
+    async function initPage() {
+      await requireAuth();
+      requireRole('usuario');
+      
+      console.log('Usuario autenticado, cargando página principal...');
+      // Aquí puedes agregar tu lógica de inicialización
+      setupEventListeners();
+      loadUserData();
+      loadStats();
+    }
+    
+    function setupEventListeners() {
+      // Configurar eventos de la página
+      console.log('Configurando eventos...');
+      
+      // Evento para cerrar sesión
+      document.getElementById('btnLogout').addEventListener('click', function(e) {
+        e.preventDefault();
+        logout();
+      });
+      
+                          // Evento para mi perfil
+                    document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        window.location.href = '/pages/user/configuracion.html';
+                    });
+    }
+    
+    function loadUserData() {
+      // Cargar datos del usuario
+      console.log('Cargando datos del usuario...');
+      
+      // Ejemplo: cargar nombre del usuario
+      const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Usuario';
+      document.getElementById('welcomeName').textContent = userName;
+      document.getElementById('welcomeNameNav').textContent = userName;
+    }
+    
+    function loadStats() {
+      // Cargar estadísticas
+      console.log('Cargando estadísticas...');
+      
+      // Aquí puedes hacer llamadas a la API para obtener estadísticas reales
+      // Por ahora usamos datos de ejemplo
+      document.getElementById('statsPrestamosActivos').textContent = '2';
+      document.getElementById('statsLibrosDisponibles').textContent = '15,420';
+      document.getElementById('statsBibliotecas').textContent = '8';
+    }
+    
+    function logout() {
+      // Limpiar sesión
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
+      
+      // Redirigir al login
+      window.location.href = '/pages/guest/login.html';
+    }
+    
+        // Función showProfile eliminada - ahora redirige a la página de configuración
+    
+    initPage();
+  </script>
+</body>
+</html>

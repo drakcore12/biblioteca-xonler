@@ -1,0 +1,29 @@
+/* ========================================
+   ELEMENTOS DE LISTA
+   ======================================== */
+.list-group-item {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+
+.list-group-item:hover {
+  background-color: var(--primary-accent-light);
+  color: var(--color-dark);
+}
+
+.list-group-item:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.list-group-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(127, 85, 57, 0.4);
+}
+
+.list-group-item.active {
+  background-color: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}

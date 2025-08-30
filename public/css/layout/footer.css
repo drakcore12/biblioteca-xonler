@@ -1,0 +1,11 @@
+/* ========================================
+   FOOTER
+   ======================================== */
+footer {
+  background-color: var(--color-dark);
+}
+
+footer a.text-white:hover {
+  color: var(--color-light-accent) !important;
+  text-decoration: none;
+}

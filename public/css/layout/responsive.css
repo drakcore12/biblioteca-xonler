@@ -1,0 +1,39 @@
+/* ========================================
+   MEDIA QUERIES - RESPONSIVE
+   ======================================== */
+
+/* Responsive para sidebar del admin */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding-top: 0;
+    z-index: 1;
+    box-shadow: none;
+  }
+
+  main {
+    margin-left: 0 !important;
+    padding-top: 70px; /* si hay top nav fija en móvil */
+  }
+
+  .mobile-top-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+  }
+}
+
+@media (min-width: 992px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+  }
+}
