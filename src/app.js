@@ -3,12 +3,38 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 
 const app = express();
 
-// Middlewares base
+// ================== CONFIGURACIÓN BÁSICA ==================
+const SERVER_STARTED_AT = Date.now();
+
+// ================== MIDDLEWARES BASE ==================
 app.use(express.json());
-app.use(cors());
+
+// CORS (ajusta origin si necesitas restringir)
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+
+// Middleware de debug para POST requests
+app.use((req, res, next) => {
+  if (req.method === 'POST') {
+    console.log('🔍 [DEBUG] POST Request:', {
+      url: req.url,
+      contentType: req.get('Content-Type'),
+      body: req.body,
+      bodyKeys: Object.keys(req.body || {}),
+    });
+  }
+  next();
+});
+
+
 
 // Logs simples
 app.use((req, _res, next) => {
@@ -16,21 +42,21 @@ app.use((req, _res, next) => {
   next();
 });
 
-// ====== RUTAS API (usa las rutas REALES) ======
-const usuariosRouter    = require('./routes/usuarios.routes');
-const librosRouter      = require('./routes/libros.routes');
-const bibliotecasRouter = require('./routes/bibliotecas.routes');
-const colegiosRouter    = require('./routes/colegios.routes');
 
-app.use('/api/usuarios', usuariosRouter);
-app.use('/api/libros', librosRouter);
-app.use('/api/bibliotecas', bibliotecasRouter);
-app.use('/api/colegios', colegiosRouter);
 
-// ====== ESTÁTICOS ======
-// Sirve TODO lo que hay en /public (HTML, CSS, JS, imágenes)
+// ================== RUTAS API ==================
+// Ruta de prueba antes de las rutas API
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API funcionando correctamente' });
+});
+
+const apiRoutes = require('./routes/index.routes');
+app.use('/api', apiRoutes);
+
+// ================== ESTÁTICOS ==================
 app.use(express.static(path.join(__dirname, '../public')));
 
+// ================== RUTAS DE PÁGINAS ==================
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/pages/guest/index.html'));
 });
@@ -43,38 +69,23 @@ app.get('/login', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/pages/guest/login.html'));
 });
 
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../public/pages/guest/index.html'));
-});
-
-
-// Opcional: ruta de salud
-app.get('/api/health', (_req, res) => res.json({ ok: true }));
-
-// ✅ ARREGLADO: Manejo global de errores
+// ================== ERRORES ==================
 app.use((err, req, res, next) => {
   console.error('❌ Error no manejado:', err);
-  
-  // Si ya se envió respuesta, no enviar otra
-  if (res.headersSent) {
-    return next(err);
-  }
-  
-  // Error de validación de JSON
+  if (res.headersSent) return next(err);
+
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     return res.status(400).json({ error: 'JSON inválido en el body' });
   }
-  
-  // Error de base de datos
-  if (err.code === '23505') { // unique_violation
+
+  if (err.code === '23505') {
     return res.status(409).json({ error: 'Conflicto: el recurso ya existe' });
   }
-  
-  if (err.code === '23503') { // foreign_key_violation
+
+  if (err.code === '23503') {
     return res.status(400).json({ error: 'Referencia inválida' });
   }
-  
-  // Error genérico
+
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 

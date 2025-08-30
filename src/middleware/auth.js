@@ -1,81 +1,188 @@
 const jwt = require('jsonwebtoken');
 
-// ✅ ARREGLADO: Middleware de autenticación simple
+// Middleware de autenticación
 function auth(req, res, next) {
   try {
     // Obtener token del header Authorization
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ 
+        error: 'Token de acceso requerido',
+        message: 'Debes incluir un token Bearer en el header Authorization'
+      });
+    }
+    
+    // Extraer el token (remover "Bearer ")
+    const token = authHeader.substring(7);
     
     if (!token) {
-      return res.status(401).json({ error: 'Token de autenticación requerido' });
-    }
-
-    // ✅ ARREGLADO: Verificar token (usar una clave secreta simple para desarrollo)
-    // En producción, usa process.env.JWT_SECRET
-    const secret = process.env.JWT_SECRET || 'dev-secret-key-2025';
-    
-    try {
-      const payload = jwt.verify(token, secret);
-      
-      // ✅ ARREGLADO: Extraer userId del payload
-      const userId = payload.user_id || payload.id || payload.sub;
-      
-      if (!userId) {
-        return res.status(401).json({ error: 'Token inválido: sin userId' });
-      }
-      
-      // ✅ ARREGLADO: Añadir userId al request
-      req.user = { id: userId };
-      req.userId = userId; // Compatibilidad con código existente
-      
-      console.log('🔐 Usuario autenticado:', userId);
-      next();
-      
-    } catch (jwtError) {
-      console.error('❌ Error verificando JWT:', jwtError);
-      return res.status(401).json({ error: 'Token inválido o expirado' });
+      return res.status(401).json({ 
+        error: 'Token inválido',
+        message: 'El token no puede estar vacío'
+      });
     }
     
-  } catch (error) {
-    console.error('❌ Error en middleware de auth:', error);
-    return res.status(500).json({ error: 'Error interno de autenticación' });
-  }
-}
-
-// ✅ ARREGLADO: Middleware opcional (no falla si no hay token)
-function optionalAuth(req, res, next) {
-  try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    // Verificar el token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
     
-    if (token) {
-      const secret = process.env.JWT_SECRET || 'dev-secret-key-2025';
-      
-      try {
-        const payload = jwt.verify(token, secret);
-        const userId = payload.user_id || payload.id || payload.sub;
-        
-        if (userId) {
-          req.user = { id: userId };
-          req.userId = userId;
-          console.log('🔐 Usuario autenticado (opcional):', userId);
-        }
-      } catch (jwtError) {
-        // Token inválido, pero no falla la request
-        console.warn('⚠️ Token inválido en auth opcional:', jwtError.message);
-      }
-    }
+    // Agregar información del usuario al request
+    req.user = {
+      id: decoded.user_id || decoded.id,
+      email: decoded.email,
+      role: decoded.role || 'usuario',
+      nombre: decoded.nombre
+    };
+    
+    console.log('🔐 Usuario autenticado:', {
+      id: req.user.id,
+      email: req.user.email,
+      role: req.user.role
+    });
     
     next();
     
   } catch (error) {
-    console.error('❌ Error en auth opcional:', error);
-    next(); // Continuar sin autenticación
+    console.error('❌ Error de autenticación:', error.message);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        error: 'Token inválido',
+        message: 'El token proporcionado no es válido'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        error: 'Token expirado',
+        message: 'El token ha expirado, inicia sesión nuevamente'
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Error de autenticación',
+      message: 'Error interno del servidor durante la autenticación'
+    });
   }
+}
+
+// Middleware para requerir un rol específico
+function requireRole(role) {
+  return (req, res, next) => {
+    // Primero verificar que el usuario esté autenticado
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'No autenticado',
+        message: 'Debes iniciar sesión para acceder a este recurso'
+      });
+    }
+    
+    // Verificar que el usuario tenga el rol requerido
+    if (req.user.role !== role && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        error: 'Acceso denegado',
+        message: `Se requiere rol '${role}' para acceder a este recurso. Tu rol actual es '${req.user.role}'`
+      });
+    }
+    
+    console.log(`🔒 Acceso autorizado para usuario ${req.user.id} con rol ${req.user.role}`);
+    next();
+  };
+}
+
+// Middleware para requerir múltiples roles (cualquiera de ellos)
+function requireAnyRole(roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'No autenticado',
+        message: 'Debes iniciar sesión para acceder a este recurso'
+      });
+    }
+    
+    // Verificar que el usuario tenga al menos uno de los roles requeridos
+    const hasRequiredRole = roles.includes(req.user.role) || req.user.role === 'admin';
+    
+    if (!hasRequiredRole) {
+      return res.status(403).json({ 
+        error: 'Acceso denegado',
+        message: `Se requiere uno de estos roles: ${roles.join(', ')}. Tu rol actual es '${req.user.role}'`
+      });
+    }
+    
+    console.log(`🔒 Acceso autorizado para usuario ${req.user.id} con rol ${req.user.role}`);
+    next();
+  };
+}
+
+// Middleware para verificar que el usuario sea propietario del recurso o admin
+function requireOwnershipOrAdmin(resourceIdParam = 'id') {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'No autenticado',
+        message: 'Debes iniciar sesión para acceder a este recurso'
+      });
+    }
+    
+    const resourceId = req.params[resourceIdParam];
+    
+    // Los administradores pueden acceder a cualquier recurso
+    if (req.user.role === 'admin') {
+      console.log(`🔒 Admin ${req.user.id} accediendo a recurso ${resourceId}`);
+      return next();
+    }
+    
+    // Verificar que el usuario sea propietario del recurso
+    if (req.user.id !== parseInt(resourceId)) {
+      return res.status(403).json({ 
+        error: 'Acceso denegado',
+        message: 'Solo puedes acceder a tus propios recursos'
+      });
+    }
+    
+    console.log(`🔒 Usuario ${req.user.id} accediendo a su propio recurso ${resourceId}`);
+    next();
+  };
+}
+
+// Función helper para verificar permisos personalizados
+function checkPermission(permission) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'No autenticado',
+        message: 'Debes iniciar sesión para acceder a este recurso'
+      });
+    }
+    
+    // Aquí puedes implementar lógica de permisos más compleja
+    // Por ahora, solo verificamos roles básicos
+    const allowedRoles = {
+      'manage_users': ['admin'],
+      'manage_books': ['admin', 'bibliotecario'],
+      'manage_loans': ['admin', 'bibliotecario', 'usuario'],
+      'view_statistics': ['admin', 'bibliotecario']
+    };
+    
+    const requiredRoles = allowedRoles[permission] || ['admin'];
+    
+    if (!requiredRoles.includes(req.user.role) && req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        error: 'Permiso denegado',
+        message: `No tienes permisos para realizar la acción: ${permission}`
+      });
+    }
+    
+    console.log(`🔒 Permiso ${permission} concedido para usuario ${req.user.id}`);
+    next();
+  };
 }
 
 module.exports = {
   auth,
-  optionalAuth
+  requireRole,
+  requireAnyRole,
+  requireOwnershipOrAdmin,
+  checkPermission
 };

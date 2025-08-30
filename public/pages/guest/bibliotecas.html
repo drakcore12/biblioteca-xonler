@@ -196,111 +196,20 @@
     <!-- Debug tools (solo en desarrollo) -->
     <script type="module" src="/js/debug-session.js"></script>
     
-    <!-- Scripts de autenticación y funcionalidad -->
+    <!-- Scripts de funcionalidad para invitados -->
     <script type="module">
-        import { requireAuth, requireRole } from '/js/common/guard.js';
+        import { initBibliotecasGuestPage, mostrarLoginRequerido } from '/services/bibliotecas-guest.services.js';
         
-        async function initPage() {
-            await requireAuth();
-            requireRole('usuario');
+        // Inicializar página cuando se carga
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Página de bibliotecas cargada como invitado');
             
-            console.log('Usuario autenticado, cargando página de bibliotecas...');
-            // Aquí puedes agregar tu lógica de inicialización
-            setupEventListeners();
-            loadUserData();
-            loadBibliotecas();
-        }
-        
-        function setupEventListeners() {
-            // Configurar eventos de la página
-            console.log('Configurando eventos...');
+            // Mostrar mensaje de login requerido
+            mostrarLoginRequerido();
             
-            // Evento para cerrar sesión
-            document.getElementById('btnLogout').addEventListener('click', function(e) {
-                e.preventDefault();
-                logout();
-            });
-            
-                                // Evento para mi perfil
-                    document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.location.href = '/pages/user/configuracion.html';
-                    });
-            
-            // Evento para mostrar detalles de biblioteca
-            document.getElementById('bibliotecasList').addEventListener('click', function(e) {
-                if (e.target.closest('.list-group-item')) {
-                    const item = e.target.closest('.list-group-item');
-                    const id = item.dataset.id;
-                    showBibliotecaDetails(id);
-                }
-            });
-            
-            // Evento para búsqueda
-            document.getElementById('searchBtn').addEventListener('click', function() {
-                const name = document.getElementById('searchName').value;
-                const location = document.getElementById('searchLocation').value;
-                searchBibliotecas(name, location);
-            });
-        }
-        
-        function loadUserData() {
-            // Cargar datos del usuario
-            console.log('Cargando datos del usuario...');
-            
-            // Ejemplo: cargar nombre del usuario
-            const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName') || 'Usuario';
-            document.getElementById('welcomeNameNav').textContent = userName;
-        }
-        
-        function loadBibliotecas() {
-            // Cargar bibliotecas usando el servicio
-            console.log('Cargando bibliotecas...');
-            
-            // Importar y usar el servicio de bibliotecas
-            import('/services/bibliotecas.services.js').then(module => {
-                // Inicializar la página de bibliotecas
-                module.default();
-                
-                // Debug de autenticación si está disponible
-                if (module.debugAuth) {
-                    module.debugAuth();
-                }
-            }).catch(error => {
-                console.error('Error cargando servicio de bibliotecas:', error);
-            });
-        }
-        
-        function showBibliotecaDetails(id) {
-            // Mostrar detalles de la biblioteca seleccionada
-            console.log('Mostrando detalles de biblioteca:', id);
-            
-            // Ocultar mensaje por defecto y mostrar detalles
-            document.getElementById('defaultMessage').style.display = 'none';
-            document.getElementById('detailsContent').classList.remove('hidden');
-        }
-        
-        function searchBibliotecas(name, location) {
-            // Buscar bibliotecas
-            console.log('Buscando bibliotecas:', { name, location });
-        }
-        
-        function logout() {
-            // Limpiar sesión
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
-            localStorage.removeItem('userName');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('role');
-            sessionStorage.removeItem('userName');
-            
-            // Redirigir al login
-            window.location.href = '/pages/guest/login.html';
-        }
-        
-        // Función showProfile eliminada - ahora redirige a la página de configuración
-        
-        initPage();
+            // Inicializar funcionalidad de bibliotecas
+            initBibliotecasGuestPage();
+        });
     </script>
 </body>
 </html>

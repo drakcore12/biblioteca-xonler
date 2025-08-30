@@ -238,19 +238,32 @@ function collectProfileData() {
 }
 
 function collectPreferenceData() {
-    return {
-        idioma: document.getElementById('idioma').value,
-        tema: document.getElementById('tema').value,
-        tamanoFuente: document.getElementById('tamanoFuente').value,
-        maxResultados: document.getElementById('maxResultados').value,
+    const prefs = {
+        idioma: document.getElementById('idioma')?.value || 'es',
+        tema: document.getElementById('tema')?.value || 'auto',
+        tamanoFuente: document.getElementById('tamanoFuente')?.value || 'medium',
+        maxResultados: document.getElementById('maxResultados')?.value || '20',
         categoriasFavoritas: obtenerCategoriasSeleccionadas(),
-        emailPrestamos: document.getElementById('emailPrestamos').checked,
-        emailNuevosLibros: document.getElementById('emailNuevosLibros').checked,
-        emailEventos: document.getElementById('emailEventos').checked,
-        appPrestamos: document.getElementById('appPrestamos').checked,
-        appRecomendaciones: document.getElementById('appRecomendaciones').checked,
-        appMantenimiento: document.getElementById('appMantenimiento').checked
+        emailPrestamos: document.getElementById('emailPrestamos')?.checked || false,
+        emailNuevosLibros: document.getElementById('emailNuevosLibros')?.checked || false,
+        emailEventos: document.getElementById('emailEventos')?.checked || false,
+        appPrestamos: document.getElementById('appPrestamos')?.checked || false,
+        appRecomendaciones: document.getElementById('appRecomendaciones')?.checked || false,
+        appMantenimiento: document.getElementById('appMantenimiento')?.checked || false
     };
+
+    // Validar que todos los valores requeridos estén presentes
+    if (!prefs.idioma || !prefs.tema || !prefs.tamanoFuente || !prefs.maxResultados) {
+        throw new Error('Faltan campos requeridos en las preferencias');
+    }
+
+    // Validar que categoriasFavoritas sea un array
+    if (!Array.isArray(prefs.categoriasFavoritas)) {
+        prefs.categoriasFavoritas = [];
+    }
+
+    console.log('🔍 Preferencias recolectadas:', prefs);
+    return prefs;
 }
 
 // ===== CAMBIO DE CONTRASEÑA =====

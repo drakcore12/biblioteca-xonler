@@ -2,6 +2,9 @@ export function initLoginForm() {
   const loginForm = document.getElementById('loginForm');
   if (!loginForm) return;
 
+  // ✅ NUEVO: Inicializar validación de contraseña en tiempo real
+  initPasswordValidation();
+
   // --- util toast ---
   function showToastError(msg) {
     const el = document.getElementById('loginToast');
@@ -34,13 +37,15 @@ export function initLoginForm() {
       let data = {};
       try { data = await res.json(); } catch { /* puede no venir JSON en 401 */ }
 
-      if (!res.ok || !data?.success) {
+      console.log('📋 [LOGIN] Respuesta del backend:', data);
+
+      if (!res.ok) {
         showToastError(data?.error || 'Credenciales incorrectas');
         return;
       }
 
       // Normaliza rol y persiste sesión (modo storage)
-      const role = (data.role || 'usuario').toLowerCase();
+      const role = (data.user?.rol || data.role || 'usuario').toLowerCase();
       const storage = remember ? localStorage : sessionStorage;
 
       // ✅ ARREGLADO: Solo usar token real del backend
@@ -51,8 +56,14 @@ export function initLoginForm() {
       
       storage.setItem('token', data.token);
       storage.setItem('role', role);
-      if (data.userName) storage.setItem('userName', data.userName);
-      if (data.userId) storage.setItem('userId', data.userId);
+      if (data.user?.nombre) storage.setItem('userName', data.user.nombre);
+      if (data.user?.id) storage.setItem('userId', data.user.id);
+
+      console.log('🔐 [LOGIN] Datos de sesión guardados:', {
+        role: role,
+        userName: data.user?.nombre,
+        userId: data.user?.id
+      });
 
       // Redirección segura respetando ?next=
       const params = new URLSearchParams(window.location.search);
@@ -68,9 +79,19 @@ export function initLoginForm() {
           }
         } catch { /* ignore */ }
       }
-      if (role === 'admin') return window.location.replace('/pages/admin/index.html');
-      if (role === 'adminadvanced') return window.location.replace('/pages/adminAdvanced/index.html');
-      window.location.replace('/pages/user/index.html');
+      
+      // Redirección por rol
+      console.log('🔄 [LOGIN] Redirigiendo por rol:', role);
+      switch (role) {
+        case 'admin':
+        case 'adminadvanced':
+          window.location.replace('/pages/admin/index.html');
+          break;
+        case 'usuario':
+        default:
+          window.location.replace('/pages/user/index.html');
+          break;
+      }
 
     } catch (err) {
       console.error(err);
@@ -79,5 +100,30 @@ export function initLoginForm() {
       btn.disabled = false;
       btn.textContent = prev;
     }
+  });
+}
+
+// ✅ NUEVO: Función para validar contraseña en tiempo real
+function initPasswordValidation() {
+  const passwordInput = document.getElementById('loginPassword');
+  if (!passwordInput) return;
+  
+  // Mostrar/ocultar contraseña
+  const togglePassword = document.createElement('button');
+  togglePassword.type = 'button';
+  togglePassword.className = 'btn btn-outline-secondary btn-sm position-absolute end-0 top-0';
+  togglePassword.style.cssText = 'border: none; background: none; z-index: 10; margin-top: 2px; margin-right: 2px;';
+  togglePassword.innerHTML = '<i class="bi bi-eye"></i>';
+  
+  // Posicionar el botón
+  const passwordContainer = passwordInput.parentNode;
+  passwordContainer.style.position = 'relative';
+  passwordContainer.appendChild(togglePassword);
+  
+  // Funcionalidad de mostrar/ocultar
+  togglePassword.addEventListener('click', () => {
+    const type = passwordInput.type === 'password' ? 'text' : 'password';
+    passwordInput.type = type;
+    togglePassword.innerHTML = type === 'password' ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
   });
 }

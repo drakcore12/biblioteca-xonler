@@ -54,19 +54,19 @@
             <div class="tab-content">
               <div class="tab-pane fade show active" id="login">
                 <h3 class="mb-4">Iniciar Sesión</h3>
-                <form id="loginForm">
+                <form id="loginForm" autocomplete="on">
                   <div class="mb-3">
                     <label for="loginEmail" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="loginEmail" 
-                           autocomplete="email" required>
+                    <input type="email" class="form-control" id="loginEmail" name="email"
+                           autocomplete="username" required>
                   </div>
                   <div class="mb-3">
                     <label for="loginPassword" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="loginPassword" 
+                    <input type="password" class="form-control" id="loginPassword" name="password"
                            autocomplete="current-password" required>
                   </div>
                   <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="rememberMe" 
+                    <input type="checkbox" class="form-check-input" id="rememberMe" name="remember"
                            autocomplete="off">
                     <label class="form-check-label" for="rememberMe">Recordarme</label>
                   </div>
@@ -79,29 +79,34 @@
 
               <div class="tab-pane fade" id="register">
                 <h3 class="mb-4">Crear Cuenta</h3>
-                <form id="registerForm">
+                <form id="registerForm" autocomplete="on">
                   <div class="mb-3">
-                    <label for="registerName" class="form-label">Nombre completo</label>
-                    <input type="text" class="form-control" id="registerName" 
-                           autocomplete="name" required>
+                    <label for="registerName" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="registerName" name="nombre"
+                           autocomplete="given-name" required>
+                  </div>
+                  <div class="mb-3">
+                    <label for="registerApellido" class="form-label">Apellido</label>
+                    <input type="text" class="form-control" id="registerApellido" name="apellido"
+                           autocomplete="family-name" required>
                   </div>
                   <div class="mb-3">
                     <label for="registerEmail" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="registerEmail" 
+                    <input type="email" class="form-control" id="registerEmail" name="email"
                            autocomplete="email" required>
                   </div>
                   <div class="mb-3">
                     <label for="registerPassword" class="form-label">Contraseña</label>
-                    <input type="password" class="form-control" id="registerPassword" 
-                           autocomplete="new-password" required>
+                    <input type="password" class="form-control" id="registerPassword" name="password"
+                           autocomplete="new-password" required minlength="6">
                   </div>
                   <div class="mb-3">
                     <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
-                    <input type="password" class="form-control" id="confirmPassword" 
-                           autocomplete="new-password" required>
+                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                           autocomplete="new-password" required minlength="6">
                   </div>
                   <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="acceptTerms" 
+                    <input type="checkbox" class="form-check-input" id="acceptTerms" name="acceptTerms"
                            autocomplete="off" required>
                     <label class="form-check-label" for="acceptTerms">Acepto los términos y condiciones</label>
                   </div>
@@ -117,6 +122,15 @@
             <h4>¿Eres administrador?</h4>
             <p>Si eres administrador de una biblioteca en la red Xonler, inicia sesión con tus credenciales para acceder al panel de administración.</p>
             <a href="/pages/admin/login.html" class="btn btn-outline-primary">Acceso administrador</a>
+            
+            <!-- Botón de debug temporal -->
+            <hr class="my-3">
+            <button id="debugAuth" class="btn btn-outline-secondary btn-sm">🔍 Debug Auth</button>
+            <button id="clearSession" class="btn btn-outline-danger btn-sm ms-2">🗑️ Limpiar Sesión</button>
+            <button id="simulateRole" class="btn btn-outline-warning btn-sm ms-2">🎭 Simular Rol</button>
+            <button id="testGuard" class="btn btn-outline-info btn-sm ms-2">🧪 Test Guard</button>
+            <button id="checkRoles" class="btn btn-outline-dark btn-sm ms-2">📊 Check Roles</button>
+            <div id="debugInfo" class="mt-2 small text-muted" style="display: none;"></div>
           </div>
         </div>
       </div>
@@ -160,11 +174,228 @@
   <script type="module">
     import { requireAnon } from '/js/common/guard.js';
     import { initLoginForm } from '/services/login.services.js';
+    import { initRegistroForm, initPasswordValidation } from '/services/registro.services.js';
     
     requireAnon();   // si hay sesión, lo saca del login
-    initLoginForm(); // engancha el submit
+    initLoginForm(); // engancha el submit del login
+    initRegistroForm(); // engancha el submit del registro
+    initPasswordValidation(); // valida contraseña en tiempo real
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Script para mejorar autocompletado de contraseñas -->
+  <script>
+    // Mejorar el reconocimiento de campos de contraseña
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔐 Iniciando configuración de autocompletado...');
+      
+      // Esperar un poco más para que Bootstrap termine de inicializar
+      setTimeout(() => {
+        configurePasswordFields();
+      }, 1000);
+    });
+    
+    function configurePasswordFields() {
+      console.log('🔐 Configurando campos de contraseña...');
+      
+      // Configurar formulario de login
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        const emailField = loginForm.querySelector('#loginEmail');
+        const passwordField = loginForm.querySelector('#loginPassword');
+        
+        if (emailField && passwordField) {
+          console.log('🔐 Configurando campos de login...');
+          
+          // Configurar email
+          emailField.setAttribute('autocomplete', 'username');
+          emailField.setAttribute('data-lpignore', 'false');
+          
+          // Configurar contraseña con múltiples atributos
+          passwordField.setAttribute('autocomplete', 'current-password');
+          passwordField.setAttribute('data-lpignore', 'false');
+          passwordField.setAttribute('data-1p-ignore', 'false');
+          passwordField.setAttribute('data-ignore', 'false');
+          
+          // Agregar atributos específicos del navegador
+          passwordField.setAttribute('data-form-type', 'login');
+          passwordField.setAttribute('data-bwignore', 'false');
+          
+          console.log('✅ Campos de login configurados');
+        }
+      }
+      
+      // Configurar formulario de registro
+      const registerForm = document.getElementById('registerForm');
+      if (registerForm) {
+        const nameField = registerForm.querySelector('#registerName');
+        const apellidoField = registerForm.querySelector('#registerApellido');
+        const emailField = registerForm.querySelector('#registerEmail');
+        const passwordField = registerForm.querySelector('#registerPassword');
+        const confirmField = registerForm.querySelector('#confirmPassword');
+        
+        if (nameField && apellidoField && emailField && passwordField && confirmField) {
+          console.log('🔐 Configurando campos de registro...');
+          
+          // Configurar nombre
+          nameField.setAttribute('autocomplete', 'given-name');
+          nameField.setAttribute('data-lpignore', 'false');
+          
+          // Configurar apellido
+          apellidoField.setAttribute('autocomplete', 'family-name');
+          apellidoField.setAttribute('data-lpignore', 'false');
+          
+          // Configurar email
+          emailField.setAttribute('autocomplete', 'email');
+          emailField.setAttribute('data-lpignore', 'false');
+          
+          // Configurar contraseñas
+          passwordField.setAttribute('autocomplete', 'new-password');
+          passwordField.setAttribute('data-lpignore', 'false');
+          passwordField.setAttribute('data-1p-ignore', 'false');
+          passwordField.setAttribute('data-ignore', 'false');
+          passwordField.setAttribute('data-form-type', 'register');
+          
+          confirmField.setAttribute('autocomplete', 'new-password');
+          confirmField.setAttribute('data-lpignore', 'false');
+          confirmField.setAttribute('data-1p-ignore', 'false');
+          confirmField.setAttribute('data-ignore', 'false');
+          confirmField.setAttribute('data-form-type', 'register');
+          
+          console.log('✅ Campos de registro configurados');
+        }
+      }
+      
+      // Mejorar el comportamiento de los tabs
+      const tabLinks = document.querySelectorAll('[data-bs-toggle="tab"]');
+      tabLinks.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+          console.log('🔄 Tab cambiado, reconfigurando campos...');
+          
+          // Reconfigurar campos después de cambiar de tab
+          setTimeout(() => {
+            configurePasswordFields();
+          }, 200);
+          
+          // Enfocar el primer campo
+          const targetId = e.target.getAttribute('href');
+          const targetPane = document.querySelector(targetId);
+          if (targetPane) {
+            const firstInput = targetPane.querySelector('input[type="email"], input[type="text"]');
+            if (firstInput) {
+              setTimeout(() => firstInput.focus(), 100);
+            }
+          }
+        });
+      });
+      
+      console.log('🔐 Configuración de autocompletado completada');
+    }
+  </script>
+  
+  <!-- Script de debug temporal -->
+  <script>
+          document.addEventListener('DOMContentLoaded', function() {
+        const debugBtn = document.getElementById('debugAuth');
+        const clearSessionBtn = document.getElementById('clearSession');
+        const simulateRoleBtn = document.getElementById('simulateRole');
+        const debugInfo = document.getElementById('debugInfo');
+        
+        if (debugBtn && clearSessionBtn && simulateRoleBtn && debugInfo) {
+          debugBtn.addEventListener('click', function() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            const userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+            const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+            
+            debugInfo.innerHTML = `
+              <strong>Estado de autenticación:</strong><br>
+              Token: ${token ? '✅ Presente' : '❌ No encontrado'}<br>
+              Rol: ${role || 'No encontrado'}<br>
+              Usuario: ${userName || 'No encontrado'}<br>
+              ID: ${userId || 'No encontrado'}<br>
+              <br>
+              <strong>Storage:</strong><br>
+              localStorage: ${localStorage.getItem('token') ? '✅' : '❌'}<br>
+              sessionStorage: ${sessionStorage.getItem('token') ? '✅' : '❌'}
+            `;
+            debugInfo.style.display = 'block';
+          });
+          
+          clearSessionBtn.addEventListener('click', function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userId');
+            console.log('🗑️ Sesión limpiada.');
+            alert('Sesión limpiada. Ahora puedes probar desde cero.');
+            window.location.reload();
+          });
+          
+          simulateRoleBtn.addEventListener('click', function() {
+            const role = prompt('Ingresa el rol a simular (usuario, admin, adminadvanced):', 'usuario');
+            if (role) {
+              localStorage.setItem('role', role.toLowerCase());
+              localStorage.setItem('token', 'simulated-token');
+              console.log('🎭 Rol simulado:', role);
+              alert(`Rol simulado como: ${role}. Recarga la página para ver el efecto.`);
+            }
+          });
+          
+          // Botón para testear el guard
+          const testGuardBtn = document.getElementById('testGuard');
+          if (testGuardBtn) {
+            testGuardBtn.addEventListener('click', async function() {
+              console.log('🧪 [TEST] Probando guard...');
+              try {
+                const { requireAnon } = await import('/js/common/guard.js');
+                console.log('🧪 [TEST] Guard importado, ejecutando requireAnon...');
+                await requireAnon();
+              } catch (error) {
+                console.error('🧪 [TEST] Error ejecutando guard:', error);
+              }
+            });
+          }
+          
+          // Botón para verificar roles en la base de datos
+          const checkRolesBtn = document.getElementById('checkRoles');
+          if (checkRolesBtn) {
+            checkRolesBtn.addEventListener('click', async function() {
+              console.log('📊 [ROLES] Verificando roles en la base de datos...');
+              try {
+                const response = await fetch('/api/roles/public');
+                if (response.ok) {
+                  const roles = await response.json();
+                  console.log('📊 [ROLES] Roles encontrados:', roles);
+                  
+                  // Mostrar en el debugInfo
+                  const rolesInfo = roles.map(r => `ID: ${r.id}, Nombre: ${r.name}`).join('<br>');
+                  debugInfo.innerHTML = `
+                    <strong>Roles en la base de datos:</strong><br>
+                    ${rolesInfo}<br><br>
+                    <strong>Estado de autenticación:</strong><br>
+                    Token: ${localStorage.getItem('token') ? '✅ Presente' : '❌ No encontrado'}<br>
+                    Rol: ${localStorage.getItem('role') || 'No encontrado'}<br>
+                    Usuario: ${localStorage.getItem('userName') || 'No encontrado'}<br>
+                    ID: ${localStorage.getItem('userId') || 'No encontrado'}
+                  `;
+                  debugInfo.style.display = 'block';
+                } else {
+                  console.error('📊 [ROLES] Error obteniendo roles:', response.status);
+                }
+              } catch (error) {
+                console.error('📊 [ROLES] Error:', error);
+              }
+            });
+          }
+        }
+      });
+  </script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <div class="toast-container position-fixed top-0 end-0 p-3">
     <div id="loginToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">

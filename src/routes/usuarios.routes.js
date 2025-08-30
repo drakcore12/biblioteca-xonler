@@ -6,18 +6,12 @@ const {
   obtenerUsuarioPorId,
   crearUsuario,
   actualizarUsuario,
-  actualizarUsuarioActual, // ✅ ARREGLADO: Nueva función para PUT /me
+  actualizarUsuarioActual,
   eliminarUsuario,
   loginUsuario,
-  cambiarPasswordUsuario
+  cambiarPasswordUsuario,
+  actualizarPreferenciasUsuario
 } = require('../controllers/usuarios.controller');
-
-const {
-  getPreferenciasMe,
-  putPreferenciasMe,
-  getPreferenciasById,
-  putPreferenciasById
-} = require('../controllers/preferencias.controller');
 
 const { auth } = require('../middleware/auth');
 
@@ -27,18 +21,15 @@ router.post('/login',    loginUsuario);
 
 // ✅ ARREGLADO: Rutas protegidas (requieren autenticación)
 // ⚠️ IMPORTANTE: Rutas específicas ANTES que las generales
-router.get('/me/preferencias', auth, getPreferenciasMe);        // Obtener preferencias usuario actual
-router.put('/me/preferencias', auth, putPreferenciasMe);        // Actualizar preferencias usuario actual
-router.get('/me/password', auth, cambiarPasswordUsuario);       // Cambiar contraseña usuario actual
 router.get('/me',        auth, obtenerUsuarioActual);           // Usuario actual
+router.put('/me',         auth, actualizarUsuarioActual);       // Actualizar usuario actual
+router.put('/me/preferencias', auth, actualizarPreferenciasUsuario); // Actualizar preferencias usuario actual
+router.put('/me/password', auth, cambiarPasswordUsuario);       // Cambiar contraseña usuario actual
 
 router.get('/',           auth, obtenerUsuarios);               // Lista de usuarios
-router.put('/me',         auth, actualizarUsuarioActual);        // ✅ ARREGLADO: Actualizar usuario actual
+router.get('/:id',        auth, obtenerUsuarioPorId);           // Usuario por ID
 router.put('/:id',        auth, actualizarUsuario);             // Actualizar usuario por ID
 router.put('/:id/password', auth, cambiarPasswordUsuario);      // Cambiar contraseña por ID
-router.get('/:id/preferencias', auth, getPreferenciasById);     // Obtener preferencias por ID (fallback)
-router.put('/:id/preferencias', auth, putPreferenciasById);     // Actualizar preferencias por ID (fallback)
-router.get('/:id',        auth, obtenerUsuarioPorId);           // Usuario por ID
 
 router.delete('/:id',     auth, eliminarUsuario);               // Eliminar usuario
 

@@ -1,10 +1,11 @@
+// Servicio para la página de bibliotecas (completamente público)
 export default function initBibliotecasPage() {
   console.log('Página de bibliotecas inicializada');
-  cargaBibliotecas(); // ✅ ARREGLADO: ahora coincide con el nombre exportado
+  cargaBibliotecas();
   initBibliotecasSearch();
 }
 
-// ✅ ARREGLADO: función unificada sin duplicados
+// ✅ Función unificada sin duplicados - completamente pública
 export async function cargaBibliotecas() {
   const bibliotecasList = document.getElementById('bibliotecasList');
   if (!bibliotecasList) {
@@ -15,10 +16,8 @@ export async function cargaBibliotecas() {
   bibliotecasList.innerHTML = '<div class="text-center my-3">Cargando bibliotecas...</div>';
   
   try {
-    // ✅ ARREGLADO: añadido headers de autenticación
-    const res = await fetch('/api/bibliotecas', { 
-      headers: { ...authHeaders() } 
-    });
+    // ✅ Llamada pública sin headers de autenticación
+    const res = await fetch('/api/bibliotecas');
     
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}: ${res.statusText}`);
@@ -32,7 +31,7 @@ export async function cargaBibliotecas() {
       return;
     }
     
-    // ✅ ARREGLADO: renderizado unificado
+    // ✅ Renderizado unificado
     bibliotecasList.innerHTML = bibliotecas.map(b => `
       <li class="list-group-item" data-id="${b.id}">
         <h5>${b.nombre}</h5>
@@ -70,7 +69,7 @@ function initBibliotecasList() {
   const items = bibliotecasList.querySelectorAll('.list-group-item');
   console.log('📋 bibliotecasItems count:', items.length);
 
-  // ✅ ARREGLADO: limpiar listeners previos para evitar duplicados
+  // ✅ Limpiar listeners previos para evitar duplicados
   items.forEach(item => {
     // Remover listeners previos
     item.replaceWith(item.cloneNode(true));
@@ -93,14 +92,14 @@ function initBibliotecasList() {
   // Confirmar que la inicialización terminó
   console.log('↪ initBibliotecasList completa, items count:', freshItems.length);
 
-  // ✅ ARREGLADO: auto-cargar la primera biblioteca solo si hay items
+  // ✅ Auto-cargar la primera biblioteca solo si hay items
   if (freshItems.length > 0) {
     console.log('↪ Auto-cargando primera biblioteca ID:', freshItems[0].dataset.id);
     cargarLibros(freshItems[0], container);
     // Marcar visualmente
     freshItems[0].classList.add('active');
     
-    // ✅ ARREGLADO: verificar que los elementos existen antes de usarlos
+    // ✅ Verificar que los elementos existen antes de usarlos
     const defaultMessage = document.getElementById('defaultMessage');
     const detailsContent = document.getElementById('detailsContent');
     
@@ -113,7 +112,7 @@ async function cargarLibros(item, container) {
   const bibliotecaId = item.dataset.id;
   console.log('↪ Cargando libros para biblioteca ID:', bibliotecaId);
 
-  // ✅ ARREGLADO: verificar que el container existe
+  // ✅ Verificar que el container existe
   if (!container) {
     console.warn('Container de libros no encontrado');
     return;
@@ -123,7 +122,7 @@ async function cargarLibros(item, container) {
   const nombre = item.querySelector('h5').textContent;
   const direccion = item.querySelector('p').textContent;
 
-  // ✅ ARREGLADO: actualizar elementos solo si existen
+  // ✅ Actualizar elementos solo si existen
   const bibliotecaTitle = document.getElementById('bibliotecaTitle');
   const detailName = document.getElementById('detailName');
   const detailAddress = document.getElementById('detailAddress');
@@ -132,7 +131,7 @@ async function cargarLibros(item, container) {
   if (detailName) detailName.textContent = nombre;
   if (detailAddress) detailAddress.textContent = direccion;
 
-  // ✅ ARREGLADO: llamar showLibraryMap solo si hay dirección
+  // ✅ Llamar showLibraryMap solo si hay dirección
   if (direccion) {
     showLibraryMap(direccion);
   }
@@ -141,10 +140,8 @@ async function cargarLibros(item, container) {
   container.innerHTML = '<div class="text-center my-3">Cargando libros…</div>';
   
   try {
-    // ✅ ARREGLADO: añadido headers de autenticación
-    const response = await fetch(`/api/bibliotecas/${bibliotecaId}/libros`, {
-      headers: { ...authHeaders() }
-    });
+    // ✅ Llamada pública sin headers de autenticación
+    const response = await fetch(`/api/bibliotecas/${bibliotecaId}/libros`);
     
     console.log('📥 Status respuesta:', response.status);
     
@@ -191,7 +188,7 @@ function initBibliotecasSearch() {
     return;
   }
 
-  // ✅ ARREGLADO: limpiar listeners previos para evitar duplicados
+  // ✅ Limpiar listeners previos para evitar duplicados
   const newSearchBtn = searchBtn.cloneNode(true);
   searchBtn.parentNode.replaceChild(newSearchBtn, searchBtn);
 
@@ -215,7 +212,7 @@ function initBibliotecasSearch() {
 }
 
 function showLibraryMap(address) {
-  // ✅ ARREGLADO: verificar que el elemento del mapa existe
+  // ✅ Verificar que el elemento del mapa existe
   const mapIframe = document.getElementById('mapIframe');
   if (!mapIframe) {
     console.warn('Elemento #mapIframe no encontrado - saltando mapa');
@@ -237,36 +234,4 @@ function showLibraryMap(address) {
   } catch (error) {
     console.error('❌ Error cargando mapa:', error);
   }
-}
-
-// ✅ NUEVO: función helper para headers de autenticación
-function authHeaders() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  if (!token) {
-    console.warn('⚠️ No se encontró token de autenticación');
-    return {};
-  }
-  
-  console.log('🔐 Usando token para autenticación');
-  return { 
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
-}
-
-// ✅ NUEVO: función para debug de autenticación
-export function debugAuth() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  const role = localStorage.getItem('role') || sessionStorage.getItem('role');
-  
-  console.log('🔍 Debug de autenticación:', {
-    token: token ? `${token.substring(0, 20)}...` : 'No encontrado',
-    role: role || 'No encontrado',
-    storage: {
-      local: !!localStorage.getItem('token'),
-      session: !!sessionStorage.getItem('token')
-    }
-  });
-  
-  return { token, role };
 }

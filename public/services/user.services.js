@@ -298,17 +298,23 @@ export async function cambiarContraseña(datosPassword) {
 
 export async function guardarPreferencias(preferencias) {
   try {
+    console.log('🔍 Guardando preferencias:', preferencias);
     let res = await aFetch('/api/usuarios/me/preferencias', {
-      method: 'PUT', body: JSON.stringify(preferencias)
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ preferencias })
     });
-    if (res.status === 404) {
-      const id = obtenerUserId(); if (!id) throw new Error('Sin userId');
-      res = await aFetch(`/api/usuarios/${id}/preferencias`, {
-        method: 'PUT', body: JSON.stringify(preferencias)
-      });
+    
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || `HTTP ${res.status}`);
     }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return { success: true, data: await res.json() };
+    
+    const data = await res.json();
+    console.log('✅ Preferencias guardadas:', data);
+    return { success: true, data };
   } catch (e) {
     console.error('❌ Error guardando preferencias:', e);
     return { success: false, error: e.message };

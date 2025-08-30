@@ -129,22 +129,14 @@
                     </div>
                 </div>
                 
-                <div class="row" id="librosGrid">
+                <div class="row row-cols-1 row-cols-md-3 g-3" id="librosGrid">
                     <!-- Aquí se cargarán los libros dinámicamente -->
                 </div>
                 
                 <!-- Paginación -->
                 <nav aria-label="Navegación de páginas" class="mt-4">
                     <ul id="pagination" class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Siguiente</a>
-                        </li>
+                        <!-- La paginación se generará dinámicamente desde JavaScript -->
                     </ul>
                 </nav>
             </div>
@@ -388,14 +380,32 @@
                 <div class="mb-3">
                   <p class="mb-2"><strong>Autor:</strong> <span id="modalBookAuthor" class="text-muted"></span></p>
                   <p class="mb-2"><strong>ISBN:</strong> <span id="modalBookISBN" class="text-muted"></span></p>
+                  <p class="mb-2"><strong>Disponibilidad:</strong> <span id="modalBookDisponibilidad" class="badge"></span></p>
                 </div>
                 <hr>
                 <div class="mb-3">
                   <h6 class="mb-2">Descripción:</h6>
                   <p id="modalBookDescription" class="text-muted mb-0" style="line-height: 1.6;"></p>
                 </div>
+                <hr>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <small class="text-muted">Categoría: <span id="modalBookCategoria" class="badge bg-secondary"></span></small>
+                  </div>
+                  <button id="btnSolicitarPrestamo" 
+                          class="btn btn-primary" 
+                          data-libro-id=""
+                          onclick="solicitarPrestamo(this.dataset.libroId)">
+                    <i class="bi bi-book me-1"></i>
+                    Solicitar préstamo
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+          <div class="modal-footer">
+            <div id="modalPrestamoStatus" class="text-muted small me-auto"></div>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
           </div>
         </div>
       </div>

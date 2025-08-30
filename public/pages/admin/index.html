@@ -24,7 +24,7 @@
                     <li><a class="dropdown-item" href="#">Perfil</a></li>
                     <li><a class="dropdown-item" href="#">Configuración</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="login.html">Cerrar sesión</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
                 </ul>
             </div>
         </div>
@@ -47,32 +47,32 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="colegios.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-building me-2"></i> Colegios
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="bibliotecas.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-book me-2"></i> Bibliotecas
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="libros.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-journals me-2"></i> Libros
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="prestamos.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-arrow-left-right me-2"></i> Préstamos
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="usuarios.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-people me-2"></i> Usuarios
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="reportes.html">
+                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
                                 <i class="bi bi-graph-up me-2"></i> Reportes
                             </a>
                         </li>
@@ -99,7 +99,7 @@
                                 <li><a class="dropdown-item" href="#">Perfil</a></li>
                                 <li><a class="dropdown-item" href="#">Configuración</a></li>
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="login.html">Cerrar sesión</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
                             </ul>
                         </div>
                     </div>
@@ -319,6 +319,31 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/main.js" type="module"></script>
+    
+    <!-- Función de logout -->
+    <script>
+      function logout() {
+        // Limpiar sesión
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userId');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('role');
+        sessionStorage.removeItem('userName');
+        sessionStorage.removeItem('userId');
+        
+        // Redirigir al login
+        window.location.replace('/pages/guest/login.html');
+      }
+    </script>
+    
+    <!-- Guard de autenticación -->
+    <script type="module">
+      import { requireRole } from '../../js/common/guard.js';
+      
+      // Verificar que el usuario sea admin
+      requireRole('admin');
+    </script>
 </body>
 </html>

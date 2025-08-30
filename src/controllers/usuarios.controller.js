@@ -1,4 +1,4 @@
-const pool   = require('../config/database');
+const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
 
 // Obtener todos los usuarios (sin exponer el password_hash)
@@ -355,14 +355,72 @@ async function cambiarPasswordUsuario(req, res) {
   }
 }
 
+// Actualizar preferencias del usuario actual
+async function actualizarPreferenciasUsuario(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'No autenticado' });
+
+    console.log('🔍 Body recibido:', req.body);
+    const { preferencias } = req.body;
+    
+    if (!preferencias || typeof preferencias !== 'object') {
+      return res.status(400).json({ error: 'Preferencias no proporcionadas o formato inválido' });
+    }
+
+    // Obtener preferencias actuales
+    const currentPrefs = await pool.query(
+      'SELECT preferencias FROM usuarios WHERE id = $1',
+      [userId]
+    );
+
+    if (currentPrefs.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    // Combinar preferencias actuales con las nuevas
+    const currentPrefsObj = currentPrefs.rows[0].preferencias || {};
+    console.log('🔍 Preferencias actuales:', currentPrefsObj);
+    console.log('🔍 Nuevas preferencias:', preferencias);
+    
+    const newPrefsObj = { ...currentPrefsObj, ...preferencias };
+    console.log('🔍 Preferencias combinadas:', newPrefsObj);
+
+    // Actualizar preferencias
+    const result = await pool.query(
+      `UPDATE usuarios 
+       SET preferencias = $1::jsonb, 
+           updated_at = NOW()
+       WHERE id = $2
+       RETURNING id, preferencias`,
+      [newPrefsObj, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    console.log('✅ Preferencias actualizadas:', result.rows[0]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('❌ Error en actualizarPreferenciasUsuario:', error);
+    res.status(500).json({ 
+      error: 'Error al actualizar preferencias',
+      detail: error.message,
+      code: error.code
+    });
+  }
+}
+
 module.exports = {
   obtenerUsuarios,
   obtenerUsuarioActual,
   obtenerUsuarioPorId,
   crearUsuario,
   actualizarUsuario,
-  actualizarUsuarioActual, // ✅ ARREGLADO: Nueva función para PUT /me
+  actualizarUsuarioActual,
   eliminarUsuario,
   loginUsuario,
-  cambiarPasswordUsuario
+  cambiarPasswordUsuario,
+  actualizarPreferenciasUsuario
 };
