@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Panel Administrativo - Xonler</title>
+</head>
+<body>
+    <!-- Navbar móvil (solo visible en dispositivos pequeños) -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="#">Perfil</a></li>
+                    <li><a class="dropdown-item" href="#">Configuración</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="login.html">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4>Xonler Admin</h4>
+                        <p class="small">Panel de administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="colegios.html">
+                                <i class="bi bi-building me-2"></i> Colegios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="bibliotecas.html">
+                                <i class="bi bi-book me-2"></i> Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="libros.html">
+                                <i class="bi bi-journals me-2"></i> Libros
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="prestamos.html">
+                                <i class="bi bi-arrow-left-right me-2"></i> Préstamos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="reportes.html">
+                                <i class="bi bi-graph-up me-2"></i> Reportes
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0 d-none d-md-flex">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i> Admin
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item" href="#">Perfil</a></li>
+                                <li><a class="dropdown-item" href="#">Configuración</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="login.html">Cerrar sesión</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjetas de estadísticas -->
+                <div class="row mb-4">
+                    <div class="col-sm-6 col-md-3 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Total Libros</h5>
+                                        <h2>458</h2>
+                                    </div>
+                                    <div class="text-primary">
+                                        <i class="bi bi-journals fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Bibliotecas</h5>
+                                        <h2>12</h2>
+                                    </div>
+                                    <div class="text-success">
+                                        <i class="bi bi-book fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Préstamos</h5>
+                                        <h2>87</h2>
+                                    </div>
+                                    <div class="text-warning">
+                                        <i class="bi bi-arrow-left-right fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3 mb-3">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Usuarios</h5>
+                                        <h2>243</h2>
+                                    </div>
+                                    <div class="text-info">
+                                        <i class="bi bi-people fs-1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Préstamos recientes -->
+                    <div class="col-lg-8 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Préstamos Recientes</h5>
+                                    <a href="prestamos.html" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Usuario</th>
+                                                <th>Libro</th>
+                                                <th>Biblioteca</th>
+                                                <th>Fecha préstamo</th>
+                                                <th>Fecha devolución</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>145</td>
+                                                <td>Juan Pérez</td>
+                                                <td>Don Quijote de la Mancha</td>
+                                                <td>Biblioteca Central</td>
+                                                <td>01/05/2025</td>
+                                                <td>16/05/2025</td>
+                                                <td><span class="badge bg-success">Activo</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>144</td>
+                                                <td>María López</td>
+                                                <td>Cien años de soledad</td>
+                                                <td>Biblioteca Literaria</td>
+                                                <td>30/04/2025</td>
+                                                <td>15/05/2025</td>
+                                                <td><span class="badge bg-success">Activo</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>143</td>
+                                                <td>Pedro Gómez</td>
+                                                <td>La Odisea</td>
+                                                <td>Biblioteca Técnica</td>
+                                                <td>28/04/2025</td>
+                                                <td>13/05/2025</td>
+                                                <td><span class="badge bg-success">Activo</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>142</td>
+                                                <td>Ana Martínez</td>
+                                                <td>El principito</td>
+                                                <td>Biblioteca Central</td>
+                                                <td>25/04/2025</td>
+                                                <td>10/05/2025</td>
+                                                <td><span class="badge bg-warning">Por vencer</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td>141</td>
+                                                <td>Carlos Sánchez</td>
+                                                <td>Historia Universal</td>
+                                                <td>Biblioteca Literaria</td>
+                                                <td>20/04/2025</td>
+                                                <td>05/05/2025</td>
+                                                <td><span class="badge bg-danger">Vencido</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actividad reciente -->
+                    <div class="col-lg-4 mb-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-white">
+                                <h5 class="mb-0">Actividad Reciente</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                        <div>
+                                            <p class="mb-0"><strong>Nuevo libro registrado</strong></p>
+                                            <small class="text-muted">Se agregó "Matemáticas Avanzadas"</small>
+                                        </div>
+                                        <small class="text-muted">Hace 2 horas</small>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                        <div>
+                                            <p class="mb-0"><strong>Usuario registrado</strong></p>
+                                            <small class="text-muted">Nuevo usuario: Laura Díaz</small>
+                                        </div>
+                                        <small class="text-muted">Hace 5 horas</small>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                        <div>
+                                            <p class="mb-0"><strong>Préstamo devuelto</strong></p>
+                                            <small class="text-muted">Carlos devolvió "La Ilíada"</small>
+                                        </div>
+                                        <small class="text-muted">Ayer</small>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                        <div>
+                                            <p class="mb-0"><strong>Nueva biblioteca registrada</strong></p>
+                                            <small class="text-muted">Biblioteca Científica registrada</small>
+                                        </div>
+                                        <small class="text-muted">Hace 2 días</small>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+                                        <div>
+                                            <p class="mb-0"><strong>Actualización de libro</strong></p>
+                                            <small class="text-muted">Se actualizaron ejemplares de "Don Quijote"</small>
+                                        </div>
+                                        <small class="text-muted">Hace 3 días</small>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="card-footer bg-white text-center">
+                                <a href="#" class="text-decoration-none">Ver todas las actividades</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6 offset-md-3 col-lg-6 offset-lg-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <span>© 2025 Xonler - Red de Bibliotecas Estudiantiles</span>
+                        </div>
+                        <div>
+                            <a href="../index.html" class="text-white text-decoration-none">Volver al sitio principal</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/main.js" type="module"></script>
+</body>
+</html>
