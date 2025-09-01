@@ -2,59 +2,186 @@ const { pool } = require('../config/database');
 
 async function obtenerLibros(req, res) {
   try {
-    const { q = null, categoria = null, disponibilidad = null } = req.query;
+    const { q = null, disponibilidad = null, orden = 'titulo' } = req.query;
+    
+    // ✅ Manejar múltiples categorías (Express las convierte en array)
+    let categoria = req.query.categoria;
+    if (categoria && !Array.isArray(categoria)) {
+      categoria = [categoria]; // Convertir a array si es solo una
+    }
     const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
     const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
 
+    // Construir ORDER BY dinámico
+    let orderBy = 'l.titulo';
+    let needsJoin = false;
+    
+    switch (orden) {
+      case 'relevancia':
+        // Ordenar por libros más prestados (popularidad)
+        orderBy = 'total_prestamos DESC, l.titulo ASC';
+        needsJoin = true;
+        break;
+      case 'recientes':
+        // Ordenar por ID más alto (libros más recientes)
+        orderBy = 'l.id DESC';
+        break;
+      case 'autor':
+        orderBy = 'l.autor ASC, l.titulo ASC';
+        break;
+      case 'titulo':
+      default:
+        orderBy = 'l.titulo ASC';
+        break;
+    }
+
     // ✅ Query más robusta como en bibliotecas
-    const sql = `
-      SELECT l.id, l.titulo, l.autor, l.isbn, 
-             l.imagen_url, l.descripcion, l.categoria, 
-             l.disponibilidad
-      FROM public.libros l
-      WHERE ($1::text IS NULL OR 
-            l.titulo ILIKE '%'||$1||'%' OR 
-            l.autor ILIKE '%'||$1||'%' OR 
-            l.isbn ILIKE '%'||$1||'%')
-        AND ($2::text IS NULL OR l.categoria = $2)
-        AND ($3::boolean IS NULL OR l.disponibilidad = $3)
-      ORDER BY l.titulo
-      LIMIT $4 OFFSET $5
-    `;
+    let sql;
+    
+    // Construir WHERE dinámicamente para mejor debug
+    let whereConditions = [];
+    let paramIndex = 1;
+    
+    // Filtro de búsqueda (q)
+    if (q && q.trim()) {
+      whereConditions.push(`(l.titulo ILIKE '%'||$${paramIndex}||'%' OR l.autor ILIKE '%'||$${paramIndex}||'%' OR l.isbn ILIKE '%'||$${paramIndex}||'%')`);
+      paramIndex++;
+    }
+    
+         // Filtro de categoría (múltiples categorías con OR)
+     if (categoria && Array.isArray(categoria) && categoria.length > 0) {
+       const categoriaConditions = categoria.map((_, index) => 
+         `l.categoria = $${paramIndex + index}`
+       );
+       whereConditions.push(`(${categoriaConditions.join(' OR ')})`);
+       paramIndex += categoria.length;
+     } else if (categoria && typeof categoria === 'string' && categoria.trim()) {
+       // Compatibilidad con categoría única
+       whereConditions.push(`l.categoria = $${paramIndex}`);
+       paramIndex++;
+     }
+    
+    // Filtro de disponibilidad
+    if (disponibilidadValue !== null) {
+      whereConditions.push(`l.disponibilidad = $${paramIndex}`);
+      paramIndex++;
+    }
+    
+    // Construir SQL final
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+    
+    // Construir SQL con JOIN opcional para relevancia
+    if (needsJoin) {
+      sql = `
+        SELECT l.id, l.titulo, l.autor, l.isbn, 
+               l.imagen_url, l.descripcion, l.categoria, 
+               l.disponibilidad,
+               COALESCE(COUNT(p.id), 0) as total_prestamos
+        FROM public.libros l
+        LEFT JOIN public.biblioteca_libros bl ON bl.libro_id = l.id
+        LEFT JOIN public.prestamos p ON p.biblioteca_libro_id = bl.id
+        ${whereClause}
+        GROUP BY l.id, l.titulo, l.autor, l.isbn, l.imagen_url, l.descripcion, l.categoria, l.disponibilidad
+        ORDER BY ${orderBy}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+    } else {
+      sql = `
+        SELECT l.id, l.titulo, l.autor, l.isbn, 
+               l.imagen_url, l.descripcion, l.categoria, 
+               l.disponibilidad
+        FROM public.libros l
+        ${whereClause}
+        ORDER BY ${orderBy}
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+    }
+    
+    console.log('🔍 [DEBUG] SQL construido dinámicamente:', sql);
+    console.log('🔍 [DEBUG] Condiciones WHERE:', whereConditions);
+    console.log('🔍 [DEBUG] Ordenamiento:', { orden, orderBy, needsJoin });
 
-    const params = [
-      q,
-      categoria,
-      disponibilidad === 'disponibles' ? true : null,
-      limit,
-      offset
-    ];
+    // Debug de parámetros recibidos
+    console.log('🔍 [DEBUG] Parámetros recibidos:', { q, categoria, disponibilidad, orden, limit, offset });
+    
+    // Convertir disponibilidad correctamente
+    let disponibilidadValue = null;
+    if (disponibilidad === 'disponibles') {
+      disponibilidadValue = true;
+    } else if (disponibilidad === 'no_disponibles') {
+      disponibilidadValue = false;
+    }
+    
+    // Construir array de parámetros dinámicamente
+    const params = [];
+    
+    if (q && q.trim()) params.push(q.trim());
+    if (categoria && Array.isArray(categoria) && categoria.length > 0) {
+      // Agregar cada categoría como parámetro separado
+      categoria.forEach(cat => {
+        if (cat && cat.trim()) params.push(cat.trim());
+      });
+    } else if (categoria && typeof categoria === 'string' && categoria.trim()) {
+      params.push(categoria.trim());
+    }
+    if (disponibilidadValue !== null) params.push(disponibilidadValue);
+    params.push(limit, offset);
+    
+    console.log('🔍 [DEBUG] Parámetros finales:', params);
 
+    console.log('🔍 [DEBUG] Ejecutando query con parámetros:', params);
+    console.log('🔍 [DEBUG] SQL generado:', sql);
+    
+    // Log de los primeros resultados para debug
     const { rows } = await pool.query(sql, params);
+    console.log('🔍 [DEBUG] Resultados obtenidos:', rows.length, 'libros');
+    if (rows.length > 0) {
+      console.log('🔍 [DEBUG] Primeros 3 libros:', rows.slice(0, 3).map(l => ({ id: l.id, titulo: l.titulo, autor: l.autor, categoria: l.categoria })));
+    }
 
-    // Count query para paginación
-    const countSql = `
-      SELECT COUNT(*)::int AS total
-      FROM public.libros l
-      WHERE ($1::text IS NULL OR 
-            l.titulo ILIKE '%'||$1||'%' OR 
-            l.autor ILIKE '%'||$1||'%' OR 
-            l.isbn ILIKE '%'||$1||'%')
-        AND ($2::text IS NULL OR l.categoria = $2)
-        AND ($3::boolean IS NULL OR l.disponibilidad = $3)
-    `;
+    // Count query para paginación (consistente con el JOIN cuando sea necesario)
+    let countSql;
+    if (needsJoin) {
+      countSql = `
+        SELECT COUNT(DISTINCT l.id)::int AS total
+        FROM public.libros l
+        LEFT JOIN public.biblioteca_libros bl ON bl.libro_id = l.id
+        LEFT JOIN public.prestamos p ON p.biblioteca_libro_id = bl.id
+        ${whereClause}
+      `;
+    } else {
+      countSql = `
+        SELECT COUNT(*)::int AS total
+        FROM public.libros l
+        ${whereClause}
+      `;
+    }
 
-    const { rows: countRows } = await pool.query(countSql, [q, categoria, disponibilidad === 'disponibles' ? true : null]);
+    // Parámetros para count (sin limit y offset)
+    const countParams = params.slice(0, -2);
+    
+    console.log('🔍 [DEBUG] Ejecutando count query con parámetros:', countParams);
+    const { rows: countRows } = await pool.query(countSql, countParams);
+    console.log('🔍 [DEBUG] Total de libros encontrados:', countRows[0].total);
 
     // ✅ Mismo formato de respuesta que bibliotecas
-    res.json({
+    const respuesta = {
       data: rows,
       paginacion: {
         total: countRows[0].total,
         limit,
         offset
       }
+    };
+    
+    console.log('🔍 [DEBUG] Respuesta enviada:', {
+      totalLibros: rows.length,
+      totalEnPaginacion: countRows[0].total,
+      limit,
+      offset
     });
+    
+    res.json(respuesta);
 
   } catch (e) {
     console.error('❌ obtenerLibros:', e);

@@ -97,10 +97,16 @@ export function debugAuth() {
   return { token, role };
 }
 
-// ===== Paginación 3x3 =====
+// ===== Estado Global y Paginación 3x3 =====
+const STATE = {
+  lastVisibles: [],          // último lote renderizado (para re-render en cambio de vista)
+  serverPaginated: true,     // asumimos paginación server-side
+  totalBackend: 0,
+};
+
 const PAGINATION = {
   page: 1,
-  pageSize: 9, // 3x3
+  pageSize: 9, // 3x3 SIEMPRE
   totalPages: 1,
   libros: [],
 };
@@ -108,6 +114,7 @@ const PAGINATION = {
 // Alias para código legado que aún use LIBROS_POR_PAGINA
 const LIBROS_POR_PAGINA = PAGINATION.pageSize;
 
+// ✅ RESTAURADO: Funciones de paginación client-side para rescate
 function setLibros(data) {
   PAGINATION.libros = Array.isArray(data) ? data : [];
   PAGINATION.totalPages = Math.max(1, Math.ceil(PAGINATION.libros.length / PAGINATION.pageSize));
@@ -122,8 +129,11 @@ function getPageSlice(page) {
 }
 
 function goToPage(page) {
+  console.log('🔍 [DEBUG] goToPage llamado con página:', page);
   PAGINATION.page = Math.min(Math.max(1, page), PAGINATION.totalPages);
   const visibles = getPageSlice(PAGINATION.page);
+  console.log('🔍 [DEBUG] Libros visibles en página', page, ':', visibles.length);
+  console.log('🔍 [DEBUG] Llamando renderizarLibros con', visibles.length, 'libros');
   renderizarLibros(visibles);
   renderPagination();
   actualizarContadorResultados(visibles.length, PAGINATION.libros.length, PAGINATION.page, PAGINATION.totalPages);
@@ -133,7 +143,7 @@ function goToPage(page) {
 
 let filtrosActuales = {};
 
-// ✅ ARREGLADO: cargar libros con filtros usando URL builder y paginación
+// ✅ ARREGLADO: cargar libros con lógica híbrida (backend + rescate client-side)
 export async function cargarLibros(filtros = {}, pagina = 1) {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) {
@@ -141,8 +151,12 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     return;
   }
 
-  // Actualizar estado global
+  console.log('🔍 [DEBUG] cargarLibros llamado con:', { filtros, pagina });
+
+  // ✅ Actualizar estado global y asegurar 3×3
   filtrosActuales = { ...filtros };
+  PAGINATION.pageSize = 9;                   // 3×3 SIEMPRE
+  PAGINATION.page = Math.max(1, pagina);
 
   // Mostrar loader
   librosGrid.innerHTML = `
@@ -155,12 +169,10 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
   `;
 
   try {
-    // Construir URL con paginación
-    const url = buildLibrosUrl({
-      ...filtros,
-      limit: LIBROS_POR_PAGINA,
-      offset: (pagina - 1) * LIBROS_POR_PAGINA
-    });
+    // ✅ Construir URL con paginación correcta
+    const limit = PAGINATION.pageSize;
+    const offset = (PAGINATION.page - 1) * PAGINATION.pageSize;
+    const url = buildLibrosUrl({ ...filtrosActuales, limit, offset });
     
     console.log('📚 Cargando libros desde:', url);
     const response = await fetch(url, {
@@ -175,30 +187,100 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
 
     // Extraer datos normalizando diferentes formatos de respuesta
     const crudos = payload?.libros || payload?.data || payload || [];
+    const totalBackend = payload?.paginacion?.total ?? (Array.isArray(crudos) ? crudos.length : 0);
     
-    // Manejar caso sin resultados
-    if (!Array.isArray(crudos) || crudos.length === 0) {
-      librosGrid.innerHTML = `
-        <div class="col-12 text-center py-5">
-          <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            No se encontraron libros con los filtros aplicados.
-            <br><small>Intenta ajustar los criterios de búsqueda.</small>
-          </div>
-        </div>
-      `;
-      actualizarContadorResultados(0);
-      actualizarPaginacion(0, 1, 1);
+    console.log('🔍 [DEBUG] Datos extraídos:', { crudos, esArray: Array.isArray(crudos), longitud: crudos.length });
+    
+    // --- Heurística: ¿el backend ignoró limit/offset o el filtro?
+    const backendIgnoraPaginacion = Array.isArray(crudos) && crudos.length > limit;
+    const hayTitulo = filtrosActuales.titulo?.trim()?.length >= 2;
+    const hayAutor = filtrosActuales.autor?.trim()?.length >= 2;
+    const hayCategoria = Array.isArray(filtrosActuales.categorias) && filtrosActuales.categorias.length > 0;
+    const hayDisp = filtrosActuales.disponibilidad && filtrosActuales.disponibilidad !== 'todos';
+    const hayBiblioteca = filtrosActuales.biblioteca && filtrosActuales.biblioteca !== 'todas';
+    const hayFiltro = hayTitulo || hayAutor || hayCategoria || hayDisp || hayBiblioteca;
+
+    console.log('🔍 [DEBUG] Heurística backend:', {
+      backendIgnoraPaginacion,
+      hayFiltro,
+      hayTitulo,
+      hayAutor,
+      hayCategoria,
+      hayDisp,
+      hayBiblioteca,
+      crudosRecibidos: crudos.length,
+      limitSolicitado: limit
+    });
+
+    let dataset = crudos;
+
+    // Si hay filtros y parece que el backend NO filtró, filtramos en cliente
+    if (hayFiltro) {
+      const t = (filtrosActuales.titulo || '').trim().toLowerCase();
+      const a = (filtrosActuales.autor || '').trim().toLowerCase();
+      const cat = hayCategoria ? String(filtrosActuales.categorias[0]).toLowerCase() : null;
+      const disp = filtrosActuales.disponibilidad;
+      const bib = hayBiblioteca ? filtrosActuales.biblioteca : null;
+
+      dataset = crudos.filter(l => {
+        const tituloOk = t ? String(l.titulo || '').toLowerCase().includes(t) : true;
+        const autorOk = a ? String(l.autor || '').toLowerCase().includes(a) : true;
+        
+        // ✅ Filtro de categoría (múltiples con OR)
+        let catOk = true;
+        if (hayCategoria && filtrosActuales.categorias && filtrosActuales.categorias.length > 0) {
+          const libroCategoria = String(l.categoria || '');
+          catOk = filtrosActuales.categorias.some(cat => 
+            String(cat) === libroCategoria
+          );
+        }
+        
+        const dispOk = disp && disp !== 'todos'
+          ? (disp === 'disponibles' ? !!l.disponibilidad : !l.disponibilidad)
+          : true;
+        // ✅ Filtro de biblioteca (asumiendo que los libros tienen biblioteca_id)
+        const bibOk = bib ? (l.biblioteca_id === bib || l.biblioteca_id === parseInt(bib)) : true;
+        return tituloOk && autorOk && catOk && dispOk && bibOk;
+      });
+
+      console.log('🔍 [DEBUG] Filtrado en cliente:', {
+        totalOriginal: crudos.length,
+        totalFiltrado: dataset.length,
+        filtrosAplicados: { 
+          titulo: t, 
+          autor: a, 
+          categorias: filtrosActuales.categorias, 
+          disponibilidad: disp, 
+          biblioteca: bib 
+        }
+      });
+    }
+
+    // Si el backend ignoró la paginación o estamos filtrando en cliente, paginamos nosotros
+    if (backendIgnoraPaginacion || hayFiltro) {
+      console.log('🔄 [DEBUG] Usando paginación client-side');
+      setLibros(dataset);               // guarda todo el dataset en cliente
+      PAGINATION.totalPages = Math.max(1, Math.ceil(dataset.length / PAGINATION.pageSize));
+      goToPage(PAGINATION.page);        // esto llama a renderizarLibros con el slice 3×3
+      actualizarContadorResultados(
+        getPageSlice(PAGINATION.page).length,
+        dataset.length,
+        PAGINATION.page,
+        PAGINATION.totalPages
+      );
       return;
     }
 
-    // Configurar paginación y renderizar
-    setLibros(crudos);
-    if (payload.paginacion?.total) {
-      // Si el backend provee total, usar ese para la paginación
-      PAGINATION.totalPages = Math.max(1, Math.ceil(payload.paginacion.total / PAGINATION.pageSize));
-    }
-    goToPage(1);
+    // Caso feliz: backend sí paginó y sí filtró
+    console.log('✅ [DEBUG] Backend funcionando correctamente, usando paginación server-side');
+    setLibros(crudos); // guarda el lote por consistencia (aunque ya venga paginado)
+    PAGINATION.totalPages = Math.max(1, Math.ceil(totalBackend / PAGINATION.pageSize));
+    renderizarLibros(crudos);           // ya es un slice del backend
+    renderPagination();
+    actualizarContadorResultados(crudos.length, totalBackend, PAGINATION.page, PAGINATION.totalPages);
+
+    // Scroll al inicio del grid
+    document.getElementById('librosGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (error) {
     console.error('❌ Error cargando libros:', error);
@@ -211,42 +293,85 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
         </div>
       </div>
     `;
-    actualizarContadorResultados(0);
+    actualizarContadorResultados(0, 0, 1, 1);
   }
 }
 
-// ✅ NUEVO: renderizar libros en grid
+// ✅ NUEVO: renderizar libros en grid 3x3 o lista
 function renderizarLibros(libros) {
+  console.log('🔍 [DEBUG] renderizarLibros llamado con', libros.length, 'libros');
   const librosGrid = document.getElementById('librosGrid');
-  librosGrid.innerHTML = libros.map(libro => `
-    <div class="col">
-      <div class="card h-100 shadow-sm">
-        <img src="${resolveImg(libro)}"
-             class="card-img-top libro-img"
-             alt="${libro.titulo}"
-             style="height:200px;object-fit:cover;">
-        <div class="card-body d-flex flex-column">
-          <h6 class="card-title">${libro.titulo}</h6>
-          <p class="card-text small text-muted">${libro.autor || 'Autor desconocido'}</p>
-          ${libro.categoria ? `<span class="badge bg-primary mb-2">${libro.categoria}</span>` : ''}
-          ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
-          ${libro.disponibilidad !== undefined
-            ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} mb-2">
-                 ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
-               </span>` : ''}
-          <div class="mt-auto">
-            <button class="btn btn-outline-primary btn-sm w-100 ver-detalle" data-id="${libro.id}">
+  if (!librosGrid) {
+    console.error('❌ [DEBUG] Elemento #librosGrid no encontrado en renderizarLibros');
+    return;
+  }
+  
+  const isListView = librosGrid.classList.contains('list-group');
+  console.log('🔍 [DEBUG] Modo lista:', isListView);
+  
+  if (isListView) {
+    // Modo lista
+    librosGrid.innerHTML = libros.map(libro => `
+      <div class="list-group-item list-group-item-action">
+        <div class="d-flex align-items-center">
+          <img src="${resolveImg(libro)}"
+               class="me-3"
+               alt="${libro.titulo}"
+               style="width:80px;height:100px;object-fit:cover;">
+          <div class="flex-grow-1">
+            <h6 class="mb-1">${libro.titulo}</h6>
+            <p class="mb-1 small text-muted">${libro.autor || 'Autor desconocido'}</p>
+            <div class="mb-2">
+              ${libro.categoria ? `<span class="badge bg-primary me-2">${libro.categoria}</span>` : ''}
+              ${libro.disponibilidad !== undefined
+                ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} me-2">
+                     ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
+                   </span>` : ''}
+            </div>
+            ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
+          </div>
+          <div class="ms-3">
+            <button class="btn btn-outline-primary btn-sm ver-detalle" data-id="${libro.id}">
               Ver detalles
             </button>
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  } else {
+    // Modo grid 3x3
+    librosGrid.innerHTML = libros.map(libro => `
+      <div class="col-12 col-md-6 col-lg-4 mb-3">
+        <div class="card h-100 shadow-sm">
+          <img src="${resolveImg(libro)}"
+               class="card-img-top libro-img"
+               alt="${libro.titulo}"
+               style="height:200px;object-fit:cover;">
+          <div class="card-body d-flex flex-column">
+            <h6 class="card-title">${libro.titulo}</h6>
+            <p class="card-text small text-muted">${libro.autor || 'Autor desconocido'}</p>
+            ${libro.categoria ? `<span class="badge bg-primary mb-2">${libro.categoria}</span>` : ''}
+            ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
+            ${libro.disponibilidad !== undefined
+              ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} mb-2">
+                   ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
+                 </span>` : ''}
+            <div class="mt-auto">
+              <button class="btn btn-outline-primary btn-sm w-100 ver-detalle" data-id="${libro.id}">
+                Ver detalles
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
   
   // ✅ ARREGLADO: Configurar fallback de imágenes y delegación de eventos
   setupImageFallbacks();
   setupEventDelegation();
+  
+  console.log('🔍 [DEBUG] renderizarLibros completado. HTML generado:', librosGrid.innerHTML.substring(0, 200) + '...');
 }
 
 function actualizarContadorResultados(countVisibles, total = countVisibles, page = 1, totalPages = 1) {
@@ -259,14 +384,66 @@ function actualizarContadorResultados(countVisibles, total = countVisibles, page
   }
 }
 
-// ✅ ARREGLADO: No cargar bibliotecas ya que no tienes esa tabla
-function cargarBibliotecas() {
+// ✅ NUEVO: Función para actualizar paginación
+function actualizarPaginacion(total, page = 1, totalPages = 1) {
+  console.log('🔍 [DEBUG] actualizarPaginacion llamado con:', { total, page, totalPages });
+  if (total === 0) {
+    renderPagination();
+  }
+}
+
+// ✅ Función de test debug eliminada - ya no es necesaria
+
+// ✅ ARREGLADO: Cargar bibliotecas reales desde la API
+export async function cargarBibliotecas() {
   const bibliotecaSelect = document.getElementById('biblioteca');
   if (!bibliotecaSelect) return;
   
-  // ✅ ARREGLADO: Como no tienes tabla bibliotecas, solo mostrar opción por defecto
-  bibliotecaSelect.innerHTML = '<option value="todas">Todas las bibliotecas</option>';
-  console.log('📚 Filtro de biblioteca deshabilitado (no hay tabla bibliotecas)');
+  try {
+    console.log('📚 Cargando bibliotecas para el selector...');
+    
+    // Llamada pública sin autenticación (las bibliotecas son públicas)
+    const response = await fetch('/api/bibliotecas');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const bibliotecas = await response.json();
+    console.log('📚 Bibliotecas recibidas:', bibliotecas);
+    
+    // Normalizar el array de bibliotecas
+    const bibliotecasArray = Array.isArray(bibliotecas) 
+      ? bibliotecas 
+      : (bibliotecas?.bibliotecas || bibliotecas?.data || []);
+    
+    if (!Array.isArray(bibliotecasArray) || bibliotecasArray.length === 0) {
+      console.warn('⚠️ No se encontraron bibliotecas, usando solo opción por defecto');
+      bibliotecaSelect.innerHTML = '<option value="todas">Todas las bibliotecas</option>';
+      return;
+    }
+    
+    // Construir opciones del selector
+    let options = '<option value="todas">Todas las bibliotecas</option>';
+    
+    bibliotecasArray.forEach(biblioteca => {
+      const nombre = biblioteca.nombre || 'Biblioteca sin nombre';
+      const id = biblioteca.id || 'unknown';
+      options += `<option value="${id}">${nombre}</option>`;
+    });
+    
+    bibliotecaSelect.innerHTML = options;
+    console.log(`✅ Selector de bibliotecas cargado con ${bibliotecasArray.length} opciones`);
+    
+  } catch (error) {
+    console.error('❌ Error cargando bibliotecas:', error);
+    
+    // Fallback: mostrar solo opción por defecto
+    bibliotecaSelect.innerHTML = '<option value="todas">Todas las bibliotecas</option>';
+    
+    // Opcional: mostrar error en la consola
+    console.warn('⚠️ Usando opción por defecto debido al error');
+  }
 }
 
 // ✅ ARREGLADO: inicializar búsqueda y filtros con debounce mejorado
@@ -323,7 +500,7 @@ export function aplicarFiltros() {
   };
   
   console.log('🔍 Filtros aplicados:', filtros);
-  cargarLibros(filtros);
+  cargarLibros(filtros, 1); // 👈 siempre desde la página 1
 }
 
 // ✅ NUEVO: obtener categorías seleccionadas
@@ -340,7 +517,7 @@ function obtenerCategoriasSeleccionadas() {
 
 // ✅ ARREGLADO: aplicar filtros en tiempo real usando función centralizada
 function aplicarFiltrosEnTiempoReal() {
-  aplicarFiltros();
+  aplicarFiltros(); // Esto ya llama a cargarLibros(filtros, 1)
 }
 
 // ✅ ARREGLADO: función debounce mejorada para búsqueda en tiempo real
@@ -354,28 +531,56 @@ function debounce(func, wait) {
 
 // ✅ ARREGLADO: Construir URL de filtros de manera robusta
 function buildLibrosUrl(filtros = {}) {
+  console.log('🔍 [DEBUG] buildLibrosUrl llamado con filtros:', filtros);
   const params = new URLSearchParams();
   
-  // Parámetros de búsqueda
-  if (filtros.titulo && filtros.titulo.trim().length >= 2) {
-    params.set('titulo', filtros.titulo.trim());
+  // Parámetros de búsqueda - usar 'q' para búsqueda general
+  const titulo = filtros.titulo?.trim();
+  const autor = filtros.autor?.trim();
+  
+  // ✅ Mandamos varios por compatibilidad
+  if (titulo && titulo.length >= 2) {
+    params.set('q', titulo);
+    params.set('titulo', titulo);
+    console.log('🔍 [DEBUG] Agregando filtro título:', titulo);
+  } else if (autor && autor.length >= 2) {
+    params.set('q', autor);
+    params.set('autor', autor);
+    console.log('🔍 [DEBUG] Agregando filtro autor:', autor);
   }
   
-  if (filtros.autor && filtros.autor.trim().length >= 2) {
-    params.set('autor', filtros.autor.trim());
+  // Categoría (múltiples categorías)
+  if (Array.isArray(filtros.categorias) && filtros.categorias.length > 0) {
+    // Enviar cada categoría como parámetro separado
+    filtros.categorias.forEach((cat, index) => {
+      params.append('categoria', cat);
+    });
+    console.log('🔍 [DEBUG] Agregando filtros categoría:', filtros.categorias);
   }
   
-  if (filtros.categorias && Array.isArray(filtros.categorias) && filtros.categorias.length > 0) {
-    params.set('categoria', filtros.categorias[0]); // Solo la primera categoría por ahora
-  }
-  
+  // Disponibilidad
   if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
-    params.set('disponibilidad', filtros.disponibilidad);
+    params.set('disponibilidad', filtros.disponibilidad === 'disponibles' ? 'true' : 'false');
+    console.log('🔍 [DEBUG] Agregando filtro disponibilidad:', filtros.disponibilidad);
+  }
+  
+  // ✅ Biblioteca
+  if (filtros.biblioteca && filtros.biblioteca !== 'todas') {
+    params.set('biblioteca', filtros.biblioteca);
+    console.log('🔍 [DEBUG] Agregando filtro biblioteca:', filtros.biblioteca);
   }
 
-  // Server-side pagination
-  params.set('limit', PAGINATION.pageSize);
-  params.set('offset', (PAGINATION.page - 1) * PAGINATION.pageSize);
+  // Ordenamiento
+  if (filtros.orden && filtros.orden !== 'relevancia') {
+    params.set('orden', filtros.orden);
+    console.log('🔍 [DEBUG] Agregando filtro orden:', filtros.orden);
+  }
+
+  // ✅ usa los que llegan por parámetro (importante para filtros)
+  const limit = Number.isFinite(filtros.limit) ? filtros.limit : PAGINATION.pageSize;
+  const offset = Number.isFinite(filtros.offset) ? filtros.offset : (PAGINATION.page - 1) * PAGINATION.pageSize;
+  params.set('limit', String(limit));
+  params.set('offset', String(offset));
   
   const url = `/api/libros${params.toString() ? '?' + params.toString() : ''}`;
   
@@ -388,11 +593,7 @@ function renderPagination() {
   if (!ul) return;
 
   const { page, totalPages } = PAGINATION;
-
-  if (totalPages <= 1) {
-    ul.innerHTML = '';
-    return;
-  }
+  if (totalPages <= 1) { ul.innerHTML = ''; return; }
 
   const mkItem = (label, target, disabled = false, active = false) => `
     <li class="page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}">
@@ -401,9 +602,9 @@ function renderPagination() {
   `;
 
   // Prev
-  let html = mkItem('«', page - 1, page === 1, false);
+  let html = mkItem('«', page - 1, page === 1);
 
-  // Números (máximo 5 visibles; ajusta si quieres)
+  // Números (máximo 5 visibles)
   const max = 5;
   let start = Math.max(1, page - Math.floor(max / 2));
   let end = Math.min(totalPages, start + max - 1);
@@ -414,16 +615,16 @@ function renderPagination() {
   }
 
   // Next
-  html += mkItem('»', page + 1, page === totalPages, false);
+  html += mkItem('»', page + 1, page === totalPages);
 
   ul.innerHTML = html;
 
-  // Delegación de eventos
+  // ✅ Paginador que siempre pide la página correcta
   ul.querySelectorAll('a.page-link').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
       const target = Number(a.dataset.page);
-      if (!Number.isNaN(target)) goToPage(target);
+      if (!Number.isNaN(target)) cargarLibros(filtrosActuales, target);
     });
   });
 }
@@ -627,25 +828,26 @@ window.verDetalleLibro = async function(libroId) {
   return await verDetalleLibro(libroId);
 };
 
-// ✅ NUEVO: cambiar vista (grid/list)
+// ✅ ARREGLADO: cambiar vista sin romper el 3×3
 export function cambiarVista(modo) {
-  const librosGrid = document.getElementById('librosGrid');
+  const grid = document.getElementById('librosGrid');
   const viewGrid = document.getElementById('viewGrid');
   const viewList = document.getElementById('viewList');
-  
-  if (!librosGrid || !viewGrid || !viewList) return;
-  
+  if (!grid || !viewGrid || !viewList) return;
+
   if (modo === 'list') {
-    librosGrid.classList.remove('row');
-    librosGrid.classList.add('list-group');
-    viewList.classList.add('active');
+    grid.classList.remove('row', 'row-cols-1', 'row-cols-md-3', 'g-3');
+    grid.classList.add('list-group');
+    viewList.classList.add('active'); 
     viewGrid.classList.remove('active');
   } else {
-    librosGrid.classList.remove('list-group');
-    librosGrid.classList.add('row');
-    viewGrid.classList.add('active');
+    grid.classList.remove('list-group');
+    grid.classList.add('row', 'row-cols-1', 'row-cols-md-3', 'g-3'); // 👈 3×3 consistente
+    viewGrid.classList.add('active'); 
     viewList.classList.remove('active');
   }
+  // ✅ Re-render del lote visible actual (no re-fetch)
+  renderizarLibros(STATE.lastVisibles);
 }
 
 // ✅ NUEVO: ordenar libros
@@ -665,7 +867,7 @@ export function limpiarFiltros() {
   }
   
   // ✅ ARREGLADO: Recargar libros sin filtros
-  cargarLibros({});
+  cargarLibros({}, 1); // 👈 vuelve a página 1
   
   console.log('🧹 Filtros limpiados, recargando todos los libros...');
 }

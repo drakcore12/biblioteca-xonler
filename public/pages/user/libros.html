@@ -45,12 +45,18 @@
     <main class="container my-5">
         <h2>Catálogo de Libros</h2>
         <p class="lead">Explora nuestra colección completa de libros disponibles en todas las bibliotecas.</p>
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>Filtros automáticos:</strong> Los filtros se aplican automáticamente mientras escribes o seleccionas opciones.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
         
         <div class="row mt-4">
             <div class="col-md-3">
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Filtros</h5>
+                        <small class="text-muted">Los filtros se aplican automáticamente</small>
                     </div>
                     <div class="card-body">
                         <form id="filterForm">
@@ -65,28 +71,28 @@
                             <div class="mb-3">
                                 <label class="form-label">Categoría</label>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="ficcion" id="catFiccion">
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Ficción" id="catFiccion">
                                     <label class="form-check-label" for="catFiccion">Ficción</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="ciencia" id="catCiencia">
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Ciencia" id="catCiencia">
                                     <label class="form-check-label" for="catCiencia">Ciencia</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="historia" id="catHistoria">
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Historia" id="catHistoria">
                                     <label class="form-check-label" for="catHistoria">Historia</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="literatura" id="catLiteratura">
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Literatura" id="catLiteratura">
                                     <label class="form-check-label" for="catLiteratura">Literatura</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="tecnologia" id="catTecnologia">
-                                    <label class="form-check-label" for="catTecnologia">Tecnología</label>
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Filosofía" id="catFilosofia">
+                                    <label class="form-check-label" for="catFilosofia">Filosofía</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="arte" id="catArte">
-                                    <label class="form-check-label" for="catArte">Arte</label>
+                                    <input class="form-check-input" type="checkbox" name="categoriasFavoritas" value="Otros" id="catOtros">
+                                    <label class="form-check-label" for="catOtros">Otros</label>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -104,8 +110,12 @@
                                 </select>
                             </div>
                             <div class="d-grid gap-2">
-                                <button type="button" class="btn btn-primary" id="applyFiltersBtn">Aplicar Filtros</button>
-                                <button type="button" class="btn btn-outline-secondary" id="clearFiltersBtn">Limpiar Filtros</button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFiltersBtn">
+                                    <i class="bi bi-x-circle me-1"></i>Limpiar Filtros
+                                </button>
+                            </div>
+                            <div id="filtrosActivos" class="mt-3" style="display: none;">
+                                <!-- Aquí se mostrarán los filtros activos -->
                             </div>
                         </form>
                     </div>
@@ -114,13 +124,13 @@
             
             <div class="col-md-9">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span id="resultCount">Mostrando 9 de 42 libros</span>
+
                     <div class="d-flex">
                         <select class="form-select me-2" id="sortBy" style="width: auto;">
-                            <option value="relevancia">Relevancia</option>
+                            <option value="relevancia">Más populares</option>
+                            <option value="recientes">Más recientes</option>
                             <option value="titulo">Título (A-Z)</option>
                             <option value="autor">Autor (A-Z)</option>
-                            <option value="recientes">Más recientes</option>
                         </select>
                         <div class="btn-group" role="group">
                             <button type="button" class="btn btn-outline-secondary active" id="viewGrid" aria-label="Ver en cuadrícula"><i class="bi bi-grid"></i></button>
@@ -203,33 +213,45 @@
                 logout();
             });
             
-                                // Evento para mi perfil
-                    document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
-                        e.preventDefault();
-                        window.location.href = '/pages/user/configuracion.html';
-                    });
-            
-            // Evento para aplicar filtros
-            document.getElementById('applyFiltersBtn').addEventListener('click', function() {
-                applyFilters();
+            // Evento para mi perfil
+            document.getElementById('btnMiPerfil').addEventListener('click', function(e) {
+                e.preventDefault();
+                window.location.href = '/pages/user/configuracion.html';
             });
+            
+            // ✅ Filtros automáticos - no se necesita botón de aplicar
             
             // Evento para limpiar filtros
             document.getElementById('clearFiltersBtn').addEventListener('click', function() {
+                console.log('🧹 Limpiando filtros...');
+                
+                // Limpiar formulario
+                const filterForm = document.getElementById('filterForm');
+                if (filterForm) {
+                    filterForm.reset();
+                }
+                
+                // Ocultar estado de filtros
+                const filterStatus = document.getElementById('filterStatus');
+                if (filterStatus) {
+                    filterStatus.style.display = 'none';
+                }
+                
+                // Ocultar filtros activos del sidebar
+                const filtrosActivos = document.getElementById('filtrosActivos');
+                if (filtrosActivos) {
+                    filtrosActivos.style.display = 'none';
+                }
+                
+                // ✅ Recargar libros sin filtros (automático)
                 import('/services/libros.services.js').then(module => {
-                    if (module.limpiarFiltros) {
-                        module.limpiarFiltros();
-                    } else {
-                        // Fallback si la función no está disponible
-                        const filterForm = document.getElementById('filterForm');
-                        if (filterForm) {
-                            filterForm.reset();
-                        }
-                        // Recargar libros sin filtros
-                        module.cargarLibros({});
-                    }
+                    module.cargarLibros({}, 1);
                 });
+                
+                console.log('🧹 Filtros limpiados y recargando...');
             });
+            
+            // ✅ Botón de test debug eliminado - ya no es necesario
             
             // Evento para cambiar vista
             document.getElementById('viewGrid').addEventListener('click', function() {
@@ -244,6 +266,49 @@
             document.getElementById('sortBy').addEventListener('change', function() {
                 sortBooks(this.value);
             });
+            
+            // Búsqueda en tiempo real para título
+            const searchTitle = document.getElementById('searchTitle');
+            if (searchTitle) {
+                let timeoutId;
+                searchTitle.addEventListener('input', function() {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        if (this.value.trim().length >= 2 || this.value.trim().length === 0) {
+                            applyFilters();
+                        }
+                    }, 500);
+                });
+            }
+            
+            // Búsqueda en tiempo real para autor
+            const searchAuthor = document.getElementById('searchAuthor');
+            if (searchAuthor) {
+                let timeoutId;
+                searchAuthor.addEventListener('input', function() {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        if (this.value.trim().length >= 2 || this.value.trim().length === 0) {
+                            applyFilters();
+                        }
+                    }, 500);
+                });
+            }
+            
+            // Filtros automáticos para categorías y disponibilidad
+            const categoriasCheckboxes = document.querySelectorAll('input[name="categoriasFavoritas"]');
+            categoriasCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    applyFilters();
+                });
+            });
+            
+            const disponibilidadSelect = document.getElementById('disponibilidad');
+            if (disponibilidadSelect) {
+                disponibilidadSelect.addEventListener('change', function() {
+                    applyFilters();
+                });
+            }
         }
         
         function loadUserData() {
@@ -261,8 +326,16 @@
             
             // ✅ ARREGLADO: Importar y usar el servicio de libros
             import('/services/libros.services.js').then(module => {
-                // Inicializar la página de libros
-                module.default();
+                // Inicializar toda la página (incluye cargar bibliotecas)
+                if (module.default) {
+                    module.default(); // Esto llama a initLibrosPage()
+                } else {
+                    // Fallback: solo cargar libros si no hay initLibrosPage
+                    module.cargarLibros();
+                    if (module.cargarBibliotecas) {
+                        module.cargarBibliotecas();
+                    }
+                }
                 
                 // Debug de autenticación si está disponible
                 if (module.debugAuth) {
@@ -289,26 +362,31 @@
         }
         
         function applyFilters() {
-            // Aplicar filtros usando el servicio
-            console.log('Aplicando filtros...');
+            // ✅ Función para filtros automáticos (llamada por eventos de input)
+            console.log('🔄 Aplicando filtros automáticamente...');
             
+            // Mostrar indicador de carga
+            const resultCount = document.getElementById('resultCount');
+            if (resultCount) {
+                resultCount.innerHTML = '<span class="text-muted"><i class="bi bi-hourglass-split me-1"></i>Aplicando filtros...</span>';
+            }
+            
+            const filtros = {
+                titulo: document.getElementById('searchTitle')?.value?.trim() || '',
+                autor: document.getElementById('searchAuthor')?.value?.trim() || '',
+                categorias: obtenerCategoriasSeleccionadas(),
+                disponibilidad: document.getElementById('disponibilidad')?.value || 'todos',
+                biblioteca: document.getElementById('biblioteca')?.value || 'todas'
+            };
+            
+            console.log('🔍 Filtros aplicados:', filtros);
+            
+            // Mostrar estado de filtros activos
+            mostrarEstadoFiltros(filtros);
+            
+            // ✅ Cargar libros con filtros (automático)
             import('/services/libros.services.js').then(module => {
-                // ✅ ARREGLADO: Usar función centralizada del servicio
-                if (module.aplicarFiltros) {
-                    module.aplicarFiltros();
-                } else {
-                    // Fallback si la función no está disponible
-                    const filtros = {
-                        titulo: document.getElementById('searchTitle')?.value?.trim() || '',
-                        autor: document.getElementById('searchAuthor')?.value?.trim() || '',
-                        categorias: obtenerCategoriasSeleccionadas(),
-                        disponibilidad: document.getElementById('disponibilidad')?.value || 'todos',
-                        biblioteca: document.getElementById('biblioteca')?.value || 'todas'
-                    };
-                    
-                    console.log('🔍 Filtros aplicados:', filtros);
-                    module.cargarLibros(filtros);
-                }
+                module.cargarLibros(filtros, 1);
             });
         }
         
@@ -323,21 +401,84 @@
             return categorias;
         }
         
+        function mostrarEstadoFiltros(filtros) {
+            const filterStatus = document.getElementById('filterStatus');
+            const filtrosActivos = document.getElementById('filtrosActivos');
+            
+            const filtrosActivosList = [];
+            
+            if (filtros.titulo) filtrosActivosList.push(`Título: "${filtros.titulo}"`);
+            if (filtros.autor) filtrosActivosList.push(`Autor: "${filtros.autor}"`);
+            if (filtros.categorias.length > 0) filtrosActivosList.push(`Categorías: ${filtros.categorias.join(', ')}`);
+            if (filtros.disponibilidad !== 'todos') filtrosActivosList.push(`Disponibilidad: ${filtros.disponibilidad}`);
+            
+            // Mostrar en el header principal
+            if (filterStatus) {
+                if (filtrosActivosList.length > 0) {
+                    filterStatus.innerHTML = `<i class="bi bi-funnel me-1"></i>Filtros activos: ${filtrosActivosList.join(' | ')}`;
+                    filterStatus.style.display = 'block';
+                } else {
+                    filterStatus.style.display = 'none';
+                }
+            }
+            
+            // Mostrar en el sidebar
+            if (filtrosActivos) {
+                if (filtrosActivosList.length > 0) {
+                    filtrosActivos.innerHTML = `
+                        <div class="alert alert-info py-2 mb-0">
+                            <small><i class="bi bi-info-circle me-1"></i><strong>Filtros activos:</strong></small>
+                            <div class="mt-1">
+                                ${filtrosActivosList.map(f => `<span class="badge bg-primary me-1 mb-1">${f}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                    filtrosActivos.style.display = 'block';
+                } else {
+                    filtrosActivos.style.display = 'none';
+                }
+            }
+        }
+        
         function setViewMode(mode) {
-            // Cambiar modo de vista usando el servicio
+            // Cambiar modo de vista
             console.log('Cambiando a vista:', mode);
             
-            import('/services/libros.services.js').then(module => {
-                module.cambiarVista(mode);
-            });
+            const librosGrid = document.getElementById('librosGrid');
+            const viewGrid = document.getElementById('viewGrid');
+            const viewList = document.getElementById('viewList');
+            
+            if (!librosGrid || !viewGrid || !viewList) return;
+            
+            if (mode === 'list') {
+                librosGrid.classList.remove('row');
+                librosGrid.classList.add('list-group');
+                viewList.classList.add('active');
+                viewGrid.classList.remove('active');
+            } else {
+                librosGrid.classList.remove('list-group');
+                librosGrid.classList.add('row');
+                viewGrid.classList.add('active');
+                viewList.classList.remove('active');
+            }
         }
         
         function sortBooks(criteria) {
-            // Ordenar libros usando el servicio
+            // Ordenar libros
             console.log('Ordenando por:', criteria);
             
+            // Recargar libros con el criterio de ordenamiento
+            const filtros = {
+                titulo: document.getElementById('searchTitle')?.value?.trim() || '',
+                autor: document.getElementById('searchAuthor')?.value?.trim() || '',
+                categorias: obtenerCategoriasSeleccionadas(),
+                disponibilidad: document.getElementById('disponibilidad')?.value || 'todos',
+                biblioteca: document.getElementById('biblioteca')?.value || 'todas',
+                orden: criteria
+            };
+            
             import('/services/libros.services.js').then(module => {
-                module.ordenarLibros(criteria);
+                module.cargarLibros(filtros);
             });
         }
         
