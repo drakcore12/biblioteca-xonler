@@ -100,8 +100,6 @@ export function debugAuth() {
 // ===== Estado Global y Paginación 3x3 =====
 const STATE = {
   lastVisibles: [],          // último lote renderizado (para re-render en cambio de vista)
-  serverPaginated: true,     // asumimos paginación server-side
-  totalBackend: 0,
 };
 
 const PAGINATION = {
@@ -111,14 +109,12 @@ const PAGINATION = {
   libros: [],
 };
 
-// Alias para código legado que aún use LIBROS_POR_PAGINA
-const LIBROS_POR_PAGINA = PAGINATION.pageSize;
+
 
 // ✅ RESTAURADO: Funciones de paginación client-side para rescate
 function setLibros(data) {
   PAGINATION.libros = Array.isArray(data) ? data : [];
   PAGINATION.totalPages = Math.max(1, Math.ceil(PAGINATION.libros.length / PAGINATION.pageSize));
-  PAGINATION.page = 1;
 }
 
 function getPageSlice(page) {
@@ -132,12 +128,15 @@ function goToPage(page) {
   console.log('🔍 [DEBUG] goToPage llamado con página:', page);
   PAGINATION.page = Math.min(Math.max(1, page), PAGINATION.totalPages);
   const visibles = getPageSlice(PAGINATION.page);
+
+  // 👇 guarda para re-render al cambiar vista
+  STATE.lastVisibles = visibles;
+
   console.log('🔍 [DEBUG] Libros visibles en página', page, ':', visibles.length);
   console.log('🔍 [DEBUG] Llamando renderizarLibros con', visibles.length, 'libros');
   renderizarLibros(visibles);
   renderPagination();
   actualizarContadorResultados(visibles.length, PAGINATION.libros.length, PAGINATION.page, PAGINATION.totalPages);
-  // opcional: subir al inicio del grid
   document.getElementById('librosGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -157,6 +156,11 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
   filtrosActuales = { ...filtros };
   PAGINATION.pageSize = 9;                   // 3×3 SIEMPRE
   PAGINATION.page = Math.max(1, pagina);
+
+  // 👈 IMPORTANTE: Asegurar que siempre haya un orden por defecto
+  if (!filtrosActuales.orden) {
+    filtrosActuales.orden = 'popularidad';
+  }
 
   // Mostrar loader
   librosGrid.innerHTML = `
@@ -191,8 +195,21 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     
     console.log('🔍 [DEBUG] Datos extraídos:', { crudos, esArray: Array.isArray(crudos), longitud: crudos.length });
     
+    // 👈 DEBUG: Verificar si el backend está devolviendo popularidad
+    if (crudos.length > 0) {
+      const primerLibro = crudos[0];
+      console.log('🔍 [DEBUG] Primer libro recibido:', {
+        id: primerLibro.id,
+        titulo: primerLibro.titulo,
+        popularidad: primerLibro.popularidad,
+        total_prestamos: primerLibro.total_prestamos,
+        tienePopularidad: 'popularidad' in primerLibro
+      });
+    }
+    
     // --- Heurística: ¿el backend ignoró limit/offset o el filtro?
-    const backendIgnoraPaginacion = Array.isArray(crudos) && crudos.length > limit;
+    // ✅ ARREGLADO: Mejor detección de si el backend está funcionando correctamente
+    const backendFuncionaCorrectamente = Array.isArray(crudos) && crudos.length <= limit && crudos.length > 0;
     const hayTitulo = filtrosActuales.titulo?.trim()?.length >= 2;
     const hayAutor = filtrosActuales.autor?.trim()?.length >= 2;
     const hayCategoria = Array.isArray(filtrosActuales.categorias) && filtrosActuales.categorias.length > 0;
@@ -201,7 +218,7 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     const hayFiltro = hayTitulo || hayAutor || hayCategoria || hayDisp || hayBiblioteca;
 
     console.log('🔍 [DEBUG] Heurística backend:', {
-      backendIgnoraPaginacion,
+      backendFuncionaCorrectamente,
       hayFiltro,
       hayTitulo,
       hayAutor,
@@ -256,18 +273,26 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
       });
     }
 
-    // Si el backend ignoró la paginación o estamos filtrando en cliente, paginamos nosotros
-    if (backendIgnoraPaginacion || hayFiltro) {
+    // Si el backend NO está funcionando correctamente o estamos filtrando en cliente, paginamos nosotros
+    if (!backendFuncionaCorrectamente || hayFiltro) {
       console.log('🔄 [DEBUG] Usando paginación client-side');
-      setLibros(dataset);               // guarda todo el dataset en cliente
-      PAGINATION.totalPages = Math.max(1, Math.ceil(dataset.length / PAGINATION.pageSize));
+      
+      // 👇 NUEVO: orden en cliente cuando el backend no lo hace
+      const criterio = filtrosActuales.orden || 'popularidad';
+      const datasetOrdenado = ordenarDataset(dataset, criterio, filtrosActuales);
+      
+      console.log('🔄 [DEBUG] Dataset ordenado por:', criterio, 'Total libros:', datasetOrdenado.length);
+
+      setLibros(datasetOrdenado);               // guarda TODO ya ordenado
+      PAGINATION.totalPages = Math.max(1, Math.ceil(datasetOrdenado.length / PAGINATION.pageSize));
       goToPage(PAGINATION.page);        // esto llama a renderizarLibros con el slice 3×3
       actualizarContadorResultados(
         getPageSlice(PAGINATION.page).length,
-        dataset.length,
+        datasetOrdenado.length,
         PAGINATION.page,
         PAGINATION.totalPages
       );
+      renderPagination();
       return;
     }
 
@@ -275,6 +300,7 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     console.log('✅ [DEBUG] Backend funcionando correctamente, usando paginación server-side');
     setLibros(crudos); // guarda el lote por consistencia (aunque ya venga paginado)
     PAGINATION.totalPages = Math.max(1, Math.ceil(totalBackend / PAGINATION.pageSize));
+    STATE.lastVisibles = crudos;            // 👈 asegura re-render al cambiar vista
     renderizarLibros(crudos);           // ya es un slice del backend
     renderPagination();
     actualizarContadorResultados(crudos.length, totalBackend, PAGINATION.page, PAGINATION.totalPages);
@@ -309,6 +335,12 @@ function renderizarLibros(libros) {
   const isListView = librosGrid.classList.contains('list-group');
   console.log('🔍 [DEBUG] Modo lista:', isListView);
   
+  // 👉 Solo fuerza clases de grid si NO estás en lista
+  if (!isListView) {
+    librosGrid.classList.remove('list-group');
+    librosGrid.classList.add('row', 'row-cols-1', 'row-cols-md-3', 'g-3');
+  }
+  
   if (isListView) {
     // Modo lista
     librosGrid.innerHTML = libros.map(libro => `
@@ -342,7 +374,7 @@ function renderizarLibros(libros) {
     // Modo grid 3x3
     librosGrid.innerHTML = libros.map(libro => `
       <div class="col-12 col-md-6 col-lg-4 mb-3">
-        <div class="card h-100 shadow-sm">
+        <div class="card h-100 shadow-sm libro-card" data-id="${libro.id}">
           <img src="${resolveImg(libro)}"
                class="card-img-top libro-img"
                alt="${libro.titulo}"
@@ -353,7 +385,7 @@ function renderizarLibros(libros) {
             ${libro.categoria ? `<span class="badge bg-primary mb-2">${libro.categoria}</span>` : ''}
             ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
             ${libro.disponibilidad !== undefined
-              ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} mb-2">
+              ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} mb-2 badge-disponibilidad">
                    ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
                  </span>` : ''}
             <div class="mt-auto">
@@ -371,6 +403,8 @@ function renderizarLibros(libros) {
   setupImageFallbacks();
   setupEventDelegation();
   
+  STATE.lastVisibles = libros; // 👈 siempre reflejar último render
+  
   console.log('🔍 [DEBUG] renderizarLibros completado. HTML generado:', librosGrid.innerHTML.substring(0, 200) + '...');
 }
 
@@ -384,13 +418,7 @@ function actualizarContadorResultados(countVisibles, total = countVisibles, page
   }
 }
 
-// ✅ NUEVO: Función para actualizar paginación
-function actualizarPaginacion(total, page = 1, totalPages = 1) {
-  console.log('🔍 [DEBUG] actualizarPaginacion llamado con:', { total, page, totalPages });
-  if (total === 0) {
-    renderPagination();
-  }
-}
+
 
 // ✅ Función de test debug eliminada - ya no es necesaria
 
@@ -460,6 +488,15 @@ function initLibrosSearch() {
     aplicarFiltros();
   });
   
+  // ✅ NUEVO: Event listener para ordenamiento automático
+  const sortBySelect = document.getElementById('sortBy');
+  if (sortBySelect) {
+    sortBySelect.addEventListener('change', () => {
+      console.log('🔄 Ordenamiento cambiado, aplicando filtros...');
+      aplicarFiltros();
+    });
+  }
+  
   // ✅ ARREGLADO: búsqueda en tiempo real con debounce y minLength
   const searchTitle = document.getElementById('searchTitle');
   const searchAuthor = document.getElementById('searchAuthor');
@@ -496,7 +533,8 @@ export function aplicarFiltros() {
     autor: document.getElementById('searchAuthor')?.value?.trim() || '',
     categorias: obtenerCategoriasSeleccionadas(),
     disponibilidad: document.getElementById('disponibilidad')?.value || 'todos',
-    biblioteca: document.getElementById('biblioteca')?.value || 'todas'
+    biblioteca: document.getElementById('biblioteca')?.value || 'todas',
+    orden: document.getElementById('sortBy')?.value || 'popularidad'
   };
   
   console.log('🔍 Filtros aplicados:', filtros);
@@ -520,6 +558,78 @@ function aplicarFiltrosEnTiempoReal() {
   aplicarFiltros(); // Esto ya llama a cargarLibros(filtros, 1)
 }
 
+// ✅ NUEVO: Funciones helper para ordenamiento en cliente
+function normalizarTexto(v) {
+  return String(v || '').toLowerCase().trim();
+}
+
+function ordenarDataset(dataset, criterio, filtros = {}) {
+  const arr = [...dataset];
+  const key = (criterio || 'relevancia').toLowerCase();
+
+  // Atajos: si el backend ya ordenó y trajo LIMIT/OFFSET, no hace falta reordenar
+  // (pero mantenemos el orden por si venimos de paginación client-side)
+  const byNumDesc = (field) => (a, b) => (Number(b?.[field]) || 0) - (Number(a?.[field]) || 0);
+
+  switch (key) {
+    case 'titulo':
+      arr.sort((a, b) => normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo)));
+      break;
+
+    case 'autor':
+      arr.sort((a, b) => normalizarTexto(a.autor).localeCompare(normalizarTexto(b.autor)));
+      break;
+
+    case 'recientes':
+      arr.sort((a, b) => (b.id || 0) - (a.id || 0));
+      break;
+
+    case 'popularidad':
+      // 👇 IMPORTANTE: Popularidad es un ORDEN, no un filtro
+      // Ordenar por popularidad real del backend (conteo de préstamos)
+      arr.sort((a, b) => {
+        const getPop = (x) => Number(x?.popularidad ?? 0);
+        const pa = getPop(a);
+        const pb = getPop(b);
+        
+        // Si tienen diferente popularidad, ordenar por popularidad descendente
+        if (pb !== pa) return pb - pa;
+        
+        // Si tienen la misma popularidad, ordenar alfabéticamente por título
+        return normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo));
+      });
+      break;
+
+    case 'relevancia':
+    default:
+      // 👇 primero relevancia del backend; si no viene, cae a popularidad; luego título
+      arr.sort((a, b) => {
+        const r = byNumDesc('relevancia')(a, b);
+        if (r !== 0) return r;
+        const p = byNumDesc('popularidad')(a, b);
+        if (p !== 0) return p;
+        return normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo));
+      });
+
+      // (Opcional) si NO hay relevancia/popularidad y sí hay búsqueda de texto, aplica tu heurística:
+      const q = normalizarTexto(filtros?.titulo || filtros?.autor || filtros?.q || '');
+      if (q && !arr.some(x => x.relevancia || x.popularidad)) {
+        const score = (libro) => {
+          const t = normalizarTexto(libro.titulo);
+          const a = normalizarTexto(libro.autor);
+          let s = 0;
+          if (t.includes(q)) s += 2;
+          if (t.startsWith(q)) s += 2;
+          if (a.includes(q)) s += 1;
+          return s;
+        };
+        arr.sort((x, y) => score(y) - score(x));
+      }
+      break;
+  }
+  return arr;
+}
+
 // ✅ ARREGLADO: función debounce mejorada para búsqueda en tiempo real
 function debounce(func, wait) {
   let timeout;
@@ -533,6 +643,11 @@ function debounce(func, wait) {
 function buildLibrosUrl(filtros = {}) {
   console.log('🔍 [DEBUG] buildLibrosUrl llamado con filtros:', filtros);
   const params = new URLSearchParams();
+  
+  // 👈 IMPORTANTE: Siempre enviar orden por defecto
+  const orden = filtros.orden || 'popularidad';
+  params.set('orden', orden);
+  console.log('🔍 [DEBUG] Agregando filtro orden:', orden);
   
   // Parámetros de búsqueda - usar 'q' para búsqueda general
   const titulo = filtros.titulo?.trim();
@@ -549,31 +664,22 @@ function buildLibrosUrl(filtros = {}) {
     console.log('🔍 [DEBUG] Agregando filtro autor:', autor);
   }
   
-  // Categoría (múltiples categorías)
+  // Categorías: repetir 'categoria' (como espera tu backend actual)
   if (Array.isArray(filtros.categorias) && filtros.categorias.length > 0) {
-    // Enviar cada categoría como parámetro separado
-    filtros.categorias.forEach((cat, index) => {
-      params.append('categoria', cat);
-    });
-    console.log('🔍 [DEBUG] Agregando filtros categoría:', filtros.categorias);
+    filtros.categorias.forEach(cat => params.append('categoria', cat));
+    console.log('🔍 [DEBUG] Agregando filtros categoría (multi):', filtros.categorias);
   }
   
-  // Disponibilidad
+  // Disponibilidad: true/false (como espera tu backend actual)
   if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
     params.set('disponibilidad', filtros.disponibilidad === 'disponibles' ? 'true' : 'false');
-    console.log('🔍 [DEBUG] Agregando filtro disponibilidad:', filtros.disponibilidad);
+    console.log('🔍 [DEBUG] Agregando filtro disponibilidad:', params.get('disponibilidad'));
   }
   
-  // ✅ Biblioteca
+  // Biblioteca: usa el nombre que soporte el backend actual
   if (filtros.biblioteca && filtros.biblioteca !== 'todas') {
-    params.set('biblioteca', filtros.biblioteca);
+    params.set('biblioteca', filtros.biblioteca); // o 'biblioteca_id' si tu backend ya lo cambió
     console.log('🔍 [DEBUG] Agregando filtro biblioteca:', filtros.biblioteca);
-  }
-
-  // Ordenamiento
-  if (filtros.orden && filtros.orden !== 'relevancia') {
-    params.set('orden', filtros.orden);
-    console.log('🔍 [DEBUG] Agregando filtro orden:', filtros.orden);
   }
 
   // ✅ usa los que llegan por parámetro (importante para filtros)
@@ -689,7 +795,7 @@ export async function verDetalleLibro(libroId) {
       }
 
       // Recargar la lista de libros para actualizar todo
-      cargarLibros();
+      cargarLibros(filtrosActuales, PAGINATION.page);
     } catch (error) {
       console.error('❌ Error solicitando préstamo:', error);
       
@@ -847,16 +953,21 @@ export function cambiarVista(modo) {
     viewList.classList.remove('active');
   }
   // ✅ Re-render del lote visible actual (no re-fetch)
-  renderizarLibros(STATE.lastVisibles);
+  const lote = (STATE.lastVisibles && STATE.lastVisibles.length)
+    ? STATE.lastVisibles
+    : getPageSlice(PAGINATION.page);
+  renderizarLibros(lote);
 }
 
 // ✅ NUEVO: ordenar libros
 export function ordenarLibros(criterio) {
   console.log('📚 Ordenando libros por:', criterio);
   
-  // Aquí puedes implementar la lógica de ordenamiento
-  // Por ahora, recargar los libros (el backend debería manejar el ordenamiento)
-  cargarLibros();
+  // Guarda el criterio en el estado de filtros
+  filtrosActuales = { ...(filtrosActuales || {}), orden: criterio || 'popularidad' };
+  
+  // Recarga con el nuevo criterio (preserva 3×3)
+  cargarLibros(filtrosActuales, 1);
 }
 
 // ✅ ARREGLADO: función para limpiar filtros

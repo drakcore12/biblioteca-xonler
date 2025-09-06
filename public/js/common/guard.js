@@ -1,11 +1,12 @@
-// /js/common/guard.js (versión solo por inactividad)
+// /js/common/guard.js - Sistema de autenticación y navegación mejorado
 
-const SESSION_TIMEOUT_MS   = 30 * 60 * 1000; // 30 min (ajusta)
-const WARNING_BEFORE_MS    = 60 * 1000;      // aviso 1 min antes (0 = sin aviso)
+const SESSION_TIMEOUT_MS   = 30 * 60 * 1000; // 30 min
+const WARNING_BEFORE_MS    = 60 * 1000;      // aviso 1 min antes
 const LAST_ACTIVITY_KEY    = 'lastActivity';
 const LOGOUT_REASON_KEY    = 'logoutReason';
-const TOKEN_KEYS           = ['token'];      // agrega más si usas sessionStorage
+const TOKEN_KEYS           = ['token'];
 const ROLE_KEYS            = ['role'];
+const CLOCK_SKEW_S         = 30; // 30 segundos de tolerancia para exp
 
 const ROUTES = {
   login: '/pages/guest/login.html',
@@ -20,7 +21,6 @@ let setupDone    = false;
 function now() { return Date.now(); }
 
 function pickStorage() {
-  // Si tienes token en localStorage úsalo; si no, sessionStorage
   return localStorage.getItem('token') ? localStorage : sessionStorage;
 }
 
@@ -40,6 +40,7 @@ function writeLastActivity(ts = now()) {
 function minutes(ms) { return Math.max(0, Math.floor(ms / 60000)); }
 
 function isProbablyJwt(t) { return typeof t === 'string' && t.split('.').length === 3; }
+
 function b64urlDecode(str) {
   try {
     const pad = s => s + '='.repeat((4 - (s.length % 4)) % 4);
@@ -49,6 +50,7 @@ function b64urlDecode(str) {
     return new TextDecoder('utf-8').decode(bytes);
   } catch { return null; }
 }
+
 function decodeJwt(t) {
   try {
     const p = t.split('.');
@@ -57,12 +59,14 @@ function decodeJwt(t) {
     return payload ? JSON.parse(payload) : null;
   } catch { return null; }
 }
+
 function jwtExpired() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token || !isProbablyJwt(token)) return false;
   const payload = decodeJwt(token);
   if (!payload || typeof payload.exp !== 'number') return false;
-  return Math.floor(now() / 1000) >= payload.exp;
+  // Aplicar clock skew para tolerar desfases de reloj
+  return Math.floor(now() / 1000) >= (payload.exp - CLOCK_SKEW_S);
 }
 
 function clearSession(reason = 'inactivity') {
@@ -83,7 +87,6 @@ function scheduleTimers() {
 
   const last = readLastActivity();
   if (!last) {
-    // Si no hay actividad almacenada, inicializa ahora
     writeLastActivity();
   }
 
@@ -101,8 +104,6 @@ function scheduleTimers() {
   if (WARNING_BEFORE_MS > 0 && remaining > WARNING_BEFORE_MS) {
     warningTimer = setTimeout(() => {
       console.warn('⚠️ Tu sesión está por expirar por inactividad en ~1 minuto.');
-      // Aquí puedes disparar un modal/Toast para que el usuario haga clic y renueve actividad.
-      // Ej.: mostrarToast('Tu sesión está por expirar...')
     }, remaining - WARNING_BEFORE_MS);
   }
 
@@ -118,7 +119,7 @@ function scheduleTimers() {
 }
 
 function recordActivity() {
-  if (!hasToken()) return; // no hay sesión
+  if (!hasToken()) return;
   writeLastActivity();
   scheduleTimers();
 }
@@ -129,21 +130,19 @@ function setupActivityMonitoring() {
 
   const events = ['mousedown','mousemove','keypress','scroll','touchstart','click','visibilitychange'];
   const handler = () => {
-    // Solo contar actividad si el documento está visible (evita "ticks" en segundo plano)
     if (document.visibilityState === 'visible') recordActivity();
   };
   events.forEach(ev => document.addEventListener(ev, handler, { passive: true }));
 
-  // Sincroniza multi-pestaña: si otra pestaña actualiza lastActivity, recalculamos
+  // Sincroniza multi-pestaña
   window.addEventListener('storage', (e) => {
     if (e.key === LAST_ACTIVITY_KEY) scheduleTimers();
     if (e.key === LOGOUT_REASON_KEY) {
-      // Si otra pestaña hizo logout, esta también redirige
       redirectToLogin();
     }
   });
 
-  // Arranque: si hay token, arma timers; si no, no hace nada
+  // Arranque: si hay token, arma timers
   if (hasToken()) {
     if (!readLastActivity()) writeLastActivity();
     scheduleTimers();
@@ -151,20 +150,39 @@ function setupActivityMonitoring() {
 }
 
 // ====== API para guards ======
+
+// Para páginas públicas (login, inicio) - rebota si ya está autenticado
 export async function requireAnon() {
   // Si no hay token → puede ver login
   if (!hasToken()) return;
-  // Hay token: si expira por JWT o inactividad, forzar salida
+  
+  // Si token vencido, limpia y deja ver login
   if (jwtExpired()) {
     clearSession('jwt_expired');
-    return; // permitirá que la página actual muestre login si corresponde
+    return;
   }
-  // Redirige según rol almacenado (si gustas)
-  const role = (localStorage.getItem('role') || sessionStorage.getItem('role') || 'usuario').toLowerCase();
+
+  // Solo redirigir si estás en una página pública (login, inicio)
+  // NO redirigir si ya estás en páginas de usuario o admin
+  const currentPath = window.location.pathname;
+  const isPublicPage = currentPath.includes('/pages/guest/') || currentPath === '/' || currentPath === '/index.html';
+  
+  if (!isPublicPage) {
+    // Si ya estás en una página protegida, no hacer nada
+    return;
+  }
+
+  // Prefiere rol del token sobre localStorage
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const payload = decodeJwt(token) || {};
+  const role = (payload.role || localStorage.getItem('role') || sessionStorage.getItem('role') || 'usuario').toLowerCase();
+
   const dest = (role === 'admin' || role === 'adminadvanced') ? ROUTES.admin : ROUTES.user;
-  if (window.location.pathname !== dest) window.location.replace(dest);
+  console.log('🔄 Usuario ya autenticado en página pública, redirigiendo a:', dest);
+  window.location.replace(dest);
 }
 
+// Para páginas protegidas - requiere autenticación
 export async function requireAuth() {
   if (!hasToken()) {
     if (window.location.pathname !== ROUTES.login) {
@@ -182,14 +200,51 @@ export async function requireAuth() {
   scheduleTimers();
 }
 
+// Para páginas con rol específico
 export async function requireRole(expected) {
   await requireAuth();
   if (!hasToken()) return;
-  const role = (localStorage.getItem('role') || sessionStorage.getItem('role') || 'usuario').toLowerCase();
+  
+  // Prefiere rol del token
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const payload = decodeJwt(token) || {};
+  const role = (payload.role || localStorage.getItem('role') || sessionStorage.getItem('role') || 'usuario').toLowerCase();
+  
+  console.log('🔍 [ROLE CHECK] Verificando rol:', {
+    expected: expected.toLowerCase(),
+    actual: role,
+    currentPath: window.location.pathname,
+    tokenRole: payload.role,
+    localStorageRole: localStorage.getItem('role'),
+    sessionStorageRole: sessionStorage.getItem('role'),
+    token: token ? `${token.substring(0, 50)}...` : 'No encontrado',
+    payload: payload
+  });
+  
   if (role !== expected.toLowerCase()) {
     const dest = (role === 'admin' || role === 'adminadvanced') ? ROUTES.admin : ROUTES.user;
-    if (window.location.pathname !== dest) window.location.replace(dest);
+    if (window.location.pathname !== dest) {
+      console.log('🔄 Rol incorrecto, redirigiendo a:', dest);
+      window.location.replace(dest);
+    }
   }
+}
+
+// Función para logout limpio
+export function doLogout() {
+  console.log('🚪 Cerrando sesión...');
+  clearSession('manual_logout');
+  window.location.replace(ROUTES.login); // replace para que atrás no vuelva a la protegida
+}
+
+// Función de compatibilidad (ya no necesaria pero por si se llama)
+export function allowLogout() {
+  return true;
+}
+
+// Función de compatibilidad (eliminada - ya no se usa)
+export function blockUserNavigation() {
+  console.warn('⚠️ blockUserNavigation() está deshabilitado. Usa requireAnon() en páginas públicas.');
 }
 
 // ====== bootstrap ======

@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Iniciar Sesión - Xonler</title>
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -73,6 +76,12 @@
                   <div class="d-flex justify-content-between align-items-center">
                     <button type="submit" class="btn btn-primary">Iniciar sesión</button>
                     <a href="#" class="text-decoration-none">¿Olvidaste tu contraseña?</a>
+                  </div>
+                  
+                  <!-- Debug temporal -->
+                  <div class="mt-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSession()">Limpiar Sesión</button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="testLogin()">Test Login</button>
                   </div>
                 </form>
               </div>
@@ -162,7 +171,22 @@
     import { initLoginForm } from '/services/login.services.js';
     import { initRegistroForm, initPasswordValidation } from '/services/registro.services.js';
     
-    requireAnon();   // si hay sesión, lo saca del login
+    // Función para inicializar la validación
+    function boot() {
+      requireAnon(); // si hay sesión, lo saca del login
+    }
+    
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+    
+    // Ejecutar cuando la página vuelve a ser visible (por si usan botón atrás)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        requireAnon();
+      }
+    });
+    
+    // Inicializar formularios
     initLoginForm(); // engancha el submit del login
     initRegistroForm(); // engancha el submit del registro
     initPasswordValidation(); // valida contraseña en tiempo real
@@ -280,7 +304,41 @@
   
   <!-- Script de debug temporal -->
   <script>
-          document.addEventListener('DOMContentLoaded', function() {
+    // Funciones de debug
+    function clearSession() {
+      localStorage.clear();
+      sessionStorage.clear();
+      console.log('🗑️ Sesión limpiada');
+      alert('Sesión limpiada. Ahora puedes probar el login con 2FA.');
+    }
+    
+    async function testLogin() {
+      try {
+        console.log('🧪 [TEST] Probando login con 2FA...');
+        const response = await fetch('/api/usuarios/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            email: 'luiseduardo1913@gmail.com', 
+            password: 'Ma2004-13' 
+          })
+        });
+        
+        const data = await response.json();
+        console.log('🧪 [TEST] Respuesta del login:', data);
+        
+        if (data.pending2faToken) {
+          alert('✅ 2FA detectado correctamente! Se requiere código 2FA.');
+        } else {
+          alert('❌ 2FA NO detectado. Login normal sin 2FA.');
+        }
+      } catch (error) {
+        console.error('🧪 [TEST] Error:', error);
+        alert('Error en el test: ' + error.message);
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
         const debugBtn = document.getElementById('debugAuth');
         const clearSessionBtn = document.getElementById('clearSession');
         const simulateRoleBtn = document.getElementById('simulateRole');

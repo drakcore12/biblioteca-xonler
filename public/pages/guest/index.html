@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../css/main.css">
     <title>Bibliotecas Xonler - Invitado</title>
@@ -135,17 +138,33 @@
     
     <!-- Scripts de la página principal -->
     <script type="module">
+      import { requireAnon } from '/js/common/guard.js';
       import { initIndexGuestPage, initVisualEffects } from '/services/index-guest.services.js';
+      
+      // Función para inicializar la validación
+      function boot() {
+        requireAnon(); // si hay sesión, lo saca de la página pública
+      }
       
       // Inicializar página cuando se carga
       document.addEventListener('DOMContentLoaded', () => {
         console.log('Página principal cargada');
+        
+        // Validar autenticación primero
+        boot();
         
         // Inicializar funcionalidad básica
         initIndexGuestPage();
         
         // Inicializar efectos visuales
         initVisualEffects();
+      });
+      
+      // Ejecutar cuando la página vuelve a ser visible (por si usan botón atrás)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          requireAnon();
+        }
       });
     </script>
 </body>

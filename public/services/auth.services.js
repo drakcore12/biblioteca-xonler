@@ -61,7 +61,7 @@ export class AuthService {
   // Iniciar sesión
   async login(email, password, remember = false) {
     try {
-      const response = await fetch(`${this.baseURL}/usuarios/login`, {
+      const response = await fetch(`${this.baseURL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -211,7 +211,7 @@ export class AuthService {
   // Obtener perfil del usuario actual
   async getCurrentUser() {
     try {
-      const response = await fetch(`${this.baseURL}/usuarios/me`, {
+      const response = await fetch(`${this.baseURL}/auth/me`, {
         headers: this.getAuthHeaders()
       });
 

@@ -1,6 +1,14 @@
 const { pool } = require('../config/database');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { generatePending2FAToken } = require('./twofa.controller');
+
+// Helper para normalizar preferencias que pueden venir como string
+function asObject(x) {
+  if (!x) return {};
+  if (typeof x === 'object') return x;
+  try { return JSON.parse(x); } catch { return {}; }
+}
 
 // Generar JWT token
 function generateToken(user) {
@@ -121,6 +129,8 @@ async function register(req, res) {
 // POST /auth/login
 async function login(req, res) {
   try {
+    console.log('🔍 [LOGIN] ===== INICIANDO FUNCIÓN LOGIN =====');
+    console.log('🔍 [LOGIN] Iniciando función login...');
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -129,15 +139,20 @@ async function login(req, res) {
       });
     }
 
-    // Buscar usuario por email
+    // Buscar usuario por email (incluyendo 2FA) - con COALESCE para normalizar
+    console.log('🔍 [LOGIN] Ejecutando consulta SQL...');
     const result = await pool.query(`
       SELECT 
         u.id, u.nombre, u.apellido, u.email, u.password_hash,
+        COALESCE(u.dobleautenticacion, false) AS dobleautenticacion,
+        COALESCE(u.preferencias, '{}'::jsonb) AS preferencias,
         r.name AS rol, r.id AS rol_id
       FROM usuarios u
       JOIN roles r ON u.rol_id = r.id
       WHERE u.email = $1
     `, [email]);
+    
+    console.log('🔍 [LOGIN] Consulta SQL ejecutada, filas encontradas:', result.rows.length);
 
     if (result.rows.length === 0) {
       return res.status(401).json({ 
@@ -147,6 +162,18 @@ async function login(req, res) {
 
     const user = result.rows[0];
 
+    // 🔧 Normalización robusta
+    user.preferencias = asObject(user.preferencias);
+    user.dobleautenticacion = Boolean(user.dobleautenticacion);
+
+    console.log('🔍 [LOGIN DEBUG] Normalizado:', {
+      id: user.id,
+      dobleautenticacion: user.dobleautenticacion,
+      prefs_type: typeof user.preferencias,
+      has_twofa_node: !!user.preferencias?.twofa,
+      has_secret: !!user.preferencias?.twofa?.secret_base32
+    });
+
     // Verificar password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
@@ -155,14 +182,40 @@ async function login(req, res) {
       });
     }
 
-    // Generar token
+    // ✅ Ahora sí: decisión de 2FA
+    const twofaEnabled = user.dobleautenticacion;          // ya es boolean
+    const hasSecret    = !!(user.preferencias.twofa?.secret_base32);
+
+    console.log('🔐 [LOGIN] 2FA check:', { twofaEnabled, hasSecret });
+
+    if (twofaEnabled && hasSecret) {
+      console.log('🔐 [LOGIN] Usuario con 2FA activado, generando token pendiente...');
+      
+      const pending2faToken = generatePending2FAToken(user.id);
+      
+      return res.json({
+        message: 'Se requiere autenticación de dos factores',
+        pending2faToken,
+        user: {
+          id: user.id,
+          nombre: user.nombre,
+          apellido: user.apellido,
+          email: user.email,
+          rol: user.rol,
+          rol_id: user.rol_id
+        }
+      });
+    }
+
+    // Generar token normal (sin 2FA)
     const token = generateToken(user);
 
     console.log('✅ [LOGIN] Usuario autenticado:', {
       id: user.id,
       email: user.email,
       rol: user.rol,
-      rol_id: user.rol_id
+      rol_id: user.rol_id,
+      has2FA: false
     });
 
     res.json({

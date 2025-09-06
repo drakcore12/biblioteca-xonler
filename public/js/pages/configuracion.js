@@ -1,6 +1,7 @@
 // configuracion.js - Script modular para la página de configuración
 import { requireAuth, requireRole } from '/js/common/guard.js';
 import { mostrarAlerta } from '/services/user.services.js';
+import { init2FAUI } from '/services/twofa.services.js';
 
 // ===== VARIABLES GLOBALES =====
 let userSvc = null;
@@ -24,6 +25,9 @@ async function initPage() {
     setupEventListeners();
     await loadUserData();
     await loadUserPreferences();
+    
+    // Inicializar 2FA UI
+    init2FAUI();
 }
 
 // ===== CONFIGURACIÓN DE EVENTOS =====
@@ -397,15 +401,22 @@ function showFallbackAlert(type, message) {
 
 // ===== LOGOUT =====
 function logout() {
-    ['localStorage', 'sessionStorage'].forEach(storage => {
-        const st = window[storage];
-        st.removeItem('token');
-        st.removeItem('role');
-        st.removeItem('userName');
-        st.removeItem('userId');
+    // Usar la nueva función de logout limpia
+    import('/js/common/guard.js').then(module => {
+        if (module.doLogout) {
+            module.doLogout();
+        } else {
+            // Fallback si no está disponible
+            ['localStorage', 'sessionStorage'].forEach(storage => {
+                const st = window[storage];
+                st.removeItem('token');
+                st.removeItem('role');
+                st.removeItem('userName');
+                st.removeItem('userId');
+            });
+            window.location.replace('/pages/guest/login.html');
+        }
     });
-    
-    window.location.href = '/pages/guest/login.html';
 }
 
 // ===== EXPORTAR FUNCIONES =====

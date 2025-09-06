@@ -79,6 +79,9 @@
                     <a class="list-group-item list-group-item-action" id="preferencias-tab" data-bs-toggle="list" href="#preferencias" role="tab" aria-controls="preferencias" aria-selected="false">
                         <i class="bi bi-gear me-2"></i>Preferencias
                     </a>
+                    <a class="list-group-item list-group-item-action" id="seguridad-2fa-tab" data-bs-toggle="list" href="#seguridad-2fa" role="tab" aria-controls="seguridad-2fa" aria-selected="false">
+                        <i class="bi bi-shield-check me-2"></i>Autenticación 2FA
+                    </a>
                 </div>
             </div>
 
@@ -344,6 +347,153 @@
                                     </div>
                                     
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Autenticación 2FA -->
+                    <div class="tab-pane fade" id="seguridad-2fa" role="tabpanel" aria-labelledby="seguridad-2fa-tab">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    Autenticación de Dos Factores (2FA)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Estado actual de 2FA -->
+                                <div id="twofaStatus" class="mb-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <span>Cargando estado de 2FA...</span>
+                                    </div>
+                                </div>
+
+                                <!-- Configuración de 2FA -->
+                                <div id="twofaSetup" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>¿Qué es 2FA?</strong><br>
+                                        La autenticación de dos factores añade una capa extra de seguridad a tu cuenta. 
+                                        Necesitarás tu contraseña y un código generado por tu teléfono para iniciar sesión.
+                                    </div>
+
+                                    <div class="text-center mb-4">
+                                        <button class="btn btn-primary btn-lg" id="btnStart2FA">
+                                            <i class="bi bi-qr-code me-2"></i>
+                                            Configurar 2FA
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- QR Code y verificación -->
+                                <div id="twofaQR" style="display: none;">
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        <strong>Paso 1:</strong> Escanea el código QR con tu aplicación autenticadora (Google Authenticator, Authy, etc.)
+                                    </div>
+
+                                    <div class="text-center mb-4">
+                                        <div id="qrContainer" class="d-inline-block p-3 bg-white border rounded">
+                                            <img id="qrImage" src="" alt="QR Code para 2FA" class="img-fluid" style="max-width: 200px;">
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>Paso 2:</strong> Ingresa el código de 6 dígitos que aparece en tu aplicación
+                                    </div>
+
+                                    <form id="twofaVerifyForm">
+                                        <div class="row justify-content-center">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="twofaCode" class="form-label">Código de verificación</label>
+                                                    <input 
+                                                        type="text" 
+                                                        class="form-control form-control-lg text-center" 
+                                                        id="twofaCode" 
+                                                        maxlength="6" 
+                                                        placeholder="000000"
+                                                        autocomplete="one-time-code"
+                                                        style="letter-spacing: 0.5em; font-size: 1.5rem;"
+                                                    />
+                                                </div>
+                                                <div class="d-grid gap-2">
+                                                    <button type="button" class="btn btn-success" id="btnVerify2FA">
+                                                        <i class="bi bi-check-circle me-2"></i>
+                                                        Activar 2FA
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary" id="btnCancel2FA">
+                                                        <i class="bi bi-x-circle me-2"></i>
+                                                        Cancelar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- 2FA Activado -->
+                                <div id="twofaEnabled" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        <strong>2FA Activado</strong><br>
+                                        Tu cuenta está protegida con autenticación de dos factores.
+                                    </div>
+
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                                        <button class="btn btn-outline-danger" id="btnDisable2FA">
+                                            <i class="bi bi-shield-x me-2"></i>
+                                            Desactivar 2FA
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Modal para desactivar 2FA -->
+                                <div class="modal fade" id="disable2FAModal" tabindex="-1" aria-labelledby="disable2FAModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="disable2FAModalLabel">
+                                                    <i class="bi bi-shield-x me-2"></i>
+                                                    Desactivar 2FA
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="alert alert-warning">
+                                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                                    <strong>Advertencia:</strong> Desactivar 2FA reducirá la seguridad de tu cuenta.
+                                                </div>
+                                                <p>Para desactivar 2FA, ingresa el código de 6 dígitos de tu aplicación autenticadora:</p>
+                                                <form id="disable2FAForm">
+                                                    <div class="mb-3">
+                                                        <label for="disableTwofaCode" class="form-label">Código de verificación</label>
+                                                        <input 
+                                                            type="text" 
+                                                            class="form-control form-control-lg text-center" 
+                                                            id="disableTwofaCode" 
+                                                            maxlength="6" 
+                                                            placeholder="000000"
+                                                            autocomplete="one-time-code"
+                                                            style="letter-spacing: 0.5em; font-size: 1.5rem;"
+                                                        />
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-danger" id="btnConfirmDisable2FA">
+                                                    <i class="bi bi-shield-x me-2"></i>
+                                                    Desactivar 2FA
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

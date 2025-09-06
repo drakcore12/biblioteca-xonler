@@ -629,3 +629,20 @@ CREATE INDEX IF NOT EXISTS idx_prestamos_bl_activo ON public.prestamos (bibliote
 CREATE INDEX IF NOT EXISTS idx_prestamos_usuario ON public.prestamos (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_biblib_libro ON public.biblioteca_libros (libro_id);
 
+-- Índices para ordenamiento por popularidad
+CREATE INDEX IF NOT EXISTS idx_prestamos_bllibro_fecha ON public.prestamos (biblioteca_libro_id, fecha_prestamo);
+CREATE INDEX IF NOT EXISTS idx_bllibros_biblioteca ON public.biblioteca_libros (biblioteca_id);
+CREATE INDEX IF NOT EXISTS idx_bibliotecas_colegio ON public.bibliotecas (colegio_id);
+
+-- ===== 2FA (Two-Factor Authentication) =====
+-- Agregar columna para activar/desactivar 2FA
+ALTER TABLE public.usuarios
+ADD COLUMN IF NOT EXISTS dobleautenticacion boolean NOT NULL DEFAULT false;
+
+-- Asegurar que preferencias sea jsonb válido
+UPDATE public.usuarios SET preferencias = COALESCE(preferencias, '{}'::jsonb);
+
+-- Comentarios para documentación
+COMMENT ON COLUMN public.usuarios.dobleautenticacion IS 'Indica si el usuario tiene activada la autenticación de dos factores';
+COMMENT ON COLUMN public.usuarios.preferencias IS 'Configuraciones del usuario incluyendo twofa.secret_base32 para TOTP';
+

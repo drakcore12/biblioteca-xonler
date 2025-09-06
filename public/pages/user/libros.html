@@ -127,7 +127,7 @@
 
                     <div class="d-flex">
                         <select class="form-select me-2" id="sortBy" style="width: auto;">
-                            <option value="relevancia">Más populares</option>
+                            <option value="popularidad">Más populares</option>
                             <option value="recientes">Más recientes</option>
                             <option value="titulo">Título (A-Z)</option>
                             <option value="autor">Autor (A-Z)</option>
@@ -483,16 +483,21 @@
         }
         
         function logout() {
-            // Limpiar sesión
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
-            localStorage.removeItem('userName');
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('role');
-            sessionStorage.removeItem('userName');
-            
-            // Redirigir al login
-            window.location.href = '/pages/guest/login.html';
+            // Usar la nueva función de logout limpia
+            import('/js/common/guard.js').then(module => {
+                if (module.doLogout) {
+                    module.doLogout();
+                } else {
+                    // Fallback si no está disponible
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('role');
+                    localStorage.removeItem('userName');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('role');
+                    sessionStorage.removeItem('userName');
+                    window.location.replace('/pages/guest/login.html');
+                }
+            });
         }
         
         // Función showProfile eliminada - ahora redirige a la página de configuración

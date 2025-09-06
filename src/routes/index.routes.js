@@ -10,10 +10,12 @@ const bibliotecasRoutes = require('./bibliotecas.routes');
 const librosRoutes = require('./libros.routes');
 const bibliotecaLibrosRoutes = require('./biblioteca-libros.routes');
 const prestamosRoutes = require('./prestamos.routes');
+const twofaRoutes = require('./twofa.routes');
 
 // Definir prefijos para cada grupo de rutas
 router.use('/auth', authRoutes);
 router.use('/usuarios', usuariosRoutes);
+router.use('/usuarios', twofaRoutes); // 2FA usa el mismo prefijo que usuarios
 router.use('/roles', rolesRoutes);
 router.use('/colegios', colegiosRoutes);
 router.use('/bibliotecas', bibliotecasRoutes);
