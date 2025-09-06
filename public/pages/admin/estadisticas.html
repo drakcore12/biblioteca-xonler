@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Estadísticas - Xonler Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Xonler Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="libros.html">Libros</a></li>
+                    <li><a class="dropdown-item" href="prestamos.html">Préstamos</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4>Xonler Admin</h4>
+                        <p class="small">Panel de administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="libros.html">
+                                <i class="bi bi-journals me-2"></i> Gestión de Libros
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="prestamos.html">
+                                <i class="bi bi-arrow-left-right me-2"></i> Préstamos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Estadísticas de Biblioteca</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary" onclick="exportarEstadisticas()">
+                            <i class="bi bi-download me-2"></i>Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando estadísticas...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Resumen general -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Total Libros</h6>
+                                        <h3 id="total-libros">0</h3>
+                                    </div>
+                                    <i class="bi bi-journals fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Préstamos Activos</h6>
+                                        <h3 id="prestamos-activos">0</h3>
+                                    </div>
+                                    <i class="bi bi-arrow-left-right fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Total Préstamos</h6>
+                                        <h3 id="total-prestamos">0</h3>
+                                    </div>
+                                    <i class="bi bi-graph-up fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Usuarios Únicos</h6>
+                                        <h3 id="usuarios-unicos">0</h3>
+                                    </div>
+                                    <i class="bi bi-people fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos principales -->
+                <div class="row mb-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Préstamos por Mes</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="prestamosChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Distribución por Categorías</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="categoriasChart" width="300" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Libros más populares y usuarios más activos -->
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Libros Más Populares</h5>
+                            </div>
+                            <div class="card-body" id="libros-populares">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Usuarios Más Activos</h5>
+                            </div>
+                            <div class="card-body" id="usuarios-activos">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estadísticas detalladas -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Tendencia de Préstamos</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="tendenciaChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Estado de Préstamos</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="estadoPrestamosChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/admin-biblioteca.services.js"></script>
+    <script src="../../js/admin-functions.js"></script>
+    
+    <script>
+        // Variables globales
+        let prestamosChart = null;
+        let categoriasChart = null;
+        let tendenciaChart = null;
+        let estadoPrestamosChart = null;
+
+        // Función de logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userId');
+            window.location.replace('/pages/guest/login.html');
+        }
+
+        // Mostrar/ocultar loading
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+            try {
+                mostrarLoading(true);
+                
+                const stats = await adminBibliotecaService.obtenerEstadisticas();
+                
+                // Actualizar resumen general
+                actualizarResumenGeneral(stats.estadisticas);
+                
+                // Crear gráficos
+                crearGraficoPrestamos(stats.prestamos_mensuales || []);
+                crearGraficoCategorias(stats.libros_populares || []);
+                crearGraficoTendencia(stats.prestamos_mensuales || []);
+                crearGraficoEstadoPrestamos(stats.estadisticas);
+                
+                // Mostrar listas
+                mostrarLibrosPopulares(stats.libros_populares || []);
+                mostrarUsuariosActivos(stats.usuarios_activos || []);
+
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                mostrarError('Error cargando estadísticas: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Actualizar resumen general
+        function actualizarResumenGeneral(stats) {
+            document.getElementById('total-libros').textContent = stats.total_libros || 0;
+            document.getElementById('prestamos-activos').textContent = stats.prestamos_activos || 0;
+            document.getElementById('total-prestamos').textContent = stats.total_prestamos || 0;
+            document.getElementById('usuarios-unicos').textContent = stats.usuarios_unicos || 0;
+        }
+
+        // Crear gráfico de préstamos por mes
+        function crearGraficoPrestamos(datos) {
+            const ctx = document.getElementById('prestamosChart').getContext('2d');
+            
+            if (prestamosChart) {
+                prestamosChart.destroy();
+            }
+
+            const labels = datos.map(d => new Date(d.mes).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }));
+            const values = datos.map(d => d.cantidad);
+
+            prestamosChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Préstamos',
+                        data: values,
+                        borderColor: 'rgb(75, 192, 192)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de categorías
+        function crearGraficoCategorias(librosPopulares) {
+            const ctx = document.getElementById('categoriasChart').getContext('2d');
+            
+            if (categoriasChart) {
+                categoriasChart.destroy();
+            }
+
+            // Agrupar por categorías
+            const categorias = {};
+            librosPopulares.forEach(libro => {
+                categorias[libro.categoria] = (categorias[libro.categoria] || 0) + libro.total_prestamos;
+            });
+
+            const labels = Object.keys(categorias);
+            const values = Object.values(categorias);
+
+            categoriasChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Crear gráfico de tendencia
+        function crearGraficoTendencia(datos) {
+            const ctx = document.getElementById('tendenciaChart').getContext('2d');
+            
+            if (tendenciaChart) {
+                tendenciaChart.destroy();
+            }
+
+            const labels = datos.map(d => new Date(d.mes).toLocaleDateString('es-ES', { month: 'short' }));
+            const values = datos.map(d => d.cantidad);
+
+            tendenciaChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Préstamos',
+                        data: values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de estado de préstamos
+        function crearGraficoEstadoPrestamos(stats) {
+            const ctx = document.getElementById('estadoPrestamosChart').getContext('2d');
+            
+            if (estadoPrestamosChart) {
+                estadoPrestamosChart.destroy();
+            }
+
+            const activos = stats.prestamos_activos || 0;
+            const devueltos = (stats.total_prestamos || 0) - activos;
+
+            estadoPrestamosChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Activos', 'Devueltos'],
+                    datasets: [{
+                        data: [activos, devueltos],
+                        backgroundColor: ['#FF6384', '#36A2EB']
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        // Mostrar libros populares
+        function mostrarLibrosPopulares(libros) {
+            const container = document.getElementById('libros-populares');
+            
+            if (libros.length === 0) {
+                container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                return;
+            }
+
+            container.innerHTML = libros.map((libro, index) => `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-1">${index + 1}. ${libro.titulo}</h6>
+                        <small class="text-muted">${libro.autor} • ${libro.categoria}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary fs-6">${libro.total_prestamos}</span>
+                        <small class="d-block text-muted">préstamos</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Mostrar usuarios activos
+        function mostrarUsuariosActivos(usuarios) {
+            const container = document.getElementById('usuarios-activos');
+            
+            if (usuarios.length === 0) {
+                container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                return;
+            }
+
+            container.innerHTML = usuarios.map((usuario, index) => `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="mb-1">${index + 1}. ${usuario.nombre}</h6>
+                        <small class="text-muted">${usuario.email}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-success fs-6">${usuario.total_prestamos}</span>
+                        <small class="d-block text-muted">préstamos</small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Exportar estadísticas
+        function exportarEstadisticas() {
+            // Crear un objeto con las estadísticas actuales
+            const stats = {
+                totalLibros: document.getElementById('total-libros').textContent,
+                prestamosActivos: document.getElementById('prestamos-activos').textContent,
+                totalPrestamos: document.getElementById('total-prestamos').textContent,
+                usuariosUnicos: document.getElementById('usuarios-unicos').textContent,
+                fechaExportacion: new Date().toLocaleString('es-ES')
+            };
+
+            // Crear y descargar archivo JSON
+            const dataStr = JSON.stringify(stats, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `estadisticas-biblioteca-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Inicializar aplicación
+        async function inicializar() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+                
+                if (!token || role !== 'admin') {
+                    window.location.replace('/pages/guest/login.html');
+                    return;
+                }
+
+                await cargarEstadisticas();
+                
+            } catch (error) {
+                console.error('Error inicializando aplicación:', error);
+                mostrarError('Error inicializando la aplicación: ' + error.message);
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>

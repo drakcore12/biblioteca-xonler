@@ -11,6 +11,7 @@ const librosRoutes = require('./libros.routes');
 const bibliotecaLibrosRoutes = require('./biblioteca-libros.routes');
 const prestamosRoutes = require('./prestamos.routes');
 const twofaRoutes = require('./twofa.routes');
+const adminBibliotecaRoutes = require('./admin-biblioteca.routes');
 
 // Definir prefijos para cada grupo de rutas
 router.use('/auth', authRoutes);
@@ -22,6 +23,7 @@ router.use('/bibliotecas', bibliotecasRoutes);
 router.use('/libros', librosRoutes);
 router.use('/biblioteca-libros', bibliotecaLibrosRoutes);
 router.use('/prestamos', prestamosRoutes);
+router.use('/admin', adminBibliotecaRoutes);
 
 // Ruta de salud para verificar que el servidor esté funcionando
 router.get('/health', (req, res) => {
@@ -47,6 +49,7 @@ router.get('/', (req, res) => {
       libros: '/libros',
       'biblioteca-libros': '/biblioteca-libros',
       prestamos: '/prestamos',
+      admin: '/admin',
       health: '/health'
     },
     documentation: 'Consulta la documentación para más detalles'

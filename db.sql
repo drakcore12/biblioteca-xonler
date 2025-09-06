@@ -646,3 +646,23 @@ UPDATE public.usuarios SET preferencias = COALESCE(preferencias, '{}'::jsonb);
 COMMENT ON COLUMN public.usuarios.dobleautenticacion IS 'Indica si el usuario tiene activada la autenticación de dos factores';
 COMMENT ON COLUMN public.usuarios.preferencias IS 'Configuraciones del usuario incluyendo twofa.secret_base32 para TOTP';
 
+-- ===== TABLA PUENTE USUARIO-BIBLIOTECA =====
+-- Tabla puente (uno-a-uno hoy, expandible a uno-a-muchos mañana)
+CREATE TABLE public.usuario_biblioteca (
+  usuario_id     bigint NOT NULL REFERENCES public.usuarios(id) ON DELETE CASCADE,
+  biblioteca_id  bigint NOT NULL REFERENCES public.bibliotecas(id) ON DELETE CASCADE,
+  -- si de verdad solo será una biblioteca por admin, deja PK en usuario_id
+  PRIMARY KEY (usuario_id),
+  -- si mañana quisieras permitir varias, cambia a PRIMARY KEY (usuario_id, biblioteca_id)
+  UNIQUE (usuario_id)  -- garantiza una sola biblioteca por usuario
+);
+
+-- Índices útiles
+CREATE INDEX ix_usuario_biblioteca__usuario  ON public.usuario_biblioteca(usuario_id);
+CREATE INDEX ix_usuario_biblioteca__biblio   ON public.usuario_biblioteca(biblioteca_id);
+
+-- Comentarios para la nueva tabla
+COMMENT ON TABLE public.usuario_biblioteca IS 'Relación entre usuarios administradores y bibliotecas que gestionan';
+COMMENT ON COLUMN public.usuario_biblioteca.usuario_id IS 'ID del usuario administrador';
+COMMENT ON COLUMN public.usuario_biblioteca.biblioteca_id IS 'ID de la biblioteca asignada al administrador';
+

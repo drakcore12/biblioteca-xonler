@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Gestión de Préstamos - Xonler Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Xonler Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="libros.html">Libros</a></li>
+                    <li><a class="dropdown-item" href="estadisticas.html">Estadísticas</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4>Xonler Admin</h4>
+                        <p class="small">Panel de administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="libros.html">
+                                <i class="bi bi-journals me-2"></i> Gestión de Libros
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="prestamos.html">
+                                <i class="bi bi-arrow-left-right me-2"></i> Préstamos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Gestión de Préstamos</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-primary" onclick="mostrarModalNuevoPrestamo()">
+                            <i class="bi bi-plus-circle me-2"></i>Nuevo Préstamo
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando datos...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Estado</label>
+                                <select class="form-select" id="filtro-estado-prestamos">
+                                    <option value="todos">Todos</option>
+                                    <option value="activos">Activos</option>
+                                    <option value="devueltos">Devueltos</option>
+                                    <option value="vencidos">Vencidos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" class="form-control" id="filtro-busqueda-prestamos" placeholder="Usuario o libro">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-outline-primary w-100" onclick="filtrarPrestamos()">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resumen de préstamos -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Total</h6>
+                                        <h3 id="total-prestamos">0</h3>
+                                    </div>
+                                    <i class="bi bi-list-ul fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Activos</h6>
+                                        <h3 id="prestamos-activos">0</h3>
+                                    </div>
+                                    <i class="bi bi-check-circle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Vencidos</h6>
+                                        <h3 id="prestamos-vencidos">0</h3>
+                                    </div>
+                                    <i class="bi bi-exclamation-triangle fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">Devueltos</h6>
+                                        <h3 id="prestamos-devueltos">0</h3>
+                                    </div>
+                                    <i class="bi bi-arrow-return-left fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de préstamos -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="prestamos-table">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Libro</th>
+                                        <th>Fecha préstamo</th>
+                                        <th>Fecha devolución</th>
+                                        <th>Estado</th>
+                                        <th>Días transcurridos</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de préstamos">
+                            <ul class="pagination justify-content-center" id="pagination-prestamos">
+                                <!-- Se llena dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para nuevo préstamo -->
+    <div class="modal fade" id="modalNuevoPrestamo" tabindex="-1" aria-labelledby="modalNuevoPrestamoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuevoPrestamoLabel">Nuevo Préstamo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formNuevoPrestamo">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Usuario *</label>
+                                    <input type="text" class="form-control" id="usuario-prestamo" placeholder="Buscar usuario por email" required>
+                                    <div class="form-text">Escribe el email del usuario</div>
+                                    <div id="resultados-usuario" class="mt-2"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Libro *</label>
+                                    <input type="text" class="form-control" id="libro-prestamo" placeholder="Buscar libro" required>
+                                    <div class="form-text">Escribe el título del libro</div>
+                                    <div id="resultados-libro" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de préstamo</label>
+                                    <input type="date" class="form-control" id="fecha-prestamo" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Fecha de devolución estimada</label>
+                                    <input type="date" class="form-control" id="fecha-devolucion-estimada" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="crearPrestamo()">Crear Préstamo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar préstamo -->
+    <div class="modal fade" id="modalEditarPrestamo" tabindex="-1" aria-labelledby="modalEditarPrestamoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarPrestamoLabel">Editar Préstamo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarPrestamo">
+                        <input type="hidden" id="prestamo-id-edit">
+                        <div class="mb-3">
+                            <label class="form-label">Usuario</label>
+                            <input type="text" class="form-control" id="usuario-edit" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Libro</label>
+                            <input type="text" class="form-control" id="libro-edit" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de préstamo</label>
+                            <input type="date" class="form-control" id="fecha-prestamo-edit" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha de devolución</label>
+                            <input type="date" class="form-control" id="fecha-devolucion-edit">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="marcar-devuelto">
+                                <label class="form-check-label" for="marcar-devuelto">
+                                    Marcar como devuelto
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarEdicionPrestamo()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmacionLabel">Confirmar Acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="mensaje-confirmacion"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-accion">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/admin-biblioteca.services.js"></script>
+    <script src="../../js/admin-functions.js"></script>
+    
+    <script>
+        // Variables globales - prestamosPaginacion ya está declarada en admin-functions.js
+        let usuarioSeleccionado = null;
+        let libroSeleccionado = null;
+
+        // Función de logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userId');
+            window.location.replace('/pages/guest/login.html');
+        }
+
+        // Mostrar/ocultar loading
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        // Cargar préstamos
+        async function cargarPrestamos(filtros = {}) {
+            try {
+                mostrarLoading(true);
+                
+                const response = await adminBibliotecaService.obtenerPrestamos({
+                    ...filtros,
+                    limit: prestamosPaginacion.limit,
+                    offset: (prestamosPaginacion.current - 1) * prestamosPaginacion.limit
+                });
+
+                prestamosPaginacion.total = response.paginacion.total;
+                mostrarTablaPrestamos(response.data);
+                mostrarPaginacionPrestamos();
+                actualizarResumen(response.data);
+
+            } catch (error) {
+                console.error('Error cargando préstamos:', error);
+                mostrarError('Error cargando préstamos: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar tabla de préstamos
+        function mostrarTablaPrestamos(prestamos) {
+            const tbody = document.querySelector('#prestamos-table tbody');
+            
+            if (prestamos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay préstamos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = prestamos.map(prestamo => {
+                const estado = adminBibliotecaService.obtenerEstadoPrestamo(prestamo);
+                const diasTranscurridos = calcularDiasTranscurridos(prestamo.fecha_prestamo);
+                
+                return `
+                    <tr>
+                        <td>${prestamo.usuario_nombre}</td>
+                        <td>${prestamo.libro_titulo}</td>
+                        <td>${adminBibliotecaService.formatearFecha(prestamo.fecha_prestamo)}</td>
+                        <td>${adminBibliotecaService.formatearFecha(prestamo.fecha_devolucion)}</td>
+                        <td><span class="badge bg-${estado.clase}">${estado.texto}</span></td>
+                        <td>${diasTranscurridos} días</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editarPrestamo(${prestamo.id})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                ${!prestamo.fecha_devolucion ? 
+                                    `<button class="btn btn-sm btn-success" onclick="marcarDevuelto(${prestamo.id})">
+                                        <i class="bi bi-check-circle"></i>
+                                    </button>` : 
+                                    '<span class="text-muted">Devuelto</span>'
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Calcular días transcurridos
+        function calcularDiasTranscurridos(fechaPrestamo) {
+            const fecha = new Date(fechaPrestamo);
+            const hoy = new Date();
+            const diffTime = Math.abs(hoy - fecha);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        // Actualizar resumen
+        function actualizarResumen(prestamos) {
+            const total = prestamos.length;
+            const activos = prestamos.filter(p => !p.fecha_devolucion).length;
+            const vencidos = prestamos.filter(p => {
+                if (p.fecha_devolucion) return false;
+                const dias = calcularDiasTranscurridos(p.fecha_prestamo);
+                return dias > 15;
+            }).length;
+            const devueltos = prestamos.filter(p => p.fecha_devolucion).length;
+
+            document.getElementById('total-prestamos').textContent = total;
+            document.getElementById('prestamos-activos').textContent = activos;
+            document.getElementById('prestamos-vencidos').textContent = vencidos;
+            document.getElementById('prestamos-devueltos').textContent = devueltos;
+        }
+
+        // Mostrar paginación de préstamos
+        function mostrarPaginacionPrestamos() {
+            const container = document.getElementById('pagination-prestamos');
+            const totalPages = Math.ceil(prestamosPaginacion.total / prestamosPaginacion.limit);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let pagination = '<li class="page-item' + (prestamosPaginacion.current === 1 ? ' disabled' : '') + '">';
+            pagination += '<a class="page-link" href="#" onclick="cambiarPaginaPrestamos(' + (prestamosPaginacion.current - 1) + ')">Anterior</a></li>';
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === prestamosPaginacion.current) {
+                    pagination += '<li class="page-item active"><span class="page-link">' + i + '</span></li>';
+                } else {
+                    pagination += '<li class="page-item"><a class="page-link" href="#" onclick="cambiarPaginaPrestamos(' + i + ')">' + i + '</a></li>';
+                }
+            }
+
+            pagination += '<li class="page-item' + (prestamosPaginacion.current === totalPages ? ' disabled' : '') + '">';
+            pagination += '<a class="page-link" href="#" onclick="cambiarPaginaPrestamos(' + (prestamosPaginacion.current + 1) + ')">Siguiente</a></li>';
+
+            container.innerHTML = pagination;
+        }
+
+        // Cambiar página de préstamos
+        function cambiarPaginaPrestamos(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(prestamosPaginacion.total / prestamosPaginacion.limit)) return;
+            prestamosPaginacion.current = pagina;
+            cargarPrestamos();
+        }
+
+        // Filtrar préstamos
+        function filtrarPrestamos() {
+            const filtros = {
+                estado: document.getElementById('filtro-estado-prestamos').value
+            };
+            prestamosPaginacion.current = 1;
+            cargarPrestamos(filtros);
+        }
+
+        // Mostrar modal para nuevo préstamo
+        function mostrarModalNuevoPrestamo() {
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevoPrestamo'));
+            modal.show();
+            
+            // Limpiar formulario
+            document.getElementById('formNuevoPrestamo').reset();
+            document.getElementById('resultados-usuario').innerHTML = '';
+            document.getElementById('resultados-libro').innerHTML = '';
+            usuarioSeleccionado = null;
+            libroSeleccionado = null;
+            
+            // Establecer fecha actual
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha-prestamo').value = hoy;
+            
+            // Establecer fecha de devolución estimada (15 días)
+            const fechaDevolucion = new Date();
+            fechaDevolucion.setDate(fechaDevolucion.getDate() + 15);
+            document.getElementById('fecha-devolucion-estimada').value = fechaDevolucion.toISOString().split('T')[0];
+            
+            // Configurar búsquedas
+            document.getElementById('usuario-prestamo').addEventListener('input', buscarUsuarios);
+            document.getElementById('libro-prestamo').addEventListener('input', buscarLibros);
+        }
+
+        // Buscar usuarios
+        async function buscarUsuarios() {
+            const query = document.getElementById('usuario-prestamo').value.trim();
+            const container = document.getElementById('resultados-usuario');
+            
+            if (query.length < 2) {
+                container.innerHTML = '';
+                return;
+            }
+
+            try {
+                // Aquí deberías implementar una búsqueda de usuarios
+                // Por ahora, simulamos con datos estáticos
+                container.innerHTML = '<p class="text-muted">Búsqueda de usuarios no implementada</p>';
+            } catch (error) {
+                console.error('Error buscando usuarios:', error);
+                container.innerHTML = '<p class="text-danger">Error buscando usuarios</p>';
+            }
+        }
+
+        // Buscar libros
+        async function buscarLibros() {
+            const query = document.getElementById('libro-prestamo').value.trim();
+            const container = document.getElementById('resultados-libro');
+            
+            if (query.length < 2) {
+                container.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await adminBibliotecaService.obtenerLibros({ q: query, limit: 5 });
+                
+                if (response.data.length === 0) {
+                    container.innerHTML = '<p class="text-muted">No se encontraron libros</p>';
+                    return;
+                }
+
+                container.innerHTML = response.data.map(libro => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1">${libro.titulo}</h6>
+                                    <p class="mb-1 text-muted">${libro.autor}</p>
+                                    <small class="text-muted">${libro.categoria}</small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-primary btn-sm" onclick="seleccionarLibro(${libro.libro_id}, '${libro.titulo}')">
+                                        <i class="bi bi-check-circle me-1"></i>Seleccionar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error buscando libros:', error);
+                container.innerHTML = '<p class="text-danger">Error buscando libros</p>';
+            }
+        }
+
+        // Seleccionar libro
+        function seleccionarLibro(libroId, titulo) {
+            libroSeleccionado = { id: libroId, titulo: titulo };
+            document.getElementById('libro-prestamo').value = titulo;
+            document.getElementById('resultados-libro').innerHTML = '';
+        }
+
+        // Crear préstamo
+        async function crearPrestamo() {
+            try {
+                if (!libroSeleccionado) {
+                    alert('Por favor selecciona un libro');
+                    return;
+                }
+
+                // Aquí implementarías la creación del préstamo
+                // Por ahora, simulamos
+                alert('Funcionalidad de creación de préstamos pendiente de implementar');
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoPrestamo'));
+                modal.hide();
+                
+                cargarPrestamos();
+                
+            } catch (error) {
+                console.error('Error creando préstamo:', error);
+                alert('Error creando préstamo: ' + error.message);
+            }
+        }
+
+        // Editar préstamo
+        async function editarPrestamo(prestamoId) {
+            try {
+                // Obtener datos del préstamo
+                const response = await adminBibliotecaService.obtenerPrestamos({ limit: 1000 });
+                const prestamo = response.data.find(p => p.id === prestamoId);
+                
+                if (!prestamo) {
+                    alert('Préstamo no encontrado');
+                    return;
+                }
+
+                // Llenar formulario
+                document.getElementById('prestamo-id-edit').value = prestamo.id;
+                document.getElementById('usuario-edit').value = prestamo.usuario_nombre;
+                document.getElementById('libro-edit').value = prestamo.libro_titulo;
+                document.getElementById('fecha-prestamo-edit').value = prestamo.fecha_prestamo;
+                document.getElementById('fecha-devolucion-edit').value = prestamo.fecha_devolucion || '';
+                document.getElementById('marcar-devuelto').checked = !!prestamo.fecha_devolucion;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalEditarPrestamo'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Error cargando préstamo:', error);
+                alert('Error cargando información del préstamo: ' + error.message);
+            }
+        }
+
+        // Guardar edición de préstamo
+        async function guardarEdicionPrestamo() {
+            try {
+                const prestamoId = document.getElementById('prestamo-id-edit').value;
+                const marcadoDevuelto = document.getElementById('marcar-devuelto').checked;
+                const fechaDevolucion = document.getElementById('fecha-devolucion-edit').value;
+
+                if (marcadoDevuelto && !fechaDevolucion) {
+                    alert('Por favor especifica la fecha de devolución');
+                    return;
+                }
+
+                if (marcadoDevuelto) {
+                    await adminBibliotecaService.marcarPrestamoDevuelto(prestamoId);
+                }
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarPrestamo'));
+                modal.hide();
+                
+                cargarPrestamos();
+                alert('Préstamo actualizado exitosamente');
+                
+            } catch (error) {
+                console.error('Error actualizando préstamo:', error);
+                alert('Error actualizando préstamo: ' + error.message);
+            }
+        }
+
+        // Marcar préstamo como devuelto
+        async function marcarDevuelto(prestamoId) {
+            try {
+                await adminBibliotecaService.marcarPrestamoDevuelto(prestamoId);
+                cargarPrestamos();
+                alert('Préstamo marcado como devuelto exitosamente');
+                
+            } catch (error) {
+                console.error('Error marcando préstamo como devuelto:', error);
+                alert('Error marcando préstamo como devuelto: ' + error.message);
+            }
+        }
+
+        // Inicializar aplicación
+        async function inicializar() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+                
+                if (!token || role !== 'admin') {
+                    window.location.replace('/pages/guest/login.html');
+                    return;
+                }
+
+                await cargarPrestamos();
+                
+            } catch (error) {
+                console.error('Error inicializando aplicación:', error);
+                mostrarError('Error inicializando la aplicación: ' + error.message);
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>

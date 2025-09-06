@@ -1,0 +1,24 @@
+// Script para limpiar la sesión del usuario y forzar re-login
+console.log('🔧 Para solucionar el problema de permisos:');
+console.log('');
+console.log('1. Abre las herramientas de desarrollador (F12)');
+console.log('2. Ve a la pestaña "Application" o "Aplicación"');
+console.log('3. En el panel izquierdo, busca "Local Storage" o "Almacenamiento local"');
+console.log('4. Selecciona http://localhost:3000');
+console.log('5. Elimina las siguientes claves:');
+console.log('   - token');
+console.log('   - role');
+console.log('   - userName');
+console.log('   - userId');
+console.log('');
+console.log('6. También elimina las mismas claves de "Session Storage"');
+console.log('7. Recarga la página (F5)');
+console.log('8. Inicia sesión nuevamente con luiseduardo13@gmail.com');
+console.log('');
+console.log('✅ Después de esto, tendrás acceso completo al panel de administración');
+console.log('');
+console.log('Alternativamente, puedes ejecutar este código en la consola del navegador:');
+console.log('');
+console.log('localStorage.clear();');
+console.log('sessionStorage.clear();');
+console.log('location.reload();');

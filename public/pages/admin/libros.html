@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Gestión de Libros - Xonler Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Xonler Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="prestamos.html">Préstamos</a></li>
+                    <li><a class="dropdown-item" href="estadisticas.html">Estadísticas</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4>Xonler Admin</h4>
+                        <p class="small">Panel de administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="libros.html">
+                                <i class="bi bi-journals me-2"></i> Gestión de Libros
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="prestamos.html">
+                                <i class="bi bi-arrow-left-right me-2"></i> Préstamos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Gestión de Libros</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-primary" onclick="mostrarModalAgregarLibro()">
+                            <i class="bi bi-plus-circle me-2"></i>Agregar Libro
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando datos...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Filtros -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" class="form-control" id="filtro-busqueda" placeholder="Título, autor o ISBN">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Categoría</label>
+                                <select class="form-select" id="filtro-categoria">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Disponibilidad</label>
+                                <select class="form-select" id="filtro-disponibilidad">
+                                    <option value="">Todos</option>
+                                    <option value="disponibles">Disponibles</option>
+                                    <option value="prestados">Prestados</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-outline-primary w-100" onclick="filtrarLibros()">
+                                    <i class="bi bi-search"></i> Filtrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de libros -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="libros-table">
+                                <thead>
+                                    <tr>
+                                        <th>Libro</th>
+                                        <th>Autor</th>
+                                        <th>Categoría</th>
+                                        <th>Disponibilidad</th>
+                                        <th>Préstamos</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de libros">
+                            <ul class="pagination justify-content-center" id="pagination-libros">
+                                <!-- Se llena dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal para agregar libro -->
+    <div class="modal fade" id="modalAgregarLibro" tabindex="-1" aria-labelledby="modalAgregarLibroLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarLibroLabel">Agregar Nuevo Libro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAgregarLibro">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Título *</label>
+                                            <input type="text" class="form-control" id="titulo-add" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Autor *</label>
+                                            <input type="text" class="form-control" id="autor-add" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">ISBN</label>
+                                            <input type="text" class="form-control" id="isbn-add" placeholder="978-0-123456-78-9">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Categoría *</label>
+                                            <select class="form-select" id="categoria-add" required>
+                                                <option value="">Seleccionar categoría</option>
+                                                <option value="Ficción">Ficción</option>
+                                                <option value="Literatura">Literatura</option>
+                                                <option value="Historia">Historia</option>
+                                                <option value="Ciencia">Ciencia</option>
+                                                <option value="Filosofía">Filosofía</option>
+                                                <option value="Biografía">Biografía</option>
+                                                <option value="Tecnología">Tecnología</option>
+                                                <option value="Arte">Arte</option>
+                                                <option value="Educación">Educación</option>
+                                                <option value="Otros">Otros</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Editorial</label>
+                                            <input type="text" class="form-control" id="editorial-add">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Año de Publicación</label>
+                                            <input type="number" class="form-control" id="ano-publicacion-add" min="1000" max="2024">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Número de Páginas</label>
+                                            <input type="number" class="form-control" id="paginas-add" min="1">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Idioma</label>
+                                            <select class="form-select" id="idioma-add">
+                                                <option value="Español">Español</option>
+                                                <option value="Inglés">Inglés</option>
+                                                <option value="Francés">Francés</option>
+                                                <option value="Alemán">Alemán</option>
+                                                <option value="Italiano">Italiano</option>
+                                                <option value="Portugués">Portugués</option>
+                                                <option value="Otro">Otro</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="descripcion-add" rows="4" placeholder="Sinopsis o descripción del libro"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">URL de Imagen</label>
+                                    <input type="url" class="form-control" id="imagen-url-add" placeholder="https://ejemplo.com/imagen.jpg">
+                                    <div class="form-text">URL de la imagen de portada del libro</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Vista Previa</h6>
+                                    </div>
+                                    <div class="card-body text-center">
+                                        <img id="preview-imagen" src="/assets/images/libro-placeholder.jpg" 
+                                             class="img-fluid mb-3" style="max-height: 200px; object-fit: cover;">
+                                        <h6 id="preview-titulo" class="card-title">Título del libro</h6>
+                                        <p id="preview-autor" class="card-text text-muted">Autor</p>
+                                        <span id="preview-categoria" class="badge bg-secondary">Categoría</span>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="disponibilidad-add" checked>
+                                        <label class="form-check-label" for="disponibilidad-add">
+                                            Disponible para préstamo
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="agregar-a-biblioteca-add" checked>
+                                        <label class="form-check-label" for="agregar-a-biblioteca-add">
+                                            Agregar a mi biblioteca
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarNuevoLibro()">
+                        <i class="bi bi-plus-circle me-2"></i>Agregar Libro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar libro -->
+    <div class="modal fade" id="modalEditarLibro" tabindex="-1" aria-labelledby="modalEditarLibroLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarLibroLabel">Editar Libro</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditarLibro">
+                        <input type="hidden" id="libro-id-edit">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Título *</label>
+                                    <input type="text" class="form-control" id="titulo-edit" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Autor *</label>
+                                    <input type="text" class="form-control" id="autor-edit" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">ISBN</label>
+                                    <input type="text" class="form-control" id="isbn-edit">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Categoría</label>
+                                    <select class="form-select" id="categoria-edit">
+                                        <option value="Ficción">Ficción</option>
+                                        <option value="Literatura">Literatura</option>
+                                        <option value="Historia">Historia</option>
+                                        <option value="Ciencia">Ciencia</option>
+                                        <option value="Filosofía">Filosofía</option>
+                                        <option value="Otros">Otros</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion-edit" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">URL de Imagen</label>
+                            <input type="url" class="form-control" id="imagen-url-edit">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="disponibilidad-edit">
+                                <label class="form-check-label" for="disponibilidad-edit">
+                                    Disponible para préstamo
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarEdicionLibro()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de confirmación -->
+    <div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalConfirmacionLabel">Confirmar Acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="mensaje-confirmacion"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="btn-confirmar-accion">Confirmar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/admin-biblioteca.services.js"></script>
+    <script src="../../js/admin-functions.js"></script>
+    
+    <script>
+        // Variables globales - librosPaginacion ya está declarada en admin-functions.js
+
+        // Función de logout
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userId');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userId');
+            window.location.replace('/pages/guest/login.html');
+        }
+
+        // Mostrar/ocultar loading
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        // Cargar libros
+        async function cargarLibros(filtros = {}) {
+            try {
+                mostrarLoading(true);
+                
+                console.log('🔍 [DEBUG] cargarLibros llamado con filtros:', filtros);
+                const response = await adminBibliotecaService.obtenerLibros({
+                    ...filtros,
+                    limit: librosPaginacion.limit,
+                    offset: (librosPaginacion.current - 1) * librosPaginacion.limit
+                });
+
+                console.log('🔍 [DEBUG] Respuesta del servidor:', response);
+                librosPaginacion.total = response.paginacion.total;
+                mostrarTablaLibros(response.data);
+                mostrarPaginacionLibros();
+
+            } catch (error) {
+                console.error('Error cargando libros:', error);
+                mostrarError('Error cargando libros: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar tabla de libros
+        function mostrarTablaLibros(libros) {
+            console.log('🔍 [DEBUG] mostrarTablaLibros llamado con:', libros);
+            const tbody = document.querySelector('#libros-table tbody');
+            
+            if (!libros || libros.length === 0) {
+                console.log('🔍 [DEBUG] No hay libros, mostrando mensaje vacío');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay libros en tu biblioteca</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = libros.map(libro => `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img src="${libro.imagen_url || '/assets/images/libro-placeholder.jpg'}" 
+                                 class="me-3" style="width: 40px; height: 60px; object-fit: cover;">
+                            <div>
+                                <h6 class="mb-0">${libro.titulo}</h6>
+                                <small class="text-muted">${libro.isbn || 'Sin ISBN'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${libro.autor}</td>
+                    <td><span class="badge bg-secondary">${libro.categoria}</span></td>
+                    <td>
+                        <span class="badge bg-${libro.disponible ? 'success' : 'warning'}">
+                            ${libro.disponible ? 'Disponible' : 'Prestado'}
+                        </span>
+                    </td>
+                    <td>${libro.total_prestamos}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editarLibro(${libro.libro_id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmarRemoverLibro(${libro.biblioteca_libro_id}, '${libro.titulo}')">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Mostrar paginación de libros
+        function mostrarPaginacionLibros() {
+            const container = document.getElementById('pagination-libros');
+            const totalPages = Math.ceil(librosPaginacion.total / librosPaginacion.limit);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let pagination = '<li class="page-item' + (librosPaginacion.current === 1 ? ' disabled' : '') + '">';
+            pagination += '<a class="page-link" href="#" onclick="cambiarPaginaLibros(' + (librosPaginacion.current - 1) + ')">Anterior</a></li>';
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === librosPaginacion.current) {
+                    pagination += '<li class="page-item active"><span class="page-link">' + i + '</span></li>';
+                } else {
+                    pagination += '<li class="page-item"><a class="page-link" href="#" onclick="cambiarPaginaLibros(' + i + ')">' + i + '</a></li>';
+                }
+            }
+
+            pagination += '<li class="page-item' + (librosPaginacion.current === totalPages ? ' disabled' : '') + '">';
+            pagination += '<a class="page-link" href="#" onclick="cambiarPaginaLibros(' + (librosPaginacion.current + 1) + ')">Siguiente</a></li>';
+
+            container.innerHTML = pagination;
+        }
+
+        // Cambiar página de libros
+        function cambiarPaginaLibros(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(librosPaginacion.total / librosPaginacion.limit)) return;
+            librosPaginacion.current = pagina;
+            cargarLibros();
+        }
+
+        // Filtrar libros
+        function filtrarLibros() {
+            const filtros = {
+                q: document.getElementById('filtro-busqueda').value,
+                categoria: document.getElementById('filtro-categoria').value,
+                disponibilidad: document.getElementById('filtro-disponibilidad').value
+            };
+            librosPaginacion.current = 1;
+            cargarLibros(filtros);
+        }
+
+        // Mostrar modal para agregar libro
+        function mostrarModalAgregarLibro() {
+            const modal = new bootstrap.Modal(document.getElementById('modalAgregarLibro'));
+            modal.show();
+            
+            // Limpiar formulario
+            document.getElementById('formAgregarLibro').reset();
+            actualizarVistaPrevia();
+            
+            // Agregar event listeners para vista previa en tiempo real
+            document.getElementById('titulo-add').addEventListener('input', actualizarVistaPrevia);
+            document.getElementById('autor-add').addEventListener('input', actualizarVistaPrevia);
+            document.getElementById('categoria-add').addEventListener('change', actualizarVistaPrevia);
+            document.getElementById('imagen-url-add').addEventListener('input', actualizarVistaPrevia);
+        }
+
+        // Actualizar vista previa en tiempo real
+        function actualizarVistaPrevia() {
+            const titulo = document.getElementById('titulo-add').value || 'Título del libro';
+            const autor = document.getElementById('autor-add').value || 'Autor';
+            const categoria = document.getElementById('categoria-add').value || 'Categoría';
+            const imagenUrl = document.getElementById('imagen-url-add').value;
+            
+            document.getElementById('preview-titulo').textContent = titulo;
+            document.getElementById('preview-autor').textContent = autor;
+            document.getElementById('preview-categoria').textContent = categoria;
+            
+            if (imagenUrl) {
+                document.getElementById('preview-imagen').src = imagenUrl;
+            } else {
+                document.getElementById('preview-imagen').src = '/assets/images/libro-placeholder.jpg';
+            }
+        }
+
+        // Guardar nuevo libro
+        async function guardarNuevoLibro() {
+            try {
+                // Validar campos requeridos
+                const titulo = document.getElementById('titulo-add').value.trim();
+                const autor = document.getElementById('autor-add').value.trim();
+                const categoria = document.getElementById('categoria-add').value;
+                
+                if (!titulo || !autor || !categoria) {
+                    alert('Por favor completa todos los campos requeridos (*)');
+                    return;
+                }
+                
+                // Recopilar datos del formulario
+                const datosLibro = {
+                    titulo: titulo,
+                    autor: autor,
+                    isbn: document.getElementById('isbn-add').value.trim(),
+                    categoria: categoria,
+                    editorial: document.getElementById('editorial-add').value.trim(),
+                    ano_publicacion: document.getElementById('ano-publicacion-add').value ? parseInt(document.getElementById('ano-publicacion-add').value) : null,
+                    paginas: document.getElementById('paginas-add').value ? parseInt(document.getElementById('paginas-add').value) : null,
+                    idioma: document.getElementById('idioma-add').value,
+                    descripcion: document.getElementById('descripcion-add').value.trim(),
+                    imagen_url: document.getElementById('imagen-url-add').value.trim(),
+                    disponibilidad: document.getElementById('disponibilidad-add').checked,
+                    agregar_a_biblioteca: document.getElementById('agregar-a-biblioteca-add').checked
+                };
+                
+                // Crear el libro
+                const response = await adminBibliotecaService.crearLibro(datosLibro);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarLibro'));
+                modal.hide();
+                
+                cargarLibros();
+                alert('Libro creado exitosamente');
+                
+            } catch (error) {
+                console.error('Error creando libro:', error);
+                alert('Error creando libro: ' + error.message);
+            }
+        }
+
+        // Editar libro
+        async function editarLibro(libroId) {
+            try {
+                const response = await adminBibliotecaService.obtenerTodosLosLibros({ limit: 1000 });
+                const libro = response.data.find(l => l.id === libroId);
+                
+                if (!libro) {
+                    alert('Libro no encontrado');
+                    return;
+                }
+
+                // Llenar formulario
+                document.getElementById('libro-id-edit').value = libro.id;
+                document.getElementById('titulo-edit').value = libro.titulo;
+                document.getElementById('autor-edit').value = libro.autor;
+                document.getElementById('isbn-edit').value = libro.isbn || '';
+                document.getElementById('categoria-edit').value = libro.categoria;
+                document.getElementById('descripcion-edit').value = libro.descripcion || '';
+                document.getElementById('imagen-url-edit').value = libro.imagen_url || '';
+                document.getElementById('disponibilidad-edit').checked = libro.disponibilidad;
+
+                const modal = new bootstrap.Modal(document.getElementById('modalEditarLibro'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Error cargando libro:', error);
+                alert('Error cargando información del libro: ' + error.message);
+            }
+        }
+
+        // Guardar edición de libro
+        async function guardarEdicionLibro() {
+            try {
+                const libroId = document.getElementById('libro-id-edit').value;
+                const datos = {
+                    titulo: document.getElementById('titulo-edit').value,
+                    autor: document.getElementById('autor-edit').value,
+                    isbn: document.getElementById('isbn-edit').value,
+                    categoria: document.getElementById('categoria-edit').value,
+                    descripcion: document.getElementById('descripcion-edit').value,
+                    imagen_url: document.getElementById('imagen-url-edit').value,
+                    disponibilidad: document.getElementById('disponibilidad-edit').checked
+                };
+
+                await adminBibliotecaService.actualizarLibro(libroId, datos);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalEditarLibro'));
+                modal.hide();
+                
+                cargarLibros();
+                alert('Libro actualizado exitosamente');
+                
+            } catch (error) {
+                console.error('Error actualizando libro:', error);
+                alert('Error actualizando libro: ' + error.message);
+            }
+        }
+
+        // Confirmar remover libro
+        function confirmarRemoverLibro(bibliotecaLibroId, titulo) {
+            document.getElementById('mensaje-confirmacion').textContent = 
+                `¿Estás seguro de que quieres remover "${titulo}" de tu biblioteca?`;
+            
+            document.getElementById('btn-confirmar-accion').onclick = () => removerLibroDeBiblioteca(bibliotecaLibroId);
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+            modal.show();
+        }
+
+        // Remover libro de la biblioteca
+        async function removerLibroDeBiblioteca(bibliotecaLibroId) {
+            try {
+                await adminBibliotecaService.removerLibro(bibliotecaLibroId);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmacion'));
+                modal.hide();
+                
+                cargarLibros();
+                alert('Libro removido exitosamente de la biblioteca');
+                
+            } catch (error) {
+                console.error('Error removiendo libro:', error);
+                alert('Error removiendo libro: ' + error.message);
+            }
+        }
+
+        // Cargar categorías para filtros
+        async function cargarCategorias() {
+            try {
+                const categorias = await adminBibliotecaService.obtenerCategorias();
+                const select = document.getElementById('filtro-categoria');
+                
+                select.innerHTML = '<option value="">Todas las categorías</option>' +
+                    categorias.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            } catch (error) {
+                console.error('Error cargando categorías:', error);
+            }
+        }
+
+        // Inicializar aplicación
+        async function inicializar() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+                
+                if (!token || role !== 'admin') {
+                    window.location.replace('/pages/guest/login.html');
+                    return;
+                }
+
+                await cargarCategorias();
+                await cargarLibros();
+                
+            } catch (error) {
+                console.error('Error inicializando aplicación:', error);
+                mostrarError('Error inicializando la aplicación: ' + error.message);
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', inicializar);
+    </script>
+</body>
+</html>

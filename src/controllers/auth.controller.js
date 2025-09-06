@@ -16,7 +16,7 @@ function generateToken(user) {
     { 
       id: user.id, 
       email: user.email, 
-      rol: user.rol,
+      role: user.rol,  // Changed from 'rol' to 'role' to match middleware
       rol_id: user.rol_id 
     },
     process.env.JWT_SECRET,

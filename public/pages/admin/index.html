@@ -6,6 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../../css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>Panel Administrativo - Xonler</title>
 </head>
 <body>
@@ -42,38 +43,23 @@
                     <hr class="text-white">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link text-white active" href="index.html">
+                            <a class="nav-link text-white active" href="#" onclick="mostrarSeccion('dashboard')">
                                 <i class="bi bi-speedometer2 me-2"></i> Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
-                                <i class="bi bi-building me-2"></i> Colegios
+                            <a class="nav-link text-white" href="libros.html">
+                                <i class="bi bi-journals me-2"></i> Gestión de Libros
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
-                                <i class="bi bi-book me-2"></i> Bibliotecas
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
-                                <i class="bi bi-journals me-2"></i> Libros
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
+                            <a class="nav-link text-white" href="prestamos.html">
                                 <i class="bi bi-arrow-left-right me-2"></i> Préstamos
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
-                                <i class="bi bi-people me-2"></i> Usuarios
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white" href="#" onclick="alert('Funcionalidad en desarrollo')">
-                                <i class="bi bi-graph-up me-2"></i> Reportes
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas
                             </a>
                         </li>
                     </ul>
@@ -88,16 +74,16 @@
 
             <!-- Contenido principal -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Dashboard</h1>
+                    <h1 class="h2" id="page-title">Dashboard</h1>
                     <div class="btn-toolbar mb-2 mb-md-0 d-none d-md-flex">
                         <div class="dropdown">
                             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
-                                <i class="bi bi-person-circle me-1"></i> Admin
+                                <i class="bi bi-person-circle me-1"></i> <span id="admin-name">Admin</span>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                                <li><a class="dropdown-item" href="#">Perfil</a></li>
-                                <li><a class="dropdown-item" href="#">Configuración</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="mostrarSeccion('biblioteca')">Mi Biblioteca</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
                             </ul>
@@ -105,68 +91,34 @@
                     </div>
                 </div>
 
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando datos...</p>
+                                    </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Session fix message -->
+                <div id="session-fix-message" class="alert alert-warning" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Problema de permisos detectado:</strong> Tu sesión necesita ser actualizada. 
+                    <button class="btn btn-sm btn-warning ms-2" onclick="forceLogout()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Sesión
+                    </button>
+                </div>
+
+                <!-- DASHBOARD SECTION -->
+                <div id="dashboard-section" class="content-section">
                 <!-- Tarjetas de estadísticas -->
-                <div class="row mb-4">
-                    <div class="col-sm-6 col-md-3 mb-3">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="card-title">Total Libros</h5>
-                                        <h2>458</h2>
-                                    </div>
-                                    <div class="text-primary">
-                                        <i class="bi bi-journals fs-1"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 mb-3">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="card-title">Bibliotecas</h5>
-                                        <h2>12</h2>
-                                    </div>
-                                    <div class="text-success">
-                                        <i class="bi bi-book fs-1"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 mb-3">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="card-title">Préstamos</h5>
-                                        <h2>87</h2>
-                                    </div>
-                                    <div class="text-warning">
-                                        <i class="bi bi-arrow-left-right fs-1"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-md-3 mb-3">
-                        <div class="card border-0 shadow-sm h-100">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <h5 class="card-title">Usuarios</h5>
-                                        <h2>243</h2>
-                                    </div>
-                                    <div class="text-info">
-                                        <i class="bi bi-people fs-1"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="row mb-4" id="stats-cards">
+                        <!-- Se llenan dinámicamente -->
                 </div>
                 
                 <div class="row">
@@ -181,64 +133,17 @@
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-hover">
+                                        <table class="table table-hover" id="recent-loans-table">
                                         <thead>
                                             <tr>
-                                                <th>ID</th>
                                                 <th>Usuario</th>
                                                 <th>Libro</th>
-                                                <th>Biblioteca</th>
                                                 <th>Fecha préstamo</th>
-                                                <th>Fecha devolución</th>
                                                 <th>Estado</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <tr>
-                                                <td>145</td>
-                                                <td>Juan Pérez</td>
-                                                <td>Don Quijote de la Mancha</td>
-                                                <td>Biblioteca Central</td>
-                                                <td>01/05/2025</td>
-                                                <td>16/05/2025</td>
-                                                <td><span class="badge bg-success">Activo</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>144</td>
-                                                <td>María López</td>
-                                                <td>Cien años de soledad</td>
-                                                <td>Biblioteca Literaria</td>
-                                                <td>30/04/2025</td>
-                                                <td>15/05/2025</td>
-                                                <td><span class="badge bg-success">Activo</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>143</td>
-                                                <td>Pedro Gómez</td>
-                                                <td>La Odisea</td>
-                                                <td>Biblioteca Técnica</td>
-                                                <td>28/04/2025</td>
-                                                <td>13/05/2025</td>
-                                                <td><span class="badge bg-success">Activo</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>142</td>
-                                                <td>Ana Martínez</td>
-                                                <td>El principito</td>
-                                                <td>Biblioteca Central</td>
-                                                <td>25/04/2025</td>
-                                                <td>10/05/2025</td>
-                                                <td><span class="badge bg-warning">Por vencer</span></td>
-                                            </tr>
-                                            <tr>
-                                                <td>141</td>
-                                                <td>Carlos Sánchez</td>
-                                                <td>Historia Universal</td>
-                                                <td>Biblioteca Literaria</td>
-                                                <td>20/04/2025</td>
-                                                <td>05/05/2025</td>
-                                                <td><span class="badge bg-danger">Vencido</span></td>
-                                            </tr>
+                                                <!-- Se llena dinámicamente -->
                                         </tbody>
                                     </table>
                                 </div>
@@ -250,49 +155,55 @@
                     <div class="col-lg-4 mb-4">
                         <div class="card border-0 shadow-sm h-100">
                             <div class="card-header bg-white">
-                                <h5 class="mb-0">Actividad Reciente</h5>
+                                    <h5 class="mb-0">Información de Biblioteca</h5>
+                                    </div>
+                                <div class="card-body" id="biblioteca-info">
+                                    <!-- Se llena dinámicamente -->
+                                </div>
                             </div>
-                            <div class="card-body p-0">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-                                        <div>
-                                            <p class="mb-0"><strong>Nuevo libro registrado</strong></p>
-                                            <small class="text-muted">Se agregó "Matemáticas Avanzadas"</small>
-                                        </div>
-                                        <small class="text-muted">Hace 2 horas</small>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-                                        <div>
-                                            <p class="mb-0"><strong>Usuario registrado</strong></p>
-                                            <small class="text-muted">Nuevo usuario: Laura Díaz</small>
-                                        </div>
-                                        <small class="text-muted">Hace 5 horas</small>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-                                        <div>
-                                            <p class="mb-0"><strong>Préstamo devuelto</strong></p>
-                                            <small class="text-muted">Carlos devolvió "La Ilíada"</small>
-                                        </div>
-                                        <small class="text-muted">Ayer</small>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-                                        <div>
-                                            <p class="mb-0"><strong>Nueva biblioteca registrada</strong></p>
-                                            <small class="text-muted">Biblioteca Científica registrada</small>
-                                        </div>
-                                        <small class="text-muted">Hace 2 días</small>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-                                        <div>
-                                            <p class="mb-0"><strong>Actualización de libro</strong></p>
-                                            <small class="text-muted">Se actualizaron ejemplares de "Don Quijote"</small>
-                                        </div>
-                                        <small class="text-muted">Hace 3 días</small>
-                                    </li>
-                                </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-journals fs-1 mb-3"></i>
+                                <h5>Gestión de Libros</h5>
+                                <p class="mb-3">Administra el catálogo de tu biblioteca</p>
+                                <a href="libros.html" class="btn btn-light">Gestionar Libros</a>
                             </div>
-                            <div class="card-footer bg-white text-center">
-                                <a href="#" class="text-decoration-none">Ver todas las actividades</a>
+                                        </div>
+                                        </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-arrow-left-right fs-1 mb-3"></i>
+                                <h5>Préstamos</h5>
+                                <p class="mb-3">Controla los préstamos y devoluciones</p>
+                                <a href="prestamos.html" class="btn btn-light">Ver Préstamos</a>
+                                        </div>
+                                        </div>
+                                        </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-graph-up fs-1 mb-3"></i>
+                                <h5>Estadísticas</h5>
+                                <p class="mb-3">Analiza el rendimiento de tu biblioteca</p>
+                                <a href="estadisticas.html" class="btn btn-light">Ver Estadísticas</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-building fs-1 mb-3"></i>
+                                <h5>Mi Biblioteca</h5>
+                                <p class="mb-3">Información y configuración</p>
+                                <a href="biblioteca.html" class="btn btn-light">Ver Biblioteca</a>
                             </div>
                         </div>
                     </div>
@@ -300,6 +211,7 @@
             </main>
         </div>
     </div>
+
 
     <footer class="bg-dark text-white py-4 mt-5">
         <div class="container-fluid">
@@ -319,31 +231,217 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/admin-biblioteca.services.js"></script>
     
-    <!-- Función de logout -->
     <script>
+      // Variables globales
+      let bibliotecaAsignada = null;
+      let estadisticas = null;
+
+      // Función de logout
       function logout() {
-        // Limpiar sesión
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userId');
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('role');
-        sessionStorage.removeItem('userName');
-        sessionStorage.removeItem('userId');
-        
-        // Redirigir al login
+        // Limpiar completamente el almacenamiento local y de sesión
+        localStorage.clear();
+        sessionStorage.clear();
         window.location.replace('/pages/guest/login.html');
       }
-    </script>
-    
-    <!-- Guard de autenticación -->
-    <script type="module">
-      import { requireRole } from '../../js/common/guard.js';
-      
-      // Verificar que el usuario sea admin
-      requireRole('admin');
+
+      // Función para forzar logout y actualizar sesión
+      function forceLogout() {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('Sesión limpiada. Serás redirigido al login. Inicia sesión nuevamente para acceder al panel de administración.');
+        window.location.replace('/pages/guest/login.html');
+      }
+
+      // Mostrar/ocultar loading
+      function mostrarLoading(mostrar = true) {
+        document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+      }
+
+      // Mostrar error
+      function mostrarError(mensaje) {
+        document.getElementById('error-text').textContent = mensaje;
+        document.getElementById('error-message').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('error-message').style.display = 'none';
+        }, 5000);
+      }
+
+      // Cargar dashboard
+      async function cargarDashboard() {
+        try {
+          mostrarLoading(true);
+          
+          // Cargar información de biblioteca y estadísticas en paralelo
+          const [biblioteca, stats] = await Promise.all([
+            adminBibliotecaService.obtenerBibliotecaAsignada(),
+            adminBibliotecaService.obtenerEstadisticas()
+          ]);
+
+          bibliotecaAsignada = biblioteca;
+          estadisticas = stats;
+
+          // Actualizar nombre del admin
+          document.getElementById('admin-name').textContent = biblioteca.nombre;
+
+          // Mostrar estadísticas
+          mostrarEstadisticasCards(stats.estadisticas);
+          
+          // Mostrar información de biblioteca
+          mostrarInformacionBiblioteca(biblioteca);
+          
+          // Cargar préstamos recientes
+          await cargarPrestamosRecientes();
+
+        } catch (error) {
+          console.error('Error cargando dashboard:', error);
+          
+          // Si es un error de permisos, mostrar mensaje de actualización de sesión
+          if (error.message.includes('Acceso denegado') || error.message.includes('403')) {
+            document.getElementById('session-fix-message').style.display = 'block';
+          } else {
+            mostrarError('Error cargando el dashboard: ' + error.message);
+          }
+        } finally {
+          mostrarLoading(false);
+        }
+      }
+
+      // Mostrar tarjetas de estadísticas
+      function mostrarEstadisticasCards(stats) {
+        const container = document.getElementById('stats-cards');
+        container.innerHTML = `
+          <div class="col-sm-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5 class="card-title">Total Libros</h5>
+                    <h2>${stats.total_libros || 0}</h2>
+                  </div>
+                  <div class="text-primary">
+                    <i class="bi bi-journals fs-1"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5 class="card-title">Préstamos Activos</h5>
+                    <h2>${stats.prestamos_activos || 0}</h2>
+                  </div>
+                  <div class="text-warning">
+                    <i class="bi bi-arrow-left-right fs-1"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5 class="card-title">Total Préstamos</h5>
+                    <h2>${stats.total_prestamos || 0}</h2>
+                  </div>
+                  <div class="text-success">
+                    <i class="bi bi-graph-up fs-1"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-6 col-md-3 mb-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body">
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <h5 class="card-title">Usuarios Únicos</h5>
+                    <h2>${stats.usuarios_unicos || 0}</h2>
+                  </div>
+                  <div class="text-info">
+                    <i class="bi bi-people fs-1"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Mostrar información de biblioteca
+      function mostrarInformacionBiblioteca(biblioteca) {
+        const container = document.getElementById('biblioteca-info');
+        container.innerHTML = `
+          <div class="mb-3">
+            <h6 class="text-muted">Nombre</h6>
+            <p class="mb-0">${biblioteca.nombre}</p>
+          </div>
+          <div class="mb-3">
+            <h6 class="text-muted">Dirección</h6>
+            <p class="mb-0">${biblioteca.direccion || 'No especificada'}</p>
+          </div>
+          <div class="mb-3">
+            <h6 class="text-muted">Institución</h6>
+            <p class="mb-0">${biblioteca.colegio_nombre}</p>
+          </div>
+        `;
+      }
+
+      // Cargar préstamos recientes
+      async function cargarPrestamosRecientes() {
+        try {
+          const response = await adminBibliotecaService.obtenerPrestamos({ limit: 5 });
+          const tbody = document.querySelector('#recent-loans-table tbody');
+          
+          if (response.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay préstamos recientes</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = response.data.map(prestamo => {
+            const estado = adminBibliotecaService.obtenerEstadoPrestamo(prestamo);
+            return `
+              <tr>
+                <td>${prestamo.usuario_nombre}</td>
+                <td>${prestamo.libro_titulo}</td>
+                <td>${adminBibliotecaService.formatearFecha(prestamo.fecha_prestamo)}</td>
+                <td><span class="badge bg-${estado.clase}">${estado.texto}</span></td>
+              </tr>
+            `;
+          }).join('');
+        } catch (error) {
+          console.error('Error cargando préstamos recientes:', error);
+        }
+      }
+
+      // Inicializar aplicación
+      async function inicializar() {
+        try {
+          const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+          const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+          
+          if (!token || role !== 'admin') {
+            window.location.replace('/pages/guest/login.html');
+            return;
+          }
+
+          await cargarDashboard();
+          
+        } catch (error) {
+          console.error('Error inicializando aplicación:', error);
+          mostrarError('Error inicializando la aplicación: ' + error.message);
+        }
+      }
+
+      // Inicializar cuando se carga la página
+      document.addEventListener('DOMContentLoaded', inicializar);
     </script>
 </body>
 </html>
