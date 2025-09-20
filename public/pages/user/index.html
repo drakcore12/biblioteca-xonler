@@ -121,45 +121,6 @@
       </div>
     </section>
 
-    <!-- Panel de prueba de navegación (solo en desarrollo) -->
-    <section class="card shadow-sm mt-4" id="navigationTestPanel" style="display: none;">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="bi bi-shield-check me-2"></i>
-          Panel de Prueba de Navegación
-          <small class="text-muted">(Solo para desarrollo)</small>
-        </h5>
-      </div>
-      <div class="card-body">
-        <p class="text-muted mb-3">Prueba el sistema de bloqueo de navegación:</p>
-        <div class="row g-2">
-          <div class="col-md-6">
-            <button class="btn btn-outline-danger btn-sm w-100" onclick="testExternalNavigation()">
-              <i class="bi bi-external-link me-1"></i>
-              Intentar ir a página externa
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-warning btn-sm w-100" onclick="testBackButton()">
-              <i class="bi bi-arrow-left me-1"></i>
-              Probar botón retroceder
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-info btn-sm w-100" onclick="showNavigationStatus()">
-              <i class="bi bi-info-circle me-1"></i>
-              Ver estado de navegación
-            </button>
-          </div>
-          <div class="col-md-6">
-            <button class="btn btn-outline-secondary btn-sm w-100" onclick="toggleTestPanel()">
-              <i class="bi bi-eye-slash me-1"></i>
-              Ocultar panel
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
   <!-- Footer -->
@@ -551,50 +512,6 @@
       });
     }
     
-    // Funciones de prueba para el panel de navegación
-    window.testExternalNavigation = function() {
-      console.log('🧪 Probando navegación externa...');
-      console.log('📍 Intentando ir a página de guest...');
-      window.location.href = '/pages/guest/index.html';
-    };
-    
-    window.testBackButton = function() {
-      console.log('🧪 Probando botón de retroceder...');
-      const initialPath = window.location.pathname;
-      console.log('📍 Ruta inicial:', initialPath);
-      console.log('🔄 Usando history.back()...');
-      history.back();
-    };
-    
-    window.showNavigationStatus = function() {
-      const currentPath = window.location.pathname;
-      const isUserPage = currentPath.includes('/pages/user/');
-      const hasToken = !!(localStorage.getItem('token') || sessionStorage.getItem('token'));
-      
-      alert(`Estado de Navegación:
-      
-Página actual: ${currentPath}
-Es página de usuario: ${isUserPage ? 'Sí' : 'No'}
-Token presente: ${hasToken ? 'Sí' : 'No'}
-Historial length: ${history.length}
-
-${isUserPage ? '🔒 Bloqueo de navegación ACTIVO' : '🔓 Bloqueo de navegación INACTIVO'}`);
-    };
-    
-    window.toggleTestPanel = function() {
-      const panel = document.getElementById('navigationTestPanel');
-      if (panel) {
-        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-      }
-    };
-    
-    // Mostrar panel de prueba en desarrollo (puedes comentar esta línea en producción)
-    setTimeout(() => {
-      const panel = document.getElementById('navigationTestPanel');
-      if (panel) {
-        panel.style.display = 'block';
-      }
-    }, 2000);
     
     initPage();
   </script>

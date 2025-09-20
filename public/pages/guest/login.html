@@ -81,7 +81,6 @@
                   <!-- Debug temporal -->
                   <div class="mt-3">
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearSession()">Limpiar Sesión</button>
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="testLogin()">Test Login</button>
                   </div>
                 </form>
               </div>
@@ -312,31 +311,6 @@
       alert('Sesión limpiada. Ahora puedes probar el login con 2FA.');
     }
     
-    async function testLogin() {
-      try {
-        console.log('🧪 [TEST] Probando login con 2FA...');
-        const response = await fetch('/api/usuarios/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email: 'luiseduardo1913@gmail.com', 
-            password: 'Ma2004-13' 
-          })
-        });
-        
-        const data = await response.json();
-        console.log('🧪 [TEST] Respuesta del login:', data);
-        
-        if (data.pending2faToken) {
-          alert('✅ 2FA detectado correctamente! Se requiere código 2FA.');
-        } else {
-          alert('❌ 2FA NO detectado. Login normal sin 2FA.');
-        }
-      } catch (error) {
-        console.error('🧪 [TEST] Error:', error);
-        alert('Error en el test: ' + error.message);
-      }
-    }
     
     document.addEventListener('DOMContentLoaded', function() {
         const debugBtn = document.getElementById('debugAuth');
@@ -389,20 +363,6 @@
             }
           });
           
-          // Botón para testear el guard
-          const testGuardBtn = document.getElementById('testGuard');
-          if (testGuardBtn) {
-            testGuardBtn.addEventListener('click', async function() {
-              console.log('🧪 [TEST] Probando guard...');
-              try {
-                const { requireAnon } = await import('/js/common/guard.js');
-                console.log('🧪 [TEST] Guard importado, ejecutando requireAnon...');
-                await requireAnon();
-              } catch (error) {
-                console.error('🧪 [TEST] Error ejecutando guard:', error);
-              }
-            });
-          }
           
           // Botón para verificar roles en la base de datos
           const checkRolesBtn = document.getElementById('checkRoles');
