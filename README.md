@@ -5,570 +5,520 @@
 [![Express](https://img.shields.io/badge/Express-5.1.0-lightgrey.svg)](https://expressjs.com/)
 [![License](https://img.shields.io/badge/License-ISC-yellow.svg)](LICENSE)
 
-## 📋 Descripción
+## 📋 ¿Qué es Biblioteca Xonler?
 
-Biblioteca Xonler es un sistema integral de gestión de bibliotecas escolares que conecta múltiples bibliotecas de colegios en una red unificada. Permite a los estudiantes buscar, solicitar y gestionar préstamos de libros de cualquier biblioteca de la red, mientras que los administradores pueden gestionar completamente sus bibliotecas asignadas.
+Biblioteca Xonler es un sistema web que permite a los estudiantes de diferentes colegios buscar y pedir prestados libros de cualquier biblioteca de la red. Los administradores pueden gestionar sus bibliotecas, agregar libros y controlar los préstamos.
 
-## ✨ Características Principales
+**En palabras simples:** Es como una biblioteca digital que conecta todas las bibliotecas de los colegios, permitiendo que los estudiantes vean y pidan libros de cualquier biblioteca de la red.
 
-### 🔐 Sistema de Autenticación
-- **Registro e inicio de sesión** con validación robusta
-- **Autenticación de dos factores (2FA)** con códigos TOTP
-- **Gestión de roles** (usuario, admin, bibliotecario)
-- **Tokens JWT** para sesiones seguras
-- **Protección de rutas** basada en roles
+## 🚀 Guía de Instalación Paso a Paso
 
-### 👥 Gestión de Usuarios
-- **Perfiles de usuario** completos con información personal
-- **Sistema de roles** jerárquico
-- **Preferencias personalizables** por usuario
-- **Gestión de sesiones** con opción de "recordar"
+### Paso 1: Descargar e Instalar Node.js
+1. Ve a [nodejs.org](https://nodejs.org/)
+2. **Descarga la versión LTS** (actualmente v22.x - recomendada)
+3. Ejecuta el instalador y sigue las instrucciones
+4. Verifica la instalación abriendo PowerShell y escribiendo:
+   ```bash
+   node --version
+   npm --version
+   ```
 
-### 📚 Gestión de Libros
-- **Catálogo completo** de libros con metadatos detallados
-- **Búsqueda avanzada** por título, autor, categoría, biblioteca
-- **Sistema de recomendaciones** basado en historial
-- **Gestión de inventario** por biblioteca
-- **Categorización** y etiquetado de libros
+### Paso 2: Descargar e Instalar PostgreSQL (Base de Datos)
 
-### 🏫 Gestión de Bibliotecas
-- **Múltiples bibliotecas** en una sola red
-- **Administradores asignados** por biblioteca
-- **Estadísticas individuales** por biblioteca
-- **Gestión de inventario** independiente
+#### 2.1 Descargar PostgreSQL
+1. Ve a [postgresql.org/download/windows](https://www.postgresql.org/download/windows/)
+2. Haz clic en **"Download the installer"**
+3. Selecciona la versión **18.x o 17.x** (recomendado) para Windows x86-64
+4. Descarga el archivo `.exe` (aproximadamente 300MB)
 
-### 📖 Sistema de Préstamos
-- **Solicitud de préstamos** online
-- **Seguimiento de estado** de préstamos
-- **Notificaciones** de vencimiento
-- **Historial de préstamos** completo
-- **Gestión de devoluciones**
+#### 2.2 Instalar PostgreSQL
+1. **Ejecuta el instalador** como administrador (clic derecho → "Ejecutar como administrador")
+2. **Pantalla de bienvenida**: Haz clic en "Next"
+3. **Seleccionar directorio**: Deja el directorio por defecto `C:\Program Files\PostgreSQL\18\` y haz clic "Next"
+4. **Seleccionar componentes**: 
+   - ✅ PostgreSQL Server (obligatorio)
+   - ✅ pgAdmin 4 (interfaz gráfica - RECOMENDADO)
+   - ✅ Stack Builder (herramientas adicionales)
+   - ✅ Command Line Tools
+   - Haz clic "Next"
+5. **Seleccionar directorio de datos**: Deja `C:\Program Files\PostgreSQL\18\data` y haz clic "Next"
+6. **Configurar contraseña**:
+   - **IMPORTANTE**: Anota esta contraseña, la necesitarás después
+   - Escribe una contraseña segura para el usuario `postgres`
+   - Confirma la contraseña
+   - Haz clic "Next"
+7. **Puerto**: Deja el puerto `5432` (por defecto) y haz clic "Next"
+8. **Configuración avanzada**: Deja todo por defecto y haz clic "Next"
+9. **Preparar instalación**: Revisa la configuración y haz clic "Next"
+10. **Instalando**: Espera a que termine (5-10 minutos)
+11. **Completar**: Desmarca "Stack Builder" si no lo necesitas y haz clic "Finish"
 
-### 📊 Panel de Administración
-- **Dashboard** con métricas clave
-- **Estadísticas detalladas** con gráficos interactivos
-- **Gestión de libros** y préstamos
-- **Reportes exportables**
-- **Configuración de biblioteca**
+#### 2.3 Verificar la instalación
+1. **Abre PowerShell** como administrador
+2. **Verifica PostgreSQL**:
+   ```bash
+   psql --version
+   ```
+3. **Conecta a la base de datos**:
+   ```bash
+   psql -U postgres -h localhost
+   ```
+4. **Ingresa la contraseña** que configuraste
+5. **Si funciona**, verás algo como: `postgres=#`
+6. **Salir**: Escribe `\q` y presiona Enter
 
-## 🏗️ Arquitectura del Sistema
+### Paso 3: Configurar el Proyecto
+1. **Clonar el proyecto:**
+   ```bash
+   git clone https://github.com/Srpino/Biblioteca-Xonler.git
+   cd Biblioteca-Xonler
+   ```
 
-### Backend (Node.js + Express)
+2. **Instalar dependencias:**
+   ```bash
+   npm install
+   ```
+
+3. **Configurar la base de datos con pgAdmin:**
+
+#### 3.1 Abrir pgAdmin
+1. **Busca pgAdmin** en el menú inicio de Windows
+2. **Abre pgAdmin 4** (puede tardar 30-60 segundos en cargar)
+3. **Configurar contraseña maestra** (primera vez):
+   - pgAdmin te pedirá una contraseña maestra para proteger tus conexiones
+   - Esta es DIFERENTE a la contraseña de PostgreSQL
+   - Anota esta contraseña también
+
+#### 3.2 Conectar al servidor PostgreSQL
+1. **En el panel izquierdo**, verás "Servers"
+2. **Haz clic derecho** en "Servers" → "Register" → "Server"
+3. **Pestaña "General"**:
+   - Name: `PostgreSQL 15` (o el nombre que quieras)
+4. **Pestaña "Connection"**:
+   - Host name/address: `localhost`
+   - Port: `5432`
+   - Username: `postgres`
+   - Password: `[la contraseña que configuraste en la instalación]`
+5. **Haz clic "Save"**
+
+#### 3.3 Crear la base de datos
+1. **Expande** el servidor "PostgreSQL 15"
+2. **Expande** "Databases"
+3. **Haz clic derecho** en "Databases" → "Create" → "Database"
+4. **Configuración**:
+   - Database: `xonler`
+   - Owner: `postgres`
+   - Encoding: `UTF8`
+5. **Haz clic "Save"**
+
+#### 3.4 Ejecutar el archivo SQL
+1. **Haz clic** en la base de datos `xonler` (panel izquierdo)
+2. **Haz clic** en el ícono "Query Tool" (🔍) en la barra superior
+3. **Abre el archivo**:
+   - Clic en "Open File" (📁)
+   - Navega a tu proyecto: `C:\Users\[TU_USUARIO]\Documents\Proyectos-Cursor\Biblioteca-Xonler-main\`
+   - Selecciona `db.sql`
+4. **Ejecutar el script**:
+   - Clic en "Execute" (⚡) o presiona F5
+   - Espera a que termine (puede tardar 1-2 minutos)
+   - Deberías ver "Query returned successfully" en la parte inferior
+
+4. **Configurar variables de entorno:**
+   - Copia `env.example` y renómbralo a `.env`
+   - Edita el archivo `.env` con tus datos:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=xonler
+   DB_USER=postgres
+   DB_PASSWORD=tu_contraseña_de_postgres
+   JWT_SECRET=tu_secreto_muy_seguro_aqui
+   PORT=3000
+   ```
+
+### Paso 4: Ejecutar el Proyecto
+```bash
+npm run dev
 ```
-src/
-├── app.js                 # Configuración principal de Express
-├── server.js             # Punto de entrada del servidor
-├── config/
-│   └── database.js       # Configuración de PostgreSQL
-├── controllers/          # Lógica de negocio
-│   ├── auth.controller.js
-│   ├── usuarios.controller.js
-│   ├── libros.controller.js
-│   ├── prestamos.controller.js
-│   └── admin-biblioteca.controller.js
-├── middleware/
-│   └── auth.js           # Middleware de autenticación
-└── routes/               # Definición de rutas API
-    ├── auth.routes.js
-    ├── usuarios.routes.js
-    ├── libros.routes.js
-    └── admin-biblioteca.routes.js
-```
 
-### Frontend (HTML + CSS + JavaScript)
+El proyecto estará disponible en: `http://localhost:3000`
+
+### Paso 5: Configurar Cloudflare Tunnel (Proxy Inverso)
+
+#### 5.1 Instalar Cloudflared (Método Recomendado)
+
+**Opción A: Instalación automática con winget (RECOMENDADO)**
+1. **Abre PowerShell** como administrador
+2. **Instala cloudflared**:
+   ```bash
+   winget install Cloudflare.Cloudflared
+   ```
+3. **Verifica la instalación**:
+   ```bash
+   cloudflared --version
+   ```
+
+**Opción B: Instalación manual**
+1. **Ve a la página oficial**: [developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/#windows](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/#windows)
+2. **Descarga el archivo**:
+   - Busca "Windows amd64" y haz clic en el enlace de descarga
+   - Se descargará un archivo `.exe` (aproximadamente 15MB)
+3. **Mover a carpeta de usuario**:
+   - Copia `cloudflared.exe` a tu carpeta de usuario: `C:\Users\[TU_USUARIO]\`
+   - **Verifica** que esté en: `C:\Users\[TU_USUARIO]\cloudflared.exe`
+
+#### 5.2 Verificar que el proyecto esté ejecutándose
+1. **Abre PowerShell** en la carpeta del proyecto
+2. **Ejecuta el proyecto**:
+   ```bash
+   npm run dev
+   ```
+3. **Verifica** que veas:
+   ```
+   Server running on port 3000
+   Database connected successfully
+   ```
+4. **Abre tu navegador** y ve a `http://localhost:3000`
+5. **Si funciona**, verás la página de inicio de Biblioteca Xonler
+
+#### 5.3 Crear el túnel de Cloudflare
+
+**Método Simplificado (RECOMENDADO)**
+1. **Abre una NUEVA ventana de PowerShell** (no cierres la del proyecto)
+2. **Crear el túnel**:
+   ```bash
+   cloudflared tunnel --url http://localhost:3000
+   ```
+3. **Espera la conexión** (10-30 segundos):
+   - Verás mensajes como "Connecting to Cloudflare..."
+   - Al final verás algo como: `https://abc123-def456.trycloudflare.com`
+
+**Método Alternativo (si usaste instalación manual)**
+1. **Abre una NUEVA ventana de PowerShell** (no cierres la del proyecto)
+2. **Navega a tu carpeta de usuario**:
+   ```bash
+   cd $env:USERPROFILE
+   ```
+3. **Verifica que cloudflared.exe esté ahí**:
+   ```bash
+   dir cloudflared.exe
+   ```
+4. **Crear el túnel**:
+   ```bash
+   & "$env:USERPROFILE\cloudflared.exe" tunnel --url http://127.0.0.1:3000
+   ```
+5. **Espera la conexión** (10-30 segundos):
+   - Verás mensajes como "Connecting to Cloudflare..."
+   - Al final verás algo como: `https://abc123-def456.trycloudflare.com`
+
+#### 5.4 Usar el túnel
+1. **Copia la URL** que te dio Cloudflare (ej: `https://abc123-def456.trycloudflare.com`)
+2. **Pruébala** en tu navegador
+3. **Comparte esta URL** con otros para que accedan desde internet
+4. **IMPORTANTE**: 
+   - El túnel solo funciona mientras tengas PowerShell abierto
+   - Si cierras PowerShell, el túnel se desconecta
+   - La URL cambia cada vez que reinicias el túnel
+
+#### 5.5 Mantener el túnel activo
+1. **Para mantener el túnel activo**:
+   - No cierres la ventana de PowerShell donde ejecutaste el comando
+   - Si se cierra, repite el paso 5.4
+2. **Para detener el túnel**:
+   - Presiona `Ctrl + C` en la ventana de PowerShell del túnel
+3. **Para reiniciar el túnel**:
+   - Ejecuta nuevamente el comando del paso 5.3
+
+#### 5.6 Ejecutar como servicio (Opcional - Para URL estable)
+
+Si quieres que el túnel se mantenga activo permanentemente y arranque con Windows:
+
+1. **Crear un túnel persistente**:
+   ```bash
+   cloudflared tunnel create xonler-tunnel
+   ```
+2. **Configurar el túnel**:
+   ```bash
+   cloudflared tunnel route dns xonler-tunnel xonler.local
+   ```
+3. **Ejecutar como servicio**:
+   ```bash
+   cloudflared tunnel run xonler-tunnel
+   ```
+
+**Para más detalles**, consulta la [guía oficial de Cloudflare](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/local-management/as-a-service/windows/) sobre ejecutar como servicio en Windows.
+
+### Paso 6: Verificación Final
+
+#### 6.1 Verificar que todo funciona localmente
+1. **Abre tu navegador** y ve a `http://localhost:3000`
+2. **Deberías ver**:
+   - La página de inicio de Biblioteca Xonler
+   - Un menú de navegación
+   - Opciones de login/registro
+3. **Si NO ves esto**, revisa la sección de "Solución de Problemas" abajo
+
+#### 6.2 Verificar que el túnel funciona
+1. **Abre otra pestaña** del navegador
+2. **Ve a la URL** que te dio Cloudflare (ej: `https://abc123-def456.trycloudflare.com`)
+3. **Deberías ver** la misma página que en localhost
+4. **Si funciona**, ¡felicidades! Tu proyecto está disponible en internet
+
+#### 6.3 Probar desde otro dispositivo
+1. **Conecta tu teléfono** a la misma red WiFi (o usa datos móviles)
+2. **Abre el navegador** del teléfono
+3. **Ve a la URL** de Cloudflare
+4. **Deberías poder acceder** al proyecto desde tu teléfono
+
+## 🛠️ Tecnologías Utilizadas
+
+### Backend
+- **Node.js** (v18+) - Entorno de ejecución JavaScript
+- **Express** (v5.1.0) - Framework web minimalista
+- **PostgreSQL** (v13+) - Base de datos relacional
+- **bcrypt** (v6.0.0) - Encriptación de contraseñas
+- **jsonwebtoken** (v9.0.2) - Generación y validación de JWT
+- **cors** (v2.8.5) - Middleware para CORS
+- **dotenv** (v16.6.1) - Manejo de variables de entorno
+- **multer** (v1.4.5) - Manejo de subida de archivos
+- **qrcode** (v1.5.4) - Generación de códigos QR
+- **speakeasy** (v2.0.0) - Implementación de 2FA/TOTP
+
+### Desarrollo
+- **nodemon** (v3.0.0) - Reinicio automático del servidor en desarrollo
+
+## ✨ ¿Qué puede hacer este sistema?
+
+### Para Estudiantes 👨‍🎓
+- **Registrarse y entrar** al sistema de forma segura
+- **Buscar libros** en todas las bibliotecas de la red
+- **Pedir libros prestados** online
+- **Ver el estado** de sus préstamos
+- **Recibir notificaciones** cuando se vencen los préstamos
+- **Ver su historial** de libros prestados
+
+### Para Administradores 👨‍💼
+- **Gestionar libros** de su biblioteca (agregar, editar, eliminar)
+- **Controlar préstamos** (aprobar, rechazar, marcar como devueltos)
+- **Ver estadísticas** de su biblioteca
+- **Configurar la biblioteca** (horarios, reglas, etc.)
+- **Generar reportes** de actividad
+
+### Para Bibliotecarios 📚
+- **Gestionar el inventario** de libros
+- **Procesar préstamos** y devoluciones
+- **Atender consultas** de estudiantes
+- **Mantener actualizado** el catálogo
+
+## 📖 Glosario de Términos Técnicos
+
+| Término | Explicación Simple |
+|---------|-------------------|
+| **Node.js** | Programa que permite ejecutar JavaScript en el servidor (como el motor de un coche) |
+| **PostgreSQL** | Base de datos donde se guarda toda la información (como un archivo gigante organizado) |
+| **Express** | Herramienta que facilita crear páginas web (como los cimientos de una casa) |
+| **JWT** | "Carnet de identidad" digital que dice quién eres en el sistema |
+| **2FA** | Doble verificación de seguridad (como pedir contraseña + código por SMS) |
+| **API** | "Traductor" que permite que diferentes partes del sistema se comuniquen |
+| **Middleware** | "Filtro de seguridad" que revisa las peticiones antes de procesarlas |
+| **CORS** | Permiso para que páginas web de diferentes sitios se comuniquen |
+| **bcrypt** | Método súper seguro para guardar contraseñas (imposible de descifrar) |
+| **Cloudflare Tunnel** | "Túnel" que permite acceder a tu proyecto desde internet sin abrir puertos |
+| **npm** | "Tienda de aplicaciones" para descargar herramientas de programación |
+| **Git** | Sistema para guardar y controlar versiones del código (como "historial" de Word) |
+| **Puerto 3000** | "Dirección" donde tu computadora escucha las peticiones web |
+| **localhost** | Dirección de tu propia computadora (127.0.0.1) |
+
+## 🏗️ ¿Cómo está organizado el proyecto?
+
+### Estructura Simple
 ```
-public/
-├── pages/
-│   ├── guest/            # Páginas públicas
-│   │   ├── index.html
-│   │   ├── login.html
-│   │   └── contacto.html
-│   ├── user/             # Panel de usuario
-│   │   ├── index.html
-│   │   ├── libros.html
-│   │   └── configuracion.html
-│   └── admin/            # Panel de administración
-│       ├── index.html
-│       ├── libros.html
-│       ├── prestamos.html
-│       └── estadisticas.html
-├── services/             # Servicios del frontend
-│   ├── auth.services.js
-│   ├── libros.services.js
-│   └── admin-biblioteca.services.js
-└── css/                  # Estilos personalizados
-    ├── main.css
-    ├── components/
-    └── layout/
+📁 Biblioteca-Xonler/
+├── 📁 src/                    # Código del servidor
+│   ├── 📄 app.js             # Configuración principal
+│   ├── 📄 server.js          # Inicio del servidor
+│   ├── 📁 controllers/       # Lógica de cada función
+│   ├── 📁 routes/            # URLs del sistema
+│   └── 📁 middleware/        # Seguridad
+├── 📁 public/                # Páginas web (lo que ven los usuarios)
+│   ├── 📁 pages/             # Páginas HTML
+│   ├── 📁 services/          # Código JavaScript del frontend
+│   └── 📁 css/               # Estilos y diseño
+├── 📄 db.sql                 # Estructura de la base de datos
+├── 📄 package.json           # Lista de herramientas necesarias
+└── 📄 README.md              # Este archivo
 ```
 
 ### Base de Datos (PostgreSQL)
-```sql
--- Tablas principales
-usuarios              # Información de usuarios
-roles                 # Roles del sistema
-bibliotecas           # Información de bibliotecas
-libros                # Catálogo de libros
-biblioteca_libros     # Relación biblioteca-libro
-prestamos             # Registro de préstamos
-usuario_biblioteca    # Asignación admin-biblioteca
-colegios              # Información de colegios
-```
+El sistema guarda información en estas "carpetas" principales:
+- **usuarios** - Datos de estudiantes y administradores
+- **bibliotecas** - Información de cada biblioteca
+- **libros** - Catálogo de todos los libros
+- **prestamos** - Registro de quién pidió qué libro
+- **colegios** - Información de los colegios
 
-## 🚀 Instalación y Configuración
+## 📖 Cómo usar el sistema
 
-### Prerrequisitos
-- **Node.js** 18+ 
-- **PostgreSQL** 13+
-- **npm** o **yarn**
-
-### 1. Clonar el Repositorio
-```bash
-git clone https://github.com/Srpino/Biblioteca-Xonler.git
-cd Biblioteca-Xonler
-```
-
-### 2. Instalar Dependencias
-```bash
-npm install
-```
-
-### 3. Configurar Base de Datos
-```bash
-# Crear base de datos PostgreSQL
-createdb xonler
-
-# Ejecutar esquema de base de datos
-psql -U tu_usuario -d xonler -f db.sql
-```
-
-### 4. Configurar Variables de Entorno
-```bash
-# Copiar archivo de ejemplo
-cp env.example .env
-
-# Editar variables necesarias
-nano .env
-```
-
-**Variables de entorno requeridas:**
-```env
-# Base de datos
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=xonler
-DB_USER=tu_usuario
-DB_PASSWORD=tu_password
-
-# JWT
-JWT_SECRET=tu_secreto_jwt_muy_seguro
-
-# Servidor
-PORT=3000
-
-# Bcrypt
-BCRYPT_ROUNDS=12
-```
-
-### 5. Configurar Sistema
-```bash
-# Ejecutar script de configuración
-npm run setup
-```
-
-### 6. Iniciar Servidor
-```bash
-# Desarrollo
-npm run dev
-
-# Producción
-npm start
-```
-
-El servidor estará disponible en `http://localhost:3000`
-
-## 📖 Uso del Sistema
-
-### Para Usuarios
-1. **Registro**: Crear cuenta en `/login.html`
-2. **Inicio de sesión**: Acceder con email y contraseña
-3. **Explorar libros**: Buscar en el catálogo completo
-4. **Solicitar préstamos**: Pedir libros prestados
-5. **Gestionar perfil**: Actualizar información personal
+### Para Estudiantes
+1. **Registrarse**: Crear cuenta en la página de login
+2. **Iniciar sesión**: Entrar con email y contraseña
+3. **Buscar libros**: Explorar el catálogo completo
+4. **Pedir préstamos**: Solicitar libros que te interesen
+5. **Gestionar perfil**: Actualizar tu información personal
 
 ### Para Administradores
-1. **Acceso al panel**: Login con rol de administrador
-2. **Gestión de libros**: Agregar, editar, eliminar libros
-3. **Gestión de préstamos**: Ver y administrar préstamos
-4. **Estadísticas**: Revisar métricas de la biblioteca
-5. **Configuración**: Ajustar parámetros de la biblioteca
+1. **Acceder al panel**: Login con rol de administrador
+2. **Gestionar libros**: Agregar, editar, eliminar libros
+3. **Controlar préstamos**: Ver y administrar préstamos
+4. **Ver estadísticas**: Revisar métricas de la biblioteca
+5. **Configurar**: Ajustar parámetros de la biblioteca
 
-## 🔧 API Endpoints
+## 🛡️ Seguridad del Sistema
 
-### Autenticación
-```
-POST /api/auth/register     # Registro de usuario
-POST /api/auth/login        # Inicio de sesión
-GET  /api/auth/me          # Información del usuario actual
-POST /api/auth/refresh     # Renovar token
-```
+### ¿Qué hace que sea seguro?
+- **Contraseñas encriptadas**: Imposibles de descifrar aunque alguien acceda a la base de datos
+- **Verificación en dos pasos**: Opcional, como un segundo candado en tu cuenta
+- **Sesiones seguras**: El sistema "recuerda" quién eres de forma segura
+- **Protección de datos**: Solo los usuarios autorizados pueden ver información sensible
+- **Validación de entrada**: El sistema revisa todo lo que escribes para evitar ataques
 
-### Usuarios
-```
-GET    /api/usuarios              # Listar usuarios
-GET    /api/usuarios/:id          # Obtener usuario
-PUT    /api/usuarios/:id          # Actualizar usuario
-DELETE /api/usuarios/:id          # Eliminar usuario
-```
+### ¿Quién puede hacer qué?
+- **Estudiantes**: Ver libros, pedir préstamos, gestionar su perfil
+- **Bibliotecarios**: Gestionar libros de su biblioteca, procesar préstamos
+- **Administradores**: Control total de su biblioteca asignada
+- **Super Administradores**: Acceso a todo el sistema
 
-### Libros
-```
-GET    /api/libros                # Listar libros
-GET    /api/libros/:id            # Obtener libro
-POST   /api/libros                # Crear libro
-PUT    /api/libros/:id            # Actualizar libro
-DELETE /api/libros/:id            # Eliminar libro
-```
+## 🚨 Solución de Problemas Comunes
 
-### Préstamos
-```
-GET    /api/prestamos             # Listar préstamos
-GET    /api/prestamos/:id         # Obtener préstamo
-POST   /api/prestamos             # Crear préstamo
-PUT    /api/prestamos/:id         # Actualizar préstamo
-```
+### ❌ Error: "node no se reconoce como comando"
+**Problema**: Node.js no está instalado o no está en el PATH
+**Solución**:
+1. Ve a [nodejs.org](https://nodejs.org/) y descarga Node.js
+2. Instálalo siguiendo el Paso 1
+3. Reinicia PowerShell
+4. Verifica con: `node --version`
 
-### Administración
-```
-GET    /api/admin/biblioteca      # Info de biblioteca asignada
-GET    /api/admin/estadisticas    # Estadísticas de biblioteca
-POST   /api/admin/libros          # Agregar libro a biblioteca
-```
+### ❌ Error: "psql no se reconoce como comando"
+**Problema**: PostgreSQL no está instalado o no está en el PATH
+**Solución**:
+1. Sigue el Paso 2 completo para instalar PostgreSQL
+2. Reinicia PowerShell
+3. Verifica con: `psql --version`
 
-## 🛡️ Seguridad
+### ❌ Error: "Cannot connect to database"
+**Problema**: PostgreSQL no está ejecutándose o credenciales incorrectas
+**Solución**:
+1. **Verifica que PostgreSQL esté ejecutándose**:
+   - Busca "Services" en el menú inicio
+   - Busca "postgresql-x64-15" (o similar)
+   - Si está "Stopped", haz clic derecho → "Start"
+2. **Verifica las credenciales en .env**:
+   - Usuario: `postgres`
+   - Contraseña: la que configuraste en la instalación
+   - Puerto: `5432`
+3. **Prueba la conexión**:
+   ```bash
+   psql -U postgres -h localhost
+   ```
 
-### Autenticación
-- **JWT tokens** con expiración de 24 horas
-- **Bcrypt** para hash de contraseñas (12 rounds)
-- **2FA** opcional con códigos TOTP
-- **Validación robusta** de entrada
+### ❌ Error: "Database 'xonler' does not exist"
+**Problema**: No creaste la base de datos
+**Solución**:
+1. Abre pgAdmin
+2. Sigue el Paso 3.3 para crear la base de datos
+3. Sigue el Paso 3.4 para ejecutar el archivo db.sql
 
-### Autorización
-- **Middleware de autenticación** en rutas protegidas
-- **Control de roles** granular
-- **Verificación de propiedad** de recursos
-- **Protección CSRF** básica
+### ❌ Error: "cloudflared no se reconoce como comando"
+**Problema**: Cloudflared no está instalado o no está en el PATH
+**Solución**:
+1. **Si usaste winget**: Verifica con `cloudflared --version`
+2. **Si usaste instalación manual**: Verifica que esté en: `C:\Users\[TU_USUARIO]\cloudflared.exe`
+3. **Reinstala** siguiendo el Paso 5.1 completo
 
-### Validación
-- **Sanitización** de entrada
-- **Validación de tipos** de datos
-- **Límites de tamaño** de archivos
-- **Escape de SQL** con parámetros preparados
+### ❌ Error: "Tunnel connection failed"
+**Problema**: El proyecto no está ejecutándose o hay problemas de red
+**Solución**:
+1. **Verifica que el proyecto esté ejecutándose**:
+   - Debe mostrar "Server running on port 3000"
+   - Debe mostrar "Database connected successfully"
+2. **Verifica que localhost:3000 funcione**:
+   - Abre `http://localhost:3000` en tu navegador
+3. **Reinicia el túnel**:
+   - Cierra PowerShell del túnel (Ctrl+C)
+   - Ejecuta nuevamente el comando del Paso 5.3
 
-## 📊 Diagramas UML
+### ❌ Error: "Port 3000 is already in use"
+**Problema**: Otro programa está usando el puerto 3000
+**Solución**:
+1. **Cambia el puerto en .env**:
+   ```env
+   PORT=3001
+   ```
+2. **Reinicia el proyecto**:
+   ```bash
+   npm run dev
+   ```
+3. **Actualiza el túnel**:
+   ```bash
+   cloudflared tunnel --url http://localhost:3001
+   ```
 
-### 👤 Casos de Uso - Usuario Autenticado
+### ❌ El túnel se desconecta constantemente
+**Problema**: Problemas de red o configuración
+**Solución**:
+1. **Verifica tu conexión a internet**
+2. **Reinicia el túnel**:
+   - Cierra PowerShell del túnel
+   - Espera 30 segundos
+   - Ejecuta nuevamente el comando del Paso 5.3
+3. **Usa un puerto diferente** si el problema persiste
 
-```mermaid
-graph TB
-    subgraph "Usuario Autenticado"
-        A[Usuario] --> B[Iniciar Sesión]
-        A --> C[Gestionar Perfil]
-        A --> D[Explorar Libros]
-        A --> E[Gestionar Préstamos]
-        A --> F[Ver Estadísticas]
-        A --> G[Cerrar Sesión]
-    end
-    
-    subgraph "Gestión de Perfil"
-        C --> C1[Ver Información Personal]
-        C --> C2[Actualizar Datos]
-        C --> C3[Cambiar Contraseña]
-        C --> C4[Configurar 2FA]
-        C --> C5[Gestionar Preferencias]
-    end
-    
-    subgraph "Exploración de Libros"
-        D --> D1[Buscar Libros]
-        D --> D2[Filtrar por Categoría]
-        D --> D3[Filtrar por Autor]
-        D --> D4[Filtrar por Biblioteca]
-        D --> D5[Ver Detalles del Libro]
-        D --> D6[Ver Recomendaciones]
-        D --> D7[Ver Libros Disponibles]
-    end
-    
-    subgraph "Gestión de Préstamos"
-        E --> E1[Solicitar Préstamo]
-        E --> E2[Ver Préstamos Activos]
-        E --> E3[Ver Historial de Préstamos]
-        E --> E4[Ver Préstamos Vencidos]
-        E --> E5[Renovar Préstamo]
-        E --> E6[Cancelar Préstamo]
-    end
-    
-    subgraph "Estadísticas Personales"
-        F --> F1[Ver Préstamos Activos]
-        F --> F2[Ver Libros Disponibles]
-        F --> F3[Ver Bibliotecas Convenio]
-        F --> F4[Ver Actividad Reciente]
-    end
-    
-    subgraph "Autenticación"
-        B --> B1[Login con Email/Password]
-        B --> B2[Login con 2FA]
-        B --> B3[Recordar Sesión]
-        B --> B4[Recuperar Contraseña]
-    end
-```
+### ❌ No puedo acceder desde mi teléfono
+**Problema**: Problemas de red o túnel
+**Solución**:
+1. **Verifica que el túnel esté activo**:
+   - Debe mostrar la URL en PowerShell
+2. **Prueba desde la misma computadora**:
+   - Abre la URL en el navegador de la computadora
+3. **Verifica que uses la URL correcta**:
+   - Debe empezar con `https://`
+   - Debe terminar con `.trycloudflare.com`
 
-### 🌐 Casos de Uso - Usuario Invitado (Guest)
+## 🎯 Próximas Mejoras
 
-```mermaid
-graph TB
-    subgraph "Usuario Invitado (Guest)"
-        A[Guest] --> B[Explorar Sitio Web]
-        A --> C[Registrarse]
-        A --> D[Iniciar Sesión]
-        A --> E[Contactar Soporte]
-        A --> F[Ver Información General]
-    end
-    
-    subgraph "Exploración del Sitio"
-        B --> B1[Ver Página Principal]
-        B --> B2[Leer Sobre Xonler]
-        B --> B3[Ver Características]
-        B --> B4[Ver Información de Contacto]
-        B --> B5[Navegar por Enlaces]
-    end
-    
-    subgraph "Proceso de Registro"
-        C --> C1[Completar Formulario]
-        C --> C2[Validar Email]
-        C --> C3[Crear Contraseña]
-        C --> C4[Confirmar Datos]
-        C --> C5[Activar Cuenta]
-    end
-    
-    subgraph "Proceso de Login"
-        D --> D1[Ingresar Credenciales]
-        D --> D2[Validar Datos]
-        D --> D3[Completar 2FA si aplica]
-        D --> D4[Acceder al Sistema]
-    end
-    
-    subgraph "Soporte y Contacto"
-        E --> E1[Ver Información de Contacto]
-        E --> E2[Enviar Consulta]
-        E --> E3[Ver Preguntas Frecuentes]
-        E --> E4[Acceder a Ayuda]
-    end
-    
-    subgraph "Información General"
-        F --> F1[Ver Términos y Condiciones]
-        F --> F2[Ver Política de Privacidad]
-        F --> F3[Ver Acerca de Xonler]
-        F --> F4[Ver Red de Bibliotecas]
-    end
-```
+- **App móvil** para Android e iOS
+- **Notificaciones push** para recordatorios de préstamos
+- **Sistema de calificaciones** para libros
+- **Chat en tiempo real** entre usuarios
+- **Integración con sistemas escolares** existentes
+- **Modo offline** para consultar libros sin internet
 
-### 🔄 Flujo de Autenticación
+## 📞 ¿Necesitas Ayuda?
 
-```mermaid
-sequenceDiagram
-    participant G as Guest
-    participant L as Login Page
-    participant A as Auth API
-    participant D as Database
-    participant U as User Dashboard
-    
-    G->>L: Acceder a Login
-    L->>G: Mostrar Formulario
-    G->>L: Ingresar Credenciales
-    L->>A: POST /api/auth/login
-    A->>D: Verificar Usuario
-    D-->>A: Datos del Usuario
-    
-    alt Usuario con 2FA
-        A-->>L: Requerir 2FA
-        L->>G: Mostrar Modal 2FA
-        G->>L: Ingresar Código 2FA
-        L->>A: POST /api/usuarios/login/2fa
-        A->>D: Verificar Código 2FA
-        D-->>A: Validación Exitosa
-    end
-    
-    A-->>L: Token JWT + Datos Usuario
-    L->>U: Redirigir según Rol
-    U->>G: Mostrar Dashboard Personalizado
-```
+Si tienes problemas o preguntas:
 
-### 📚 Flujo de Gestión de Libros (Usuario)
+1. **Revisa la sección de "Solución de Problemas"** arriba
+2. **Consulta el glosario** para entender términos técnicos
+3. **Verifica que sigas todos los pasos** de instalación
+4. **Contacta al soporte** si el problema persiste
 
-```mermaid
-sequenceDiagram
-    participant U as Usuario
-    participant L as Libros Page
-    participant A as Libros API
-    participant D as Database
-    participant P as Préstamos API
-    
-    U->>L: Acceder a Catálogo
-    L->>A: GET /api/libros
-    A->>D: Consultar Libros
-    D-->>A: Lista de Libros
-    A-->>L: Datos de Libros
-    L->>U: Mostrar Catálogo
-    
-    U->>L: Aplicar Filtros
-    L->>A: GET /api/libros?filtros
-    A->>D: Consulta Filtrada
-    D-->>A: Libros Filtrados
-    A-->>L: Resultados Filtrados
-    L->>U: Mostrar Resultados
-    
-    U->>L: Seleccionar Libro
-    L->>A: GET /api/libros/:id
-    A->>D: Obtener Detalles
-    D-->>A: Detalles del Libro
-    A-->>L: Información Completa
-    L->>U: Mostrar Detalles
-    
-    U->>L: Solicitar Préstamo
-    L->>P: POST /api/prestamos
-    P->>D: Crear Préstamo
-    D-->>P: Préstamo Creado
-    P-->>L: Confirmación
-    L->>U: Mostrar Confirmación
-```
-
-## 📊 Base de Datos
-
-### Esquema Principal
-```sql
--- Usuarios del sistema
-CREATE TABLE usuarios (
-    id BIGSERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,
-    apellido VARCHAR(100) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    rol_id INTEGER REFERENCES roles(id),
-    dobleautenticacion BOOLEAN DEFAULT false,
-    preferencias JSONB DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Bibliotecas de la red
-CREATE TABLE bibliotecas (
-    id BIGSERIAL PRIMARY KEY,
-    nombre VARCHAR(255) NOT NULL,
-    direccion TEXT,
-    telefono VARCHAR(20),
-    email VARCHAR(255),
-    colegio_id BIGINT REFERENCES colegios(id)
-);
-
--- Libros del catálogo
-CREATE TABLE libros (
-    id BIGSERIAL PRIMARY KEY,
-    titulo VARCHAR(255) NOT NULL,
-    autor VARCHAR(255) NOT NULL,
-    isbn VARCHAR(20),
-    categoria VARCHAR(100),
-    descripcion TEXT,
-    portada_url VARCHAR(500)
-);
-
--- Préstamos
-CREATE TABLE prestamos (
-    id BIGSERIAL PRIMARY KEY,
-    usuario_id BIGINT REFERENCES usuarios(id),
-    libro_id BIGINT REFERENCES libros(id),
-    biblioteca_id BIGINT REFERENCES bibliotecas(id),
-    fecha_prestamo DATE NOT NULL,
-    fecha_devolucion DATE
-);
-```
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests (cuando estén implementados)
-npm test
-
-# Tests de integración
-npm run test:integration
-
-# Coverage
-npm run test:coverage
-```
-
-## 🚀 Despliegue
-
-### Variables de Producción
-```env
-NODE_ENV=production
-PORT=3000
-DB_HOST=tu_host_produccion
-DB_NAME=xonler_prod
-JWT_SECRET=secreto_muy_seguro_produccion
-```
-
-### Docker (Opcional)
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crear rama para feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit cambios (`git commit -m 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Abrir Pull Request
-
-## 📝 Changelog
-
-### v1.0.0
-- ✅ Sistema de autenticación completo
-- ✅ Gestión de usuarios y roles
-- ✅ Catálogo de libros con búsqueda
-- ✅ Sistema de préstamos
-- ✅ Panel de administración
-- ✅ Estadísticas y reportes
-- ✅ Autenticación de dos factores
-- ✅ Interfaz responsive
+### Información de Contacto
+- 📧 **Email**: info@xonler.edu
+- 🐛 **Reportar errores**: [GitHub Issues](https://github.com/Srpino/Biblioteca-Xonler/issues)
+- 📖 **Documentación**: Este README
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia ISC. Ver el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la Licencia ISC. Puedes usarlo, modificarlo y distribuirlo libremente.
 
-## 👥 Autores
+## 👥 Créditos
 
-- **Equipo Xonler** - *Desarrollo inicial* - [Srpino](https://github.com/Srpino)
-
-## 🙏 Agradecimientos
-
-- Bootstrap para el framework CSS
-- Chart.js para las gráficas
-- PostgreSQL para la base de datos
-- Express.js para el backend
-- Todos los contribuidores del proyecto
-
-## 📞 Soporte
-
-Para soporte técnico o preguntas:
-- 📧 Email: info@xonler.edu
-- 📱 Teléfono: (123) 456-7890
-- 🐛 Issues: [GitHub Issues](https://github.com/Srpino/Biblioteca-Xonler/issues)
+- **Desarrollado por**: Equipo Xonler
+- **GitHub**: [Srpino](https://github.com/Srpino)
+- **Tecnologías**: Node.js, PostgreSQL, Express, Bootstrap
 
 ---
 
-**Biblioteca Xonler** - Conectando el conocimiento a través de las bibliotecas escolares 📚✨
+**📚 Biblioteca Xonler** - Conectando el conocimiento a través de las bibliotecas escolares ✨
+
+*Última actualización: Diciembre 2024*
