@@ -133,6 +133,8 @@ Biblioteca Xonler es un sistema web que permite a los estudiantes de diferentes 
    DB_USER=postgres
    DB_PASSWORD=tu_contraseña_de_postgres
    JWT_SECRET=tu_secreto_muy_seguro_aqui
+   CORS_ORIGIN=http://localhost:3000
+   BCRYPT_ROUNDS=12
    PORT=3000
    ```
 
