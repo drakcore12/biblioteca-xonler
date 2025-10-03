@@ -21,6 +21,15 @@ class AdminBibliotecaService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Si es error de autenticación, limpiar tokens y redirigir
+        if (response.status === 401) {
+          console.warn('🔐 Token inválido detectado, limpiando sesión...');
+          localStorage.clear();
+          sessionStorage.clear();
+          alert('Sesión expirada. Serás redirigido al login.');
+          window.location.href = '/pages/guest/login.html';
+          return;
+        }
         throw new Error(data.error || 'Error en la petición');
       }
 

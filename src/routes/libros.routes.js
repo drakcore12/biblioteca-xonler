@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const { pool } = require('../config/database');
 const { obtenerRecomendaciones } = require('../controllers/libros.controller');
-const { auth } = require('../middleware/auth');
+const { hybridAuth } = require('../middleware/hybrid-auth');
 
 // --- Endpoints de test (bien ubicados bajo /api/libros) ---
 router.get('/test-db', async (_req, res) => {
@@ -28,7 +28,7 @@ router.get('/test-table', async (_req, res) => {
 });
 
 // --- Rutas específicas PRIMERO ---
-router.get('/recomendaciones', auth, obtenerRecomendaciones);
+router.get('/recomendaciones', hybridAuth, obtenerRecomendaciones);
 
 // --- Listado ---
 router.get('/', async (_req, res) => {

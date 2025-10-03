@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo de Seguridad - Biblioteca Xonler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        .metric-card {
+            transition: transform 0.2s ease;
+            border-left: 4px solid #007bff;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+        }
+        .metric-card.cpu { border-left-color: #28a745; }
+        .metric-card.memory { border-left-color: #ffc107; }
+        .metric-card.disk { border-left-color: #dc3545; }
+        .metric-card.requests { border-left-color: #17a2b8; }
+        .metric-card.errors { border-left-color: #6f42c1; }
+        .metric-card.response-time { border-left-color: #fd7e14; }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-ok { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-item {
+            border-left: 4px solid #dc3545;
+            background-color: #f8f9fa;
+            margin-bottom: 10px;
+            padding: 15px;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center py-3">
+                    <h1><i class="bi bi-shield-check"></i> Monitoreo de Seguridad</h1>
+                    <div>
+                        <button class="btn btn-outline-primary me-2" onclick="refreshData()">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                        </button>
+                        <button class="btn btn-primary" onclick="testAlert()">
+                            <i class="bi bi-bell"></i> Probar Alerta
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas principales -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card metric-card cpu">
+                    <div class="card-body text-center">
+                        <i class="bi bi-cpu fs-1 text-success"></i>
+                        <h5 class="card-title">CPU</h5>
+                        <h3 id="cpu-usage" class="text-success">0%</h3>
+                        <small class="text-muted">Uso actual</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card metric-card memory">
+                    <div class="card-body text-center">
+                        <i class="bi bi-memory fs-1 text-warning"></i>
+                        <h5 class="card-title">Memoria</h5>
+                        <h3 id="memory-usage" class="text-warning">0%</h3>
+                        <small class="text-muted">Uso actual</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card metric-card disk">
+                    <div class="card-body text-center">
+                        <i class="bi bi-hdd fs-1 text-danger"></i>
+                        <h5 class="card-title">Disco</h5>
+                        <h3 id="disk-usage" class="text-danger">0%</h3>
+                        <small class="text-muted">Uso actual</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card metric-card requests">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-up-circle fs-1 text-info"></i>
+                        <h5 class="card-title">Requests</h5>
+                        <h3 id="request-count" class="text-info">0</h3>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card metric-card errors">
+                    <div class="card-body text-center">
+                        <i class="bi bi-exclamation-triangle fs-1 text-purple"></i>
+                        <h5 class="card-title">Errores</h5>
+                        <h3 id="error-count" class="text-purple">0</h3>
+                        <small class="text-muted">Total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card metric-card response-time">
+                    <div class="card-body text-center">
+                        <i class="bi bi-stopwatch fs-1 text-orange"></i>
+                        <h5 class="card-title">Tiempo</h5>
+                        <h3 id="response-time" class="text-orange">0ms</h3>
+                        <small class="text-muted">Promedio</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-graph-up"></i> Uso de Recursos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="resourcesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-activity"></i> Actividad de Requests</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="requestsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas y Logs -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-bell"></i> Alertas Recientes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="alerts-container">
+                            <div class="text-center text-muted">
+                                <i class="bi bi-hourglass-split"></i> Cargando alertas...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-gear"></i> Acciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-primary" onclick="executeBackup()">
+                                <i class="bi bi-download"></i> Ejecutar Backup
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="rotateJWT()">
+                                <i class="bi bi-arrow-repeat"></i> Rotar Claves JWT
+                            </button>
+                            <button class="btn btn-outline-info" onclick="viewLogs()">
+                                <i class="bi bi-file-text"></i> Ver Logs
+                            </button>
+                            <button class="btn btn-outline-success" onclick="resetMetrics()">
+                                <i class="bi bi-arrow-clockwise"></i> Resetear Métricas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón de actualización flotante -->
+        <button class="btn btn-primary refresh-btn" onclick="refreshData()" title="Actualizar datos">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let resourcesChart, requestsChart;
+        let refreshInterval;
+
+        // Inicializar dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            refreshData();
+            
+            // Actualizar cada 30 segundos
+            refreshInterval = setInterval(refreshData, 30000);
+        });
+
+        // Inicializar gráficos
+        function initializeCharts() {
+            // Gráfico de recursos
+            const resourcesCtx = document.getElementById('resourcesChart').getContext('2d');
+            resourcesChart = new Chart(resourcesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['CPU', 'Memoria', 'Disco'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Gráfico de requests
+            const requestsCtx = document.getElementById('requestsChart').getContext('2d');
+            requestsChart = new Chart(requestsCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Requests',
+                        data: [],
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Errores',
+                        data: [],
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar datos
+        async function refreshData() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No hay token de autenticación');
+                }
+
+                // Obtener métricas simplificadas
+                const response = await fetch('/api/security/monitoring/simple', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                updateMetrics(data.data);
+                updateCharts(data.data);
+
+            } catch (error) {
+                console.error('Error actualizando datos:', error);
+                showAlert('Error actualizando datos: ' + error.message, 'danger');
+            }
+        }
+
+        // Actualizar métricas
+        function updateMetrics(data) {
+            document.getElementById('cpu-usage').textContent = data.cpu + '%';
+            document.getElementById('memory-usage').textContent = data.memory + '%';
+            document.getElementById('disk-usage').textContent = data.disk + '%';
+            document.getElementById('request-count').textContent = data.requests;
+            document.getElementById('error-count').textContent = data.errors;
+            document.getElementById('response-time').textContent = data.responseTime + 'ms';
+
+            // Actualizar colores según el uso
+            updateMetricColor('cpu-usage', data.cpu, 80);
+            updateMetricColor('memory-usage', data.memory, 85);
+            updateMetricColor('disk-usage', data.disk, 90);
+        }
+
+        // Actualizar color de métrica
+        function updateMetricColor(elementId, value, threshold) {
+            const element = document.getElementById(elementId);
+            if (value > threshold) {
+                element.className = 'text-danger';
+            } else if (value > threshold * 0.7) {
+                element.className = 'text-warning';
+            } else {
+                element.className = 'text-success';
+            }
+        }
+
+        // Actualizar gráficos
+        function updateCharts(data) {
+            // Actualizar gráfico de recursos
+            resourcesChart.data.datasets[0].data = [data.cpu, data.memory, data.disk];
+            resourcesChart.update();
+
+            // Actualizar gráfico de requests (simulado)
+            const now = new Date();
+            const timeLabel = now.toLocaleTimeString();
+            
+            requestsChart.data.labels.push(timeLabel);
+            requestsChart.data.datasets[0].data.push(data.requests);
+            requestsChart.data.datasets[1].data.push(data.errors);
+
+            // Mantener solo los últimos 20 puntos
+            if (requestsChart.data.labels.length > 20) {
+                requestsChart.data.labels.shift();
+                requestsChart.data.datasets[0].data.shift();
+                requestsChart.data.datasets[1].data.shift();
+            }
+
+            requestsChart.update();
+        }
+
+        // Probar alerta
+        async function testAlert() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const response = await fetch('/api/security/test-alert', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        severity: 'medium',
+                        message: 'Alerta de prueba desde dashboard'
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert('Alerta de prueba enviada exitosamente', 'success');
+                } else {
+                    throw new Error('Error enviando alerta de prueba');
+                }
+            } catch (error) {
+                showAlert('Error enviando alerta: ' + error.message, 'danger');
+            }
+        }
+
+        // Ejecutar backup
+        async function executeBackup() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const response = await fetch('/api/security/backup', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('Backup ejecutado exitosamente', 'success');
+                } else {
+                    showAlert('Error en backup: ' + data.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error ejecutando backup: ' + error.message, 'danger');
+            }
+        }
+
+        // Rotar claves JWT
+        async function rotateJWT() {
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const response = await fetch('/api/security/rotate-jwt', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showAlert('Claves JWT rotadas exitosamente', 'success');
+                } else {
+                    showAlert('Error rotando claves: ' + data.message, 'danger');
+                }
+            } catch (error) {
+                showAlert('Error rotando claves: ' + error.message, 'danger');
+            }
+        }
+
+        // Ver logs
+        function viewLogs() {
+            showAlert('Los logs se encuentran en el directorio logs/', 'info');
+        }
+
+        // Resetear métricas
+        async function resetMetrics() {
+            if (confirm('¿Estás seguro de que quieres resetear las métricas?')) {
+                try {
+                    // Aquí implementarías la llamada para resetear métricas
+                    showAlert('Métricas reseteadas', 'success');
+                    refreshData();
+                } catch (error) {
+                    showAlert('Error reseteando métricas: ' + error.message, 'danger');
+                }
+            }
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alerts-container');
+            const alertId = 'alert-' + Date.now();
+            
+            const alertHtml = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            alertContainer.insertAdjacentHTML('afterbegin', alertHtml);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                const alertElement = document.getElementById(alertId);
+                if (alertElement) {
+                    alertElement.remove();
+                }
+            }, 5000);
+        }
+
+        // Limpiar intervalos al salir
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

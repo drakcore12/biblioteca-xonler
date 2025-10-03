@@ -9,7 +9,7 @@ const {
 } = require('../controllers/prestamos.controller');
 
 // Middleware para verificar autenticación
-const { auth } = require('../middleware/auth');
+const { hybridAuth } = require('../middleware/hybrid-auth');
 
 // Rutas de diagnóstico (sin autenticación)
 router.get('/test', (req, res) => {
@@ -51,7 +51,7 @@ router.get('/test-db', async (req, res) => {
 });
 
 // Rutas que requieren autenticación
-router.use(auth);
+router.use(hybridAuth);
 
 // GET /api/prestamos/usuario/actual - Préstamos del usuario actual
 router.get('/usuario/actual', obtenerPrestamosUsuarioActual);

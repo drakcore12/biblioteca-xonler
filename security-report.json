@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-10-03T04:40:27.949Z",
+  "version": "1.0.0",
+  "owaspTop10": {
+    "A01-Broken_Access_Control": "MITIGADO",
+    "A02-Cryptographic_Failures": "MITIGADO",
+    "A03-Injection": "MITIGADO",
+    "A04-Insecure_Design": "PARCIALMENTE_MITIGADO",
+    "A05-Security_Misconfiguration": "MITIGADO",
+    "A06-Vulnerable_Components": "REQUIERE_ATENCION",
+    "A07-Authentication_Failures": "MITIGADO",
+    "A08-Data_Integrity_Failures": "REQUIERE_ATENCION",
+    "A09-Security_Logging": "PARCIALMENTE_IMPLEMENTADO",
+    "A10-SSRF": "NO_APLICABLE"
+  },
+  "recommendations": [
+    "Actualizar dependencias desactualizadas",
+    "Implementar logging centralizado",
+    "Configurar SSL para base de datos",
+    "Implementar rotación de claves JWT",
+    "Configurar monitoreo de seguridad"
+  ]
+}

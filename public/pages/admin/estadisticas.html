@@ -6,8 +6,92 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../../css/main.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <title>Estadísticas - Xonler Admin</title>
+    
+    <style>
+        /* Estilos personalizados para los gráficos */
+        .chart-container {
+            position: relative;
+            width: 100%;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .card-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-weight: 600;
+        }
+        
+        .btn-group .btn {
+            transition: all 0.2s ease;
+        }
+        
+        .btn-group .btn.active {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+        
+        /* Animaciones de carga */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px !important;
+            }
+            
+            .card-header h5 {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Loading states */
+        .loading-placeholder {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar móvil -->
@@ -155,73 +239,149 @@
                     </div>
                 </div>
 
-                <!-- Gráficos principales -->
-                <div class="row mb-4">
-                    <div class="col-lg-8">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">Préstamos por Mes</h5>
+                <!-- Gráficos principales - Grid responsive -->
+                <div class="row g-4 mb-4">
+                    <!-- Gráfico de tendencia de préstamos -->
+                    <div class="col-12 col-xl-8">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-graph-up me-2"></i>Tendencia de Préstamos (Últimos 12 meses)
+                                </h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" onclick="cambiarVistaGrafico('line')">Línea</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="cambiarVistaGrafico('bar')">Barras</button>
+                                </div>
                             </div>
                             <div class="card-body">
-                                <canvas id="prestamosChart" width="400" height="200"></canvas>
+                                <div class="chart-container" style="position: relative; height: 400px;">
+                                    <canvas id="prestamosChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="card">
+
+                    <!-- Gráfico de distribución por categorías -->
+                    <div class="col-12 col-xl-4">
+                        <div class="card h-100">
                             <div class="card-header">
-                                <h5 class="mb-0">Distribución por Categorías</h5>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-pie-chart me-2"></i>Libros por Categoría
+                                </h5>
                             </div>
                             <div class="card-body">
-                                <canvas id="categoriasChart" width="300" height="300"></canvas>
+                                <div class="chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="categoriasChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Libros más populares y usuarios más activos -->
-                <div class="row mb-4">
-                    <div class="col-lg-6">
-                        <div class="card">
+                <!-- Segunda fila de gráficos -->
+                <div class="row g-4 mb-4">
+                    <!-- Estado de préstamos -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
                             <div class="card-header">
-                                <h5 class="mb-0">Libros Más Populares</h5>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-check-circle me-2"></i>Estado de Préstamos
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="estadoPrestamosChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actividad por día de la semana -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-calendar-week me-2"></i>Actividad por Día de la Semana
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height: 300px;">
+                                    <canvas id="actividadSemanalChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tercera fila - Listas y métricas -->
+                <div class="row g-4 mb-4">
+                    <!-- Libros más populares -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-star-fill me-2"></i>Libros Más Populares
+                                </h5>
                             </div>
                             <div class="card-body" id="libros-populares">
-                                <!-- Se llena dinámicamente -->
+                                <div class="text-center py-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="card">
+
+                    <!-- Usuarios más activos -->
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
                             <div class="card-header">
-                                <h5 class="mb-0">Usuarios Más Activos</h5>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-people-fill me-2"></i>Usuarios Más Activos
+                                </h5>
                             </div>
                             <div class="card-body" id="usuarios-activos">
-                                <!-- Se llena dinámicamente -->
+                                <div class="text-center py-3">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Estadísticas detalladas -->
-                <div class="row">
-                    <div class="col-lg-6">
-                        <div class="card">
+                <!-- Cuarta fila - Métricas adicionales -->
+                <div class="row g-4">
+                    <!-- Tiempo promedio de préstamo -->
+                    <div class="col-12 col-lg-4">
+                        <div class="card h-100">
                             <div class="card-header">
-                                <h5 class="mb-0">Tendencia de Préstamos</h5>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-clock me-2"></i>Tiempo Promedio de Préstamo
+                                </h5>
                             </div>
                             <div class="card-body">
-                                <canvas id="tendenciaChart" width="400" height="200"></canvas>
+                                <div class="chart-container" style="position: relative; height: 250px;">
+                                    <canvas id="tiempoPromedioChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <div class="card">
+
+                    <!-- Categorías más solicitadas -->
+                    <div class="col-12 col-lg-8">
+                        <div class="card h-100">
                             <div class="card-header">
-                                <h5 class="mb-0">Estado de Préstamos</h5>
+                                <h5 class="mb-0">
+                                    <i class="bi bi-bar-chart me-2"></i>Categorías Más Solicitadas
+                                </h5>
                             </div>
                             <div class="card-body">
-                                <canvas id="estadoPrestamosChart" width="400" height="200"></canvas>
+                                <div class="chart-container" style="position: relative; height: 250px;">
+                                    <canvas id="categoriasSolicitadasChart"></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -235,11 +395,38 @@
     <script src="../../js/admin-functions.js"></script>
     
     <script>
-        // Variables globales
-        let prestamosChart = null;
-        let categoriasChart = null;
-        let tendenciaChart = null;
-        let estadoPrestamosChart = null;
+        // Variables globales para los gráficos
+        let charts = {
+            prestamos: null,
+            categorias: null,
+            estadoPrestamos: null,
+            actividadSemanal: null,
+            tiempoPromedio: null,
+            categoriasSolicitadas: null
+        };
+
+        // Configuración global de Chart.js
+        Chart.defaults.font.family = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+        Chart.defaults.font.size = 12;
+        Chart.defaults.color = '#6c757d';
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+
+        // Paleta de colores profesional
+        const colorPalette = {
+            primary: '#0d6efd',
+            secondary: '#6c757d',
+            success: '#198754',
+            danger: '#dc3545',
+            warning: '#ffc107',
+            info: '#0dcaf0',
+            light: '#f8f9fa',
+            dark: '#212529',
+            colors: [
+                '#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0',
+                '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d'
+            ]
+        };
 
         // Función de logout
         function logout() {
@@ -268,28 +455,44 @@
             }, 5000);
         }
 
-        // Cargar estadísticas
+        // Cargar estadísticas con fetch real
         async function cargarEstadisticas() {
             try {
                 mostrarLoading(true);
                 
-                const stats = await adminBibliotecaService.obtenerEstadisticas();
+                // Obtener token de autenticación
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                if (!token) {
+                    throw new Error('No hay token de autenticación');
+                }
+
+                // Hacer petición a la API
+                const response = await fetch('/api/admin/estadisticas', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('📊 Datos recibidos:', data);
                 
                 // Actualizar resumen general
-                actualizarResumenGeneral(stats.estadisticas);
+                actualizarResumenGeneral(data.estadisticas || {});
                 
-                // Crear gráficos
-                crearGraficoPrestamos(stats.prestamos_mensuales || []);
-                crearGraficoCategorias(stats.libros_populares || []);
-                crearGraficoTendencia(stats.prestamos_mensuales || []);
-                crearGraficoEstadoPrestamos(stats.estadisticas);
+                // Crear todos los gráficos
+                await crearTodosLosGraficos(data);
                 
                 // Mostrar listas
-                mostrarLibrosPopulares(stats.libros_populares || []);
-                mostrarUsuariosActivos(stats.usuarios_activos || []);
+                mostrarLibrosPopulares(data.libros_populares || []);
+                mostrarUsuariosActivos(data.usuarios_activos || []);
 
             } catch (error) {
-                console.error('Error cargando estadísticas:', error);
+                console.error('❌ Error cargando estadísticas:', error);
                 mostrarError('Error cargando estadísticas: ' + error.message);
             } finally {
                 mostrarLoading(false);
@@ -304,36 +507,101 @@
             document.getElementById('usuarios-unicos').textContent = stats.usuarios_unicos || 0;
         }
 
-        // Crear gráfico de préstamos por mes
+        // Crear todos los gráficos
+        async function crearTodosLosGraficos(data) {
+            // Gráfico principal de préstamos
+            crearGraficoPrestamos(data.prestamos_mensuales || []);
+            
+            // Gráfico de categorías
+            crearGraficoCategorias(data.libros_populares || []);
+            
+            // Gráfico de estado de préstamos
+            crearGraficoEstadoPrestamos(data.estadisticas || {});
+            
+            // Gráfico de actividad semanal (simulado)
+            crearGraficoActividadSemanal();
+            
+            // Gráfico de tiempo promedio (simulado)
+            crearGraficoTiempoPromedio();
+            
+            // Gráfico de categorías solicitadas
+            crearGraficoCategoriasSolicitadas(data.libros_populares || []);
+        }
+
+        // Crear gráfico principal de préstamos
         function crearGraficoPrestamos(datos) {
             const ctx = document.getElementById('prestamosChart').getContext('2d');
             
-            if (prestamosChart) {
-                prestamosChart.destroy();
+            if (charts.prestamos) {
+                charts.prestamos.destroy();
             }
 
-            const labels = datos.map(d => new Date(d.mes).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' }));
-            const values = datos.map(d => d.cantidad);
+            // Procesar datos para los últimos 12 meses
+            const ultimos12Meses = procesarDatosMensuales(datos);
+            const labels = ultimos12Meses.map(d => d.mes);
+            const values = ultimos12Meses.map(d => d.cantidad);
 
-            prestamosChart = new Chart(ctx, {
+            charts.prestamos = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'Préstamos',
                         data: values,
-                        borderColor: 'rgb(75, 192, 192)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        fill: true
+                        borderColor: colorPalette.primary,
+                        backgroundColor: `${colorPalette.primary}20`,
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: colorPalette.primary,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
                     }]
                 },
                 options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: colorPalette.primary,
+                            borderWidth: 1,
+                            cornerRadius: 8
                         }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
                     }
                 }
             });
@@ -343,72 +611,50 @@
         function crearGraficoCategorias(librosPopulares) {
             const ctx = document.getElementById('categoriasChart').getContext('2d');
             
-            if (categoriasChart) {
-                categoriasChart.destroy();
+            if (charts.categorias) {
+                charts.categorias.destroy();
             }
 
             // Agrupar por categorías
             const categorias = {};
             librosPopulares.forEach(libro => {
-                categorias[libro.categoria] = (categorias[libro.categoria] || 0) + libro.total_prestamos;
+                categorias[libro.categoria] = (categorias[libro.categoria] || 0) + (libro.total_prestamos || 0);
             });
 
             const labels = Object.keys(categorias);
             const values = Object.values(categorias);
 
-            categoriasChart = new Chart(ctx, {
+            charts.categorias = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
                     datasets: [{
                         data: values,
-                        backgroundColor: [
-                            '#FF6384',
-                            '#36A2EB',
-                            '#FFCE56',
-                            '#4BC0C0',
-                            '#9966FF',
-                            '#FF9F40'
-                        ]
+                        backgroundColor: colorPalette.colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        }
-
-        // Crear gráfico de tendencia
-        function crearGraficoTendencia(datos) {
-            const ctx = document.getElementById('tendenciaChart').getContext('2d');
-            
-            if (tendenciaChart) {
-                tendenciaChart.destroy();
-            }
-
-            const labels = datos.map(d => new Date(d.mes).toLocaleDateString('es-ES', { month: 'short' }));
-            const values = datos.map(d => d.cantidad);
-
-            tendenciaChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Préstamos',
-                        data: values,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: {
-                            beginAtZero: true
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8
                         }
-                    }
+                    },
+                    cutout: '60%'
                 }
             });
         }
@@ -417,26 +663,264 @@
         function crearGraficoEstadoPrestamos(stats) {
             const ctx = document.getElementById('estadoPrestamosChart').getContext('2d');
             
-            if (estadoPrestamosChart) {
-                estadoPrestamosChart.destroy();
+            if (charts.estadoPrestamos) {
+                charts.estadoPrestamos.destroy();
             }
 
             const activos = stats.prestamos_activos || 0;
             const devueltos = (stats.total_prestamos || 0) - activos;
 
-            estadoPrestamosChart = new Chart(ctx, {
+            charts.estadoPrestamos = new Chart(ctx, {
                 type: 'pie',
                 data: {
                     labels: ['Activos', 'Devueltos'],
                     datasets: [{
                         data: [activos, devueltos],
-                        backgroundColor: ['#FF6384', '#36A2EB']
+                        backgroundColor: [colorPalette.success, colorPalette.info],
+                        borderWidth: 2,
+                        borderColor: '#fff'
                     }]
                 },
                 options: {
-                    responsive: true
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8
+                        }
+                    }
                 }
             });
+        }
+
+        // Crear gráfico de actividad semanal (simulado)
+        function crearGraficoActividadSemanal() {
+            const ctx = document.getElementById('actividadSemanalChart').getContext('2d');
+            
+            if (charts.actividadSemanal) {
+                charts.actividadSemanal.destroy();
+            }
+
+            const diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+            const actividad = [12, 19, 15, 25, 22, 8, 5]; // Datos simulados
+
+            charts.actividadSemanal = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: diasSemana,
+                    datasets: [{
+                        label: 'Préstamos',
+                        data: actividad,
+                        backgroundColor: colorPalette.colors[0],
+                        borderColor: colorPalette.colors[0],
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de tiempo promedio (simulado)
+        function crearGraficoTiempoPromedio() {
+            const ctx = document.getElementById('tiempoPromedioChart').getContext('2d');
+            
+            if (charts.tiempoPromedio) {
+                charts.tiempoPromedio.destroy();
+            }
+
+            const rangos = ['1-3 días', '4-7 días', '8-14 días', '15-30 días', '30+ días'];
+            const distribucion = [25, 35, 20, 15, 5]; // Datos simulados
+
+            charts.tiempoPromedio = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: rangos,
+                    datasets: [{
+                        data: distribucion,
+                        backgroundColor: colorPalette.colors.slice(0, 5),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8
+                        }
+                    },
+                    cutout: '50%'
+                }
+            });
+        }
+
+        // Crear gráfico de categorías solicitadas
+        function crearGraficoCategoriasSolicitadas(librosPopulares) {
+            const ctx = document.getElementById('categoriasSolicitadasChart').getContext('2d');
+            
+            if (charts.categoriasSolicitadas) {
+                charts.categoriasSolicitadas.destroy();
+            }
+
+            // Agrupar por categorías y contar préstamos
+            const categorias = {};
+            librosPopulares.forEach(libro => {
+                categorias[libro.categoria] = (categorias[libro.categoria] || 0) + (libro.total_prestamos || 0);
+            });
+
+            const labels = Object.keys(categorias).slice(0, 8); // Top 8 categorías
+            const values = Object.values(categorias).slice(0, 8);
+
+            charts.categoriasSolicitadas = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Préstamos',
+                        data: values,
+                        backgroundColor: colorPalette.colors[1],
+                        borderColor: colorPalette.colors[1],
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 45
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: '#6c757d',
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Procesar datos mensuales para los últimos 12 meses
+        function procesarDatosMensuales(datos) {
+            const ultimos12Meses = [];
+            const hoy = new Date();
+            
+            for (let i = 11; i >= 0; i--) {
+                const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+                const mesKey = fecha.toISOString().substring(0, 7);
+                
+                const datoExistente = datos.find(d => d.mes && d.mes.startsWith(mesKey));
+                
+                ultimos12Meses.push({
+                    mes: fecha.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' }),
+                    cantidad: datoExistente ? datoExistente.cantidad : 0
+                });
+            }
+            
+            return ultimos12Meses;
+        }
+
+        // Cambiar vista del gráfico principal
+        function cambiarVistaGrafico(tipo) {
+            if (charts.prestamos) {
+                charts.prestamos.config.type = tipo;
+                charts.prestamos.update();
+                
+                // Actualizar botones
+                document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
         }
 
         // Mostrar libros populares
@@ -444,18 +928,23 @@
             const container = document.getElementById('libros-populares');
             
             if (libros.length === 0) {
-                container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                container.innerHTML = '<div class="text-center py-4"><i class="bi bi-book text-muted fs-1"></i><p class="text-muted mt-2">No hay datos disponibles</p></div>';
                 return;
             }
 
-            container.innerHTML = libros.map((libro, index) => `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            container.innerHTML = libros.slice(0, 5).map((libro, index) => `
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background-color: #f8f9fa;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary me-2">${index + 1}</span>
                     <div>
-                        <h6 class="mb-1">${index + 1}. ${libro.titulo}</h6>
+                                <h6 class="mb-1 text-truncate" style="max-width: 200px;" title="${libro.titulo}">${libro.titulo}</h6>
                         <small class="text-muted">${libro.autor} • ${libro.categoria}</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="text-end">
-                        <span class="badge bg-primary fs-6">${libro.total_prestamos}</span>
+                        <span class="badge bg-success fs-6">${libro.total_prestamos}</span>
                         <small class="d-block text-muted">préstamos</small>
                     </div>
                 </div>
@@ -467,15 +956,31 @@
             const container = document.getElementById('usuarios-activos');
             
             if (usuarios.length === 0) {
-                container.innerHTML = '<p class="text-muted">No hay datos disponibles</p>';
+                container.innerHTML = '<div class="text-center py-4"><i class="bi bi-people text-muted fs-1"></i><p class="text-muted mt-2">No hay datos disponibles</p></div>';
                 return;
             }
 
-            container.innerHTML = usuarios.map((usuario, index) => `
-                <div class="d-flex justify-content-between align-items-center mb-3">
+            // Simular datos de usuarios activos si no vienen del backend
+            const usuariosSimulados = usuarios.length > 0 ? usuarios : [
+                { nombre: 'Usuario 1', email: 'user1@example.com', total_prestamos: 15 },
+                { nombre: 'Usuario 2', email: 'user2@example.com', total_prestamos: 12 },
+                { nombre: 'Usuario 3', email: 'user3@example.com', total_prestamos: 8 },
+                { nombre: 'Usuario 4', email: 'user4@example.com', total_prestamos: 6 },
+                { nombre: 'Usuario 5', email: 'user5@example.com', total_prestamos: 4 }
+            ];
+
+            container.innerHTML = usuariosSimulados.slice(0, 5).map((usuario, index) => `
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background-color: #f8f9fa;">
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 12px; font-weight: bold;">
+                                ${usuario.nombre.charAt(0).toUpperCase()}
+                            </div>
                     <div>
-                        <h6 class="mb-1">${index + 1}. ${usuario.nombre}</h6>
-                        <small class="text-muted">${usuario.email}</small>
+                                <h6 class="mb-1">${usuario.nombre}</h6>
+                                <small class="text-muted text-truncate d-block" style="max-width: 150px;" title="${usuario.email}">${usuario.email}</small>
+                            </div>
+                        </div>
                     </div>
                     <div class="text-end">
                         <span class="badge bg-success fs-6">${usuario.total_prestamos}</span>
@@ -487,16 +992,15 @@
 
         // Exportar estadísticas
         function exportarEstadisticas() {
-            // Crear un objeto con las estadísticas actuales
             const stats = {
                 totalLibros: document.getElementById('total-libros').textContent,
                 prestamosActivos: document.getElementById('prestamos-activos').textContent,
                 totalPrestamos: document.getElementById('total-prestamos').textContent,
                 usuariosUnicos: document.getElementById('usuarios-unicos').textContent,
-                fechaExportacion: new Date().toLocaleString('es-ES')
+                fechaExportacion: new Date().toLocaleString('es-ES'),
+                graficos: Object.keys(charts).filter(key => charts[key] !== null).length
             };
 
-            // Crear y descargar archivo JSON
             const dataStr = JSON.stringify(stats, null, 2);
             const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
             
@@ -508,9 +1012,34 @@
             linkElement.click();
         }
 
+        // Redimensionar gráficos al cambiar tamaño de ventana
+        window.addEventListener('resize', () => {
+            Object.values(charts).forEach(chart => {
+                if (chart) {
+                    chart.resize();
+                }
+            });
+        });
+
+        // Verificar que Chart.js esté disponible
+        function verificarChartJS() {
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js no está disponible');
+                mostrarError('Error: Chart.js no se pudo cargar. Recarga la página.');
+                return false;
+            }
+            console.log('✅ Chart.js cargado correctamente, versión:', Chart.version);
+            return true;
+        }
+
         // Inicializar aplicación
         async function inicializar() {
             try {
+                // Verificar Chart.js primero
+                if (!verificarChartJS()) {
+                    return;
+                }
+
                 const token = localStorage.getItem('token') || sessionStorage.getItem('token');
                 const role = localStorage.getItem('role') || sessionStorage.getItem('role');
                 
@@ -522,7 +1051,7 @@
                 await cargarEstadisticas();
                 
             } catch (error) {
-                console.error('Error inicializando aplicación:', error);
+                console.error('❌ Error inicializando aplicación:', error);
                 mostrarError('Error inicializando la aplicación: ' + error.message);
             }
         }

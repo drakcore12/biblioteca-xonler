@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 90
+    },
+    "auditLog": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\.978195b1f072e1d57a64cd6d34430570f4ba6297-audit.json",
+    "files": [
+        {
+            "date": 1759466703960,
+            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\security-2025-10-02.log",
+            "hash": "66285c7f8268f91d6b20b7dfb9dbddf51392029e5e6bccea4df8e129daec70ef"
+        },
+        {
+            "date": 1759467600599,
+            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\security-2025-10-03.log",
+            "hash": "539dcd6955cc16a70d66265e8b31c95b530fef8e15cf12f4f152d4fa0ab75001"
+        }
+    ],
+    "hashType": "sha256"
+}

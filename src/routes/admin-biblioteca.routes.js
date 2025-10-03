@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { auth, requireRole } = require('../middleware/auth');
+const { hybridAuth } = require('../middleware/hybrid-auth');
+const { requireRole } = require('../middleware/auth');
 const {
   obtenerBibliotecaAsignada,
   obtenerEstadisticasBiblioteca,
@@ -12,8 +13,8 @@ const {
   marcarPrestamoDevuelto
 } = require('../controllers/admin-biblioteca.controller');
 
-// Middleware: requiere autenticación y rol de admin
-router.use(auth);
+// Middleware: requiere autenticación híbrida y rol de admin
+router.use(hybridAuth);
 router.use(requireRole('admin'));
 
 // Información de la biblioteca asignada
