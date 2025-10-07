@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { generatePending2FAToken } = require('./twofa.controller');
 const { setAuthCookies, clearAuthCookies } = require('../utils/cookie-utils');
-const jwtRotation = require('../utils/jwt-rotation');
+const simpleJWT = require('../utils/simple-jwt');
 const { logAudit, logSecurity } = require('../config/logger');
 
 // Helper para normalizar preferencias que pueden venir como string
@@ -15,7 +15,7 @@ function asObject(x) {
 
 // Generar JWT token
 function generateToken(user) {
-  return jwtRotation.generateToken({
+  return simpleJWT.generateToken({
     id: user.id, 
     email: user.email, 
     role: user.rol,  // Changed from 'rol' to 'role' to match middleware

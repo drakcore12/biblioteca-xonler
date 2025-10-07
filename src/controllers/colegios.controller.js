@@ -28,8 +28,7 @@ async function obtenerColegios(req, res) {
 
     const result = await pool.query(`
       SELECT 
-        id, nombre, direccion, ciudad, codigo_postal, 
-        telefono, email, created_at, updated_at
+        id, nombre, direccion
       FROM colegios
       ${whereClause}
       ORDER BY nombre
@@ -65,8 +64,7 @@ async function obtenerColegioPorId(req, res) {
     
     const result = await pool.query(`
       SELECT 
-        id, nombre, direccion, ciudad, codigo_postal, 
-        telefono, email, created_at, updated_at
+        id, nombre, direccion
       FROM colegios
       WHERE id = $1
     `, [id]);
@@ -86,7 +84,7 @@ async function obtenerColegioPorId(req, res) {
 async function crearColegio(req, res) {
   try {
     const { 
-      nombre, direccion, ciudad, codigo_postal, telefono, email 
+      nombre, direccion
     } = req.body;
 
     if (!nombre || !direccion) {
@@ -96,10 +94,10 @@ async function crearColegio(req, res) {
     }
 
     const result = await pool.query(`
-      INSERT INTO colegios (nombre, direccion, ciudad, codigo_postal, telefono, email)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id, nombre, direccion, ciudad, codigo_postal, telefono, email, created_at, updated_at
-    `, [nombre, direccion, ciudad, codigo_postal, telefono, email]);
+      INSERT INTO colegios (nombre, direccion)
+      VALUES ($1, $2)
+      RETURNING id, nombre, direccion
+    `, [nombre, direccion]);
 
     res.status(201).json({
       message: 'Colegio creado exitosamente',
@@ -117,7 +115,7 @@ async function actualizarColegio(req, res) {
   try {
     const { id } = req.params;
     const { 
-      nombre, direccion, ciudad, codigo_postal, telefono, email 
+      nombre, direccion
     } = req.body;
 
     if (!nombre || !direccion) {
@@ -138,11 +136,10 @@ async function actualizarColegio(req, res) {
 
     const result = await pool.query(`
       UPDATE colegios 
-      SET nombre = $1, direccion = $2, ciudad = $3, codigo_postal = $4, 
-          telefono = $5, email = $6, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $7
-      RETURNING id, nombre, direccion, ciudad, codigo_postal, telefono, email, created_at, updated_at
-    `, [nombre, direccion, ciudad, codigo_postal, telefono, email, id]);
+      SET nombre = $1, direccion = $2
+      WHERE id = $3
+      RETURNING id, nombre, direccion
+    `, [nombre, direccion, id]);
 
     res.json({
       message: 'Colegio actualizado exitosamente',

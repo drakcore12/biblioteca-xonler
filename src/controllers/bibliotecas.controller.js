@@ -12,9 +12,21 @@ async function obtenerBibliotecas(req, res) {
 
     const sql = `
       SELECT b.id, b.nombre, b.direccion, b.colegio_id,
-             c.nombre AS colegio_nombre, c.direccion AS colegio_direccion
+             c.nombre AS colegio_nombre, c.direccion AS colegio_direccion,
+             COALESCE(admin_count.total_admins, 0) AS total_admins,
+             COALESCE(libros_count.total_libros, 0) AS total_libros
       FROM bibliotecas b
       JOIN colegios c ON c.id = b.colegio_id
+      LEFT JOIN (
+        SELECT biblioteca_id, COUNT(*) AS total_admins
+        FROM usuario_biblioteca
+        GROUP BY biblioteca_id
+      ) admin_count ON admin_count.biblioteca_id = b.id
+      LEFT JOIN (
+        SELECT biblioteca_id, COUNT(*) AS total_libros
+        FROM biblioteca_libros
+        GROUP BY biblioteca_id
+      ) libros_count ON libros_count.biblioteca_id = b.id
       WHERE ($1::text IS NULL OR b.nombre ILIKE '%'||$1||'%' OR b.direccion ILIKE '%'||$1||'%')
         AND ($2::bigint IS NULL OR b.colegio_id = $2::bigint)
       ORDER BY b.id
@@ -46,9 +58,21 @@ async function obtenerBibliotecaPorId(req, res) {
     const { id } = req.params;
     const sql = `
       SELECT b.id, b.nombre, b.direccion, b.colegio_id,
-             c.nombre AS colegio_nombre, c.direccion AS colegio_direccion
+             c.nombre AS colegio_nombre, c.direccion AS colegio_direccion,
+             COALESCE(admin_count.total_admins, 0) AS total_admins,
+             COALESCE(libros_count.total_libros, 0) AS total_libros
       FROM bibliotecas b
       JOIN colegios c ON c.id = b.colegio_id
+      LEFT JOIN (
+        SELECT biblioteca_id, COUNT(*) AS total_admins
+        FROM usuario_biblioteca
+        GROUP BY biblioteca_id
+      ) admin_count ON admin_count.biblioteca_id = b.id
+      LEFT JOIN (
+        SELECT biblioteca_id, COUNT(*) AS total_libros
+        FROM biblioteca_libros
+        GROUP BY biblioteca_id
+      ) libros_count ON libros_count.biblioteca_id = b.id
       WHERE b.id = $1
     `;
     const { rows } = await pool.query(sql, [id]);

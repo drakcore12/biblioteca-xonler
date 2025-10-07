@@ -13,35 +13,12 @@
   <link rel="icon" href="/favicon.ico">
 </head>
 <body>
-  <header class="bg-dark text-white py-3">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-6 col-md-4">
-          <h1 class="m-0 fs-3 fs-md-2">Xonler</h1>
-        </div>
-        <div class="col-6 col-md-8">
-          <nav class="navbar navbar-expand-lg navbar-dark p-0">
-            <button class="navbar-toggler ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-              <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse mt-2 mt-lg-0" id="navbarNav">
-              <ul class="navbar-nav ms-auto text-center">
-                <li class="nav-item"><a class="nav-link px-3" href="/pages/guest/index.html">Inicio</a></li>
-                <li class="nav-item"><a class="nav-link px-3" href="/pages/guest/contacto.html">Contacto</a></li>
-                <li class="nav-item"><a class="nav-link px-3" href="/pages/guest/bibliotecas.html">Bibliotecas</a></li>
-                <li class="nav-item"><a class="nav-link active px-3" href="/pages/guest/login.html">Iniciar Sesión</a></li>
-              </ul>
-            </div>
-          </nav>
-        </div>
-      </div>
-    </div>
-  </header>
+  <!-- Header cargado dinámicamente -->
+  <div id="guest-header"></div>
 
   <main class="container flex-grow-1 d-flex align-items-center py-4">
     <div class="row justify-content-center w-100">
-      <div class="col-11 col-sm-10 col-md-8 col-lg-6">
+      <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
         <div class="card login-card shadow-sm">
           <div class="card-header bg-white border-0 pb-0">
             <ul class="nav nav-tabs card-header-tabs">
@@ -73,9 +50,9 @@
                            autocomplete="off">
                     <label class="form-check-label" for="rememberMe">Recordarme</label>
                   </div>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <button type="submit" class="btn btn-primary">Iniciar sesión</button>
-                    <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">¿Olvidaste tu contraseña?</a>
+                  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill flex-sm-grow-0">Iniciar sesión</button>
+                    <a href="#" class="text-decoration-none text-center flex-fill flex-sm-grow-0" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">¿Olvidaste tu contraseña?</a>
                   </div>
                   
                 </form>
@@ -127,35 +104,8 @@
     </div>
   </main>
 
-  <footer class="bg-dark text-white py-4 mt-auto">
-    <div class="container">
-      <div class="row gy-4">
-        <div class="col-12 col-sm-6 col-md-4 text-center text-sm-start">
-          <h4 class="h5">Xonler</h4>
-          <p class="mb-0">Red de bibliotecas estudiantiles</p>
-        </div>
-        <div class="col-12 col-sm-6 col-md-4 text-center text-sm-start">
-          <h5 class="h6 mb-3">Enlaces</h5>
-          <ul class="list-unstyled mb-0">
-            <li class="mb-2"><a href="/pages/guest/index.html" class="text-white text-decoration-none">Inicio</a></li>
-            <li class="mb-2"><a href="/pages/guest/contacto.html" class="text-white text-decoration-none">Contacto</a></li>
-            <li class="mb-2"><a href="/pages/guest/login.html" class="text-white text-decoration-none">Iniciar Sesión</a></li>
-          </ul>
-        </div>
-        <div class="col-12 col-sm-6 col-md-4 text-center text-sm-start">
-          <h5 class="h6 mb-3">Contacto</h5>
-          <address class="mb-0">
-            <a href="mailto:info@xonler.edu" class="text-white text-decoration-none d-block mb-2">info@xonler.edu</a>
-            <a href="tel:+1234567890" class="text-white text-decoration-none">(123) 456-7890</a>
-          </address>
-        </div>
-      </div>
-      <hr class="my-4">
-      <div class="text-center">
-        <small class="text-white-50">&copy; 2025 Xonler - Red de Bibliotecas Estudiantiles</small>
-      </div>
-    </div>
-  </footer>
+  <!-- Footer cargado dinámicamente -->
+  <div id="guest-footer"></div>
 
   <!-- JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -165,6 +115,7 @@
     import { requireAnon } from '/js/common/guard.js';
     import { initLoginForm } from '/services/login.services.js';
     import { initRegistroForm, initPasswordValidation } from '/services/registro.services.js';
+    import { loadGuestLayout } from '/services/component-loader.services.js';
     
     // Función para inicializar la validación
     function boot() {
@@ -172,7 +123,19 @@
     }
     
     // Ejecutar al cargar la página
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Cargar componentes de layout
+      await loadGuestLayout('login');
+      
+      // Inicializar validación
+      boot();
+      
+      // Inicializar formularios
+      initLoginForm(); // engancha el submit del login
+      initRegistroForm(); // engancha el submit del registro
+      initPasswordValidation(); // valida contraseña en tiempo real
+      initForgotPassword(); // inicializar recuperación de contraseña
+    });
     
     // Ejecutar cuando la página vuelve a ser visible (por si usan botón atrás)
     document.addEventListener('visibilitychange', () => {
@@ -180,12 +143,6 @@
         requireAnon();
       }
     });
-    
-    // Inicializar formularios
-    initLoginForm(); // engancha el submit del login
-    initRegistroForm(); // engancha el submit del registro
-    initPasswordValidation(); // valida contraseña en tiempo real
-    initForgotPassword(); // inicializar recuperación de contraseña
   </script>
   
   <!-- Script para mejorar autocompletado de contraseñas -->

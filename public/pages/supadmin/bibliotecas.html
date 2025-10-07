@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Gestión de Bibliotecas - Super Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Super Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4><i class="bi bi-shield-check me-2"></i>Super Admin</h4>
+                        <p class="small">Panel de super administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="bibliotecas.html">
+                                <i class="bi bi-building me-2"></i> Gestión de Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas Globales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="logs.html">
+                                <i class="bi bi-file-text me-2"></i> Logs y Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="monitoring.html">
+                                <i class="bi bi-shield-check me-2"></i> Monitoreo de Seguridad
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Gestión de Bibliotecas</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-primary me-2" onclick="mostrarModalCrearBiblioteca()">
+                            <i class="bi bi-building-add me-1"></i> Nueva Biblioteca
+                        </button>
+                        <button class="btn btn-success" onclick="mostrarModalCrearColegio()">
+                            <i class="bi bi-plus-circle me-1"></i> Nuevo Colegio
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="busquedaBibliotecas" placeholder="Buscar bibliotecas...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroColegio">
+                            <option value="">Todos los colegios</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary" onclick="aplicarFiltros()">
+                            <i class="bi bi-funnel me-1"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-success" id="btnExportar" onclick="exportarBibliotecas()">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Excel
+                            </button>
+                            <button class="btn btn-outline-warning btn-html-export" onclick="exportarBibliotecasHTML()">
+                                <i class="bi bi-file-earmark-text me-1"></i> HTML
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando bibliotecas...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Tabla de bibliotecas -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Lista de Bibliotecas</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="bibliotecas-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Dirección</th>
+                                        <th>Colegio</th>
+                                        <th>Administradores</th>
+                                        <th>Libros</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de bibliotecas">
+                            <ul class="pagination justify-content-center" id="pagination-bibliotecas">
+                                <!-- Se llena dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar Biblioteca -->
+    <div class="modal fade" id="modalBiblioteca" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalBibliotecaTitulo">Crear Biblioteca</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formBiblioteca">
+                        <input type="hidden" id="bibliotecaId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="nombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="colegio" class="form-label">Colegio *</label>
+                                <select class="form-select" id="colegio" required>
+                                    <option value="">Seleccionar colegio</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="direccion" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarBiblioteca()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Crear Colegio -->
+    <div class="modal fade" id="modalColegio" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Crear Colegio</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formColegio">
+                        <div class="mb-3">
+                            <label for="nombreColegio" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="nombreColegio" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="direccionColegio" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="direccionColegio" rows="2"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarColegio()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Administrador -->
+    <div class="modal fade" id="modalAsignarAdmin" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Asignar Administrador</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formAsignarAdmin">
+                        <input type="hidden" id="bibliotecaIdAdmin">
+                        <div class="mb-3">
+                            <label for="usuarioAdmin" class="form-label">Usuario *</label>
+                            <select class="form-select" id="usuarioAdmin" required>
+                                <option value="">Seleccionar usuario</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="canManage" class="form-label">Permisos</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="canManage" checked>
+                                <label class="form-check-label" for="canManage">
+                                    Puede gestionar la biblioteca
+                                </label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="asignarAdministrador()">Asignar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación -->
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que quieres eliminar esta biblioteca?</p>
+                    <p class="text-muted">Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarEliminarBiblioteca()">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    
+    <style>
+        .btn-html-export {
+            border-color: var(--primary-accent) !important;
+            color: var(--primary-accent) !important;
+        }
+        .btn-html-export:hover {
+            background-color: var(--primary-accent) !important;
+            color: white !important;
+            border-color: var(--primary-accent) !important;
+        }
+        .btn-html-export:focus {
+            box-shadow: 0 0 0 0.2rem rgba(127, 85, 57, 0.25) !important;
+        }
+    </style>
+    
+    <script>
+        // Variables globales
+        let bibliotecas = [];
+        let colegios = [];
+        let usuarios = [];
+        let bibliotecaSeleccionada = null;
+        let paginacion = { current: 1, total: 0, limit: 10 };
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para asegurar que los scripts se carguen
+            setTimeout(function() {
+                verificarAutenticacion();
+                cargarDatosIniciales();
+            }, 100);
+        });
+
+        // Verificar autenticación
+        function verificarAutenticacion() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            
+            if (!token || role !== 'supadmin') {
+                window.location.replace('/pages/guest/login.html');
+                return;
+            }
+        }
+
+        // Cargar datos iniciales
+        async function cargarDatosIniciales() {
+            try {
+                await Promise.all([
+                    cargarBibliotecas(),
+                    cargarColegios(),
+                    cargarUsuarios()
+                ]);
+            } catch (error) {
+                console.error('Error cargando datos iniciales:', error);
+                mostrarError('Error cargando datos iniciales: ' + error.message);
+            }
+        }
+
+        // Cargar bibliotecas
+        async function cargarBibliotecas() {
+            try {
+                mostrarLoading(true);
+                
+                const filtros = {
+                    busqueda: document.getElementById('busquedaBibliotecas').value,
+                    colegio_id: document.getElementById('filtroColegio').value,
+                    limit: paginacion.limit,
+                    offset: (paginacion.current - 1) * paginacion.limit
+                };
+
+                const response = await supadminService.obtenerBibliotecas(filtros);
+                bibliotecas = response.data || [];
+                paginacion.total = response.total || 0;
+
+                mostrarBibliotecas();
+                mostrarPaginacion();
+
+            } catch (error) {
+                console.error('Error cargando bibliotecas:', error);
+                mostrarError('Error cargando bibliotecas: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Cargar colegios
+        async function cargarColegios() {
+            try {
+                const response = await supadminService.obtenerColegios();
+                colegios = response.data || [];
+                
+                // Llenar select de filtro
+                const selectFiltro = document.getElementById('filtroColegio');
+                selectFiltro.innerHTML = '<option value="">Todos los colegios</option>';
+                colegios.forEach(colegio => {
+                    selectFiltro.innerHTML += `<option value="${colegio.id}">${colegio.nombre}</option>`;
+                });
+
+                // Llenar select del modal
+                const selectModal = document.getElementById('colegio');
+                selectModal.innerHTML = '<option value="">Seleccionar colegio</option>';
+                colegios.forEach(colegio => {
+                    selectModal.innerHTML += `<option value="${colegio.id}">${colegio.nombre}</option>`;
+                });
+
+            } catch (error) {
+                console.error('Error cargando colegios:', error);
+            }
+        }
+
+        // Cargar usuarios
+        async function cargarUsuarios() {
+            try {
+                const response = await supadminService.obtenerUsuarios({ limit: 1000 });
+                usuarios = response.data || [];
+                
+                // Llenar select de usuarios para asignar admin
+                const selectUsuarios = document.getElementById('usuarioAdmin');
+                selectUsuarios.innerHTML = '<option value="">Seleccionar usuario</option>';
+                usuarios.forEach(usuario => {
+                    if (usuario.rol_id == 2) { // Solo usuarios con rol_id = 2 (admin)
+                        selectUsuarios.innerHTML += `<option value="${usuario.id}">${usuario.nombre} ${usuario.apellido || ''} (${usuario.email})</option>`;
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error cargando usuarios:', error);
+            }
+        }
+
+        // Mostrar bibliotecas en la tabla
+        function mostrarBibliotecas() {
+            const tbody = document.querySelector('#bibliotecas-table tbody');
+            
+            if (bibliotecas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay bibliotecas</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = bibliotecas.map(biblioteca => `
+                <tr>
+                    <td>${biblioteca.id}</td>
+                    <td>${biblioteca.nombre}</td>
+                    <td>${biblioteca.direccion || 'No especificada'}</td>
+                    <td>${biblioteca.colegio_nombre || 'Sin colegio'}</td>
+                    <td>
+                        <span class="badge bg-info">${biblioteca.total_admins || 0} admin(s)</span>
+                    </td>
+                    <td>
+                        <span class="badge bg-success">${biblioteca.total_libros || 0} libro(s)</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editarBiblioteca(${biblioteca.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success me-1" onclick="asignarAdmin(${biblioteca.id})" title="Asignar Admin">
+                            <i class="bi bi-person-plus"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarBiblioteca(${biblioteca.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Mostrar paginación
+        function mostrarPaginacion() {
+            const container = document.getElementById('pagination-bibliotecas');
+            const totalPages = Math.ceil(paginacion.total / paginacion.limit);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // Botón anterior
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current - 1})">Anterior</a>
+                </li>
+            `;
+
+            // Páginas
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === paginacion.current || i === 1 || i === totalPages || (i >= paginacion.current - 2 && i <= paginacion.current + 2)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === paginacion.current ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="cambiarPagina(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === paginacion.current - 3 || i === paginacion.current + 3) {
+                    paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            // Botón siguiente
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current + 1})">Siguiente</a>
+                </li>
+            `;
+
+            container.innerHTML = paginationHTML;
+        }
+
+        // Cambiar página
+        function cambiarPagina(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(paginacion.total / paginacion.limit)) return;
+            paginacion.current = pagina;
+            cargarBibliotecas();
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            paginacion.current = 1;
+            cargarBibliotecas();
+        }
+
+        // Mostrar modal crear biblioteca
+        function mostrarModalCrearBiblioteca() {
+            document.getElementById('modalBibliotecaTitulo').textContent = 'Crear Biblioteca';
+            document.getElementById('formBiblioteca').reset();
+            document.getElementById('bibliotecaId').value = '';
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalBiblioteca'));
+            modal.show();
+        }
+
+        // Mostrar modal crear colegio
+        function mostrarModalCrearColegio() {
+            document.getElementById('formColegio').reset();
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalColegio'));
+            modal.show();
+        }
+
+        // Editar biblioteca
+        async function editarBiblioteca(id) {
+            try {
+                const biblioteca = await supadminService.obtenerBibliotecaPorId(id);
+                
+                document.getElementById('modalBibliotecaTitulo').textContent = 'Editar Biblioteca';
+                document.getElementById('bibliotecaId').value = biblioteca.id;
+                document.getElementById('nombre').value = biblioteca.nombre;
+                document.getElementById('direccion').value = biblioteca.direccion || '';
+                document.getElementById('colegio').value = biblioteca.colegio_id;
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalBiblioteca'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error cargando biblioteca:', error);
+                mostrarError('Error cargando biblioteca: ' + error.message);
+            }
+        }
+
+        // Guardar biblioteca
+        async function guardarBiblioteca() {
+            try {
+                const form = document.getElementById('formBiblioteca');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const datos = {
+                    nombre: document.getElementById('nombre').value,
+                    direccion: document.getElementById('direccion').value,
+                    colegio_id: parseInt(document.getElementById('colegio').value)
+                };
+
+                const bibliotecaId = document.getElementById('bibliotecaId').value;
+                
+                if (bibliotecaId) {
+                    await supadminService.actualizarBiblioteca(bibliotecaId, datos);
+                } else {
+                    await supadminService.crearBiblioteca(datos);
+                }
+
+                // Cerrar modal y recargar
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalBiblioteca'));
+                modal.hide();
+                cargarBibliotecas();
+                
+            } catch (error) {
+                console.error('Error guardando biblioteca:', error);
+                mostrarError('Error guardando biblioteca: ' + error.message);
+            }
+        }
+
+        // Guardar colegio
+        async function guardarColegio() {
+            try {
+                const form = document.getElementById('formColegio');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const datos = {
+                    nombre: document.getElementById('nombreColegio').value,
+                    direccion: document.getElementById('direccionColegio').value
+                };
+
+                await supadminService.crearColegio(datos);
+
+                // Cerrar modal y recargar
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalColegio'));
+                modal.hide();
+                cargarColegios();
+                
+            } catch (error) {
+                console.error('Error guardando colegio:', error);
+                mostrarError('Error guardando colegio: ' + error.message);
+            }
+        }
+
+        // Asignar administrador
+        function asignarAdmin(bibliotecaId) {
+            document.getElementById('bibliotecaIdAdmin').value = bibliotecaId;
+            const modal = new bootstrap.Modal(document.getElementById('modalAsignarAdmin'));
+            modal.show();
+        }
+
+        // Asignar administrador
+        async function asignarAdministrador() {
+            try {
+                const form = document.getElementById('formAsignarAdmin');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const bibliotecaId = document.getElementById('bibliotecaIdAdmin').value;
+                const usuarioId = document.getElementById('usuarioAdmin').value;
+
+                await supadminService.asignarAdminBiblioteca(usuarioId, bibliotecaId);
+
+                // Cerrar modal y recargar
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalAsignarAdmin'));
+                modal.hide();
+                cargarBibliotecas();
+                
+            } catch (error) {
+                console.error('Error asignando administrador:', error);
+                mostrarError('Error asignando administrador: ' + error.message);
+            }
+        }
+
+        // Eliminar biblioteca
+        function eliminarBiblioteca(id) {
+            bibliotecaSeleccionada = id;
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+            modal.show();
+        }
+
+        // Confirmar eliminación
+        async function confirmarEliminarBiblioteca() {
+            try {
+                await supadminService.eliminarBiblioteca(bibliotecaSeleccionada);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar'));
+                modal.hide();
+                cargarBibliotecas();
+                
+            } catch (error) {
+                console.error('Error eliminando biblioteca:', error);
+                mostrarError('Error eliminando biblioteca: ' + error.message);
+            }
+        }
+
+        // Función alternativa para exportar con formato HTML mejorado
+        async function exportarBibliotecasHTML() {
+            try {
+                console.log('🔄 [EXPORT HTML] Iniciando exportación HTML...');
+                
+                const btnExportar = document.getElementById('btnExportar');
+                const iconoOriginal = btnExportar.innerHTML;
+                
+                // Mostrar estado de carga
+                btnExportar.disabled = true;
+                btnExportar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Exportando...';
+                
+                // Obtener datos
+                const filtros = {
+                    busqueda: document.getElementById('busquedaBibliotecas').value,
+                    colegio_id: document.getElementById('filtroColegio').value,
+                    limit: 1000,
+                    offset: 0
+                };
+
+                const response = await supadminService.obtenerBibliotecas(filtros);
+                const bibliotecasExportar = response.data || [];
+                
+                // Crear tabla HTML con estilos del sistema
+                let html = `
+                <!DOCTYPE html>
+                <html lang="es">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Reporte de Bibliotecas - Sistema Xonler</title>
+                    <style>
+                        :root {
+                            --color-light: #EDEDE9;
+                            --color-dark: #463f3a;
+                            --color-medium: #8a817c;
+                            --color-accent: #7f5539;
+                            --color-light-accent: #ddbea9;
+                            --primary-accent: #7f5539;
+                            --primary-accent-light: #ddbea9;
+                        }
+                        
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        
+                        body { 
+                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                            background-color: var(--color-light);
+                            color: var(--color-dark);
+                            margin: 20px;
+                            line-height: 1.6;
+                        }
+                        
+                        .header { 
+                            text-align: center; 
+                            margin-bottom: 40px; 
+                            padding: 20px;
+                            background: linear-gradient(135deg, var(--primary-accent), var(--primary-accent-light));
+                            color: white;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        }
+                        
+                        .header h1 { 
+                            color: white; 
+                            margin-bottom: 10px; 
+                            font-size: 2.2em;
+                            font-weight: 600;
+                        }
+                        
+                        .header p { 
+                            color: rgba(255,255,255,0.9); 
+                            font-size: 16px; 
+                            margin-bottom: 5px;
+                        }
+                        
+                        .header .subtitle {
+                            font-size: 14px;
+                            color: rgba(255,255,255,0.8);
+                        }
+                        
+                        table { 
+                            width: 100%; 
+                            border-collapse: collapse; 
+                            margin-top: 20px;
+                            background-color: white;
+                            border-radius: 8px;
+                            overflow: hidden;
+                            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        }
+                        
+                        th { 
+                            background: linear-gradient(135deg, var(--primary-accent), var(--color-accent));
+                            color: white; 
+                            padding: 15px 12px; 
+                            text-align: center; 
+                            font-weight: 600;
+                            font-size: 14px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            border: none;
+                        }
+                        
+                        td { 
+                            padding: 12px; 
+                            border: 1px solid #e0e0e0;
+                            font-size: 14px;
+                        }
+                        
+                        tr:nth-child(even) { 
+                            background-color: var(--color-light); 
+                        }
+                        
+                        tr:nth-child(odd) { 
+                            background-color: #FFFFFF; 
+                        }
+                        
+                        tr:hover {
+                            background-color: rgba(221, 190, 169, 0.3);
+                            transition: background-color 0.2s ease;
+                        }
+                        
+                        .number { 
+                            text-align: center; 
+                            font-weight: 600; 
+                            color: var(--primary-accent);
+                            background-color: var(--primary-accent-light) !important;
+                        }
+                        
+                        .id { 
+                            text-align: center; 
+                            font-weight: 600; 
+                            color: var(--color-accent);
+                            background-color: var(--color-light-accent) !important;
+                        }
+                        
+                        .estado-activa { 
+                            text-align: center; 
+                            font-weight: 600; 
+                            color: #2d5a27;
+                            background-color: #d4edda !important;
+                            border-radius: 4px;
+                        }
+                        
+                        .estado-inactiva { 
+                            text-align: center; 
+                            font-weight: 600; 
+                            color: #721c24;
+                            background-color: #f8d7da !important;
+                            border-radius: 4px;
+                        }
+                        
+                        .footer { 
+                            margin-top: 40px; 
+                            text-align: center; 
+                            color: var(--color-medium); 
+                            font-size: 13px;
+                            padding: 20px;
+                            background-color: var(--color-light);
+                            border-radius: 8px;
+                        }
+                        
+                        .stats {
+                            display: flex;
+                            justify-content: center;
+                            gap: 30px;
+                            margin: 20px 0;
+                            flex-wrap: wrap;
+                        }
+                        
+                        .stat-item {
+                            background-color: white;
+                            padding: 15px 20px;
+                            border-radius: 8px;
+                            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                            text-align: center;
+                            min-width: 120px;
+                        }
+                        
+                        .stat-number {
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: var(--primary-accent);
+                        }
+                        
+                        .stat-label {
+                            font-size: 12px;
+                            color: var(--color-medium);
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                        }
+                        
+                        @media print {
+                            body { margin: 0; }
+                            .header { background: var(--primary-accent) !important; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Reporte de Bibliotecas</h1>
+                        <p>Sistema de Gestión de Bibliotecas Xonler</p>
+                        <p class="subtitle">Generado el ${new Date().toLocaleDateString('es-ES')} - ${bibliotecasExportar.length} bibliotecas registradas</p>
+                    </div>
+                    
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number">${bibliotecasExportar.length}</div>
+                            <div class="stat-label">Total Bibliotecas</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${bibliotecasExportar.filter(b => b.total_admins > 0).length}</div>
+                            <div class="stat-label">Con Administrador</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${bibliotecasExportar.reduce((sum, b) => sum + (b.total_libros || 0), 0)}</div>
+                            <div class="stat-label">Total Libros</div>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Dirección</th>
+                                <th>Colegio</th>
+                                <th>Administradores</th>
+                                <th>Libros</th>
+                                <th>Estado</th>
+                                <th>Fecha Exportación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                bibliotecasExportar.forEach((biblioteca, index) => {
+                    const estado = biblioteca.total_admins > 0 ? 'Activa' : 'Sin administrador';
+                    const estadoClass = estado === 'Activa' ? 'estado-activa' : 'estado-inactiva';
+                    
+                    html += `
+                        <tr>
+                            <td class="number">${index + 1}</td>
+                            <td class="id">BIB-${String(biblioteca.id).padStart(3, '0')}</td>
+                            <td>${biblioteca.nombre}</td>
+                            <td>${biblioteca.direccion || 'No especificada'}</td>
+                            <td>${biblioteca.colegio_nombre || 'Sin colegio'}</td>
+                            <td class="number">${biblioteca.total_admins || 0}</td>
+                            <td class="number">${biblioteca.total_libros || 0}</td>
+                            <td class="${estadoClass}">${estado}</td>
+                            <td>${new Date().toLocaleDateString('es-ES')}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        </tbody>
+                    </table>
+                    <div class="footer">
+                        <p>Este reporte fue generado automáticamente por el Sistema de Gestión de Bibliotecas Xonler</p>
+                    </div>
+                </body>
+                </html>
+                `;
+
+                // Crear y descargar archivo HTML
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                const ahora = new Date();
+                const fecha = ahora.toISOString().split('T')[0];
+                const hora = ahora.toTimeString().split(' ')[0].replace(/:/g, '-');
+                link.download = `Reporte_Bibliotecas_${fecha}_${hora}.html`;
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                console.log('✅ [EXPORT HTML] Archivo HTML generado exitosamente');
+                mostrarExito(`Archivo HTML "${link.download}" descargado exitosamente`);
+                
+                // Restaurar botón
+                btnExportar.disabled = false;
+                btnExportar.innerHTML = iconoOriginal;
+                
+            } catch (error) {
+                console.error('❌ [EXPORT HTML] Error:', error);
+                mostrarError('Error exportando HTML: ' + error.message);
+            }
+        }
+
+        // Exportar bibliotecas a Excel con ExcelJS
+        async function exportarBibliotecas() {
+            const btnExportar = document.getElementById('btnExportar');
+            const iconoOriginal = btnExportar.innerHTML;
+            
+            try {
+                console.log('🔄 [EXPORT] Iniciando exportación de bibliotecas con ExcelJS...');
+                
+                // Mostrar estado de carga
+                btnExportar.disabled = true;
+                btnExportar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Exportando...';
+                
+                // Obtener todas las bibliotecas sin límite de paginación
+                const filtros = {
+                    busqueda: document.getElementById('busquedaBibliotecas').value,
+                    colegio_id: document.getElementById('filtroColegio').value,
+                    limit: 1000, // Obtener todas las bibliotecas
+                    offset: 0
+                };
+
+                const response = await supadminService.obtenerBibliotecas(filtros);
+                const bibliotecasExportar = response.data || [];
+                
+                console.log(`📊 [EXPORT] Exportando ${bibliotecasExportar.length} bibliotecas`);
+
+                // Crear nuevo libro de trabajo con ExcelJS
+                const workbook = new ExcelJS.Workbook();
+                
+                // Configurar metadatos del libro
+                workbook.creator = 'Sistema de Gestión de Bibliotecas Xonler';
+                workbook.lastModifiedBy = 'Sistema Xonler';
+                workbook.created = new Date();
+                workbook.modified = new Date();
+                workbook.subject = 'Reporte de Bibliotecas';
+                workbook.description = `Reporte generado el ${new Date().toLocaleDateString('es-ES')} con ${bibliotecasExportar.length} bibliotecas registradas`;
+                workbook.keywords = 'bibliotecas, colegios, administradores, libros';
+                workbook.category = 'Reportes';
+
+                // Crear hoja de trabajo
+                const worksheet = workbook.addWorksheet('Bibliotecas', {
+                    pageSetup: {
+                        paperSize: 9, // A4
+                        orientation: 'landscape',
+                        margins: {
+                            left: 0.7,
+                            right: 0.7,
+                            top: 0.75,
+                            bottom: 0.75,
+                            header: 0.3,
+                            footer: 0.3
+                        }
+                    }
+                });
+
+                // Definir columnas con anchos
+                worksheet.columns = [
+                    { header: 'No.', key: 'numero', width: 8 },
+                    { header: 'ID', key: 'id', width: 12 },
+                    { header: 'Nombre', key: 'nombre', width: 35 },
+                    { header: 'Dirección', key: 'direccion', width: 45 },
+                    { header: 'Colegio', key: 'colegio', width: 30 },
+                    { header: 'Administradores', key: 'administradores', width: 18 },
+                    { header: 'Libros', key: 'libros', width: 12 },
+                    { header: 'Estado', key: 'estado', width: 20 },
+                    { header: 'Fecha Exportación', key: 'fecha', width: 18 }
+                ];
+
+                // Estilo para encabezados
+                const headerRow = worksheet.getRow(1);
+                headerRow.height = 25;
+                headerRow.eachCell((cell, colNumber) => {
+                    cell.fill = {
+                        type: 'pattern',
+                        pattern: 'solid',
+                        fgColor: { argb: 'FF7F5539' } // --primary-accent del sistema
+                    };
+                    cell.font = {
+                        name: 'Segoe UI',
+                        size: 12,
+                        bold: true,
+                        color: { argb: 'FFFFFFFF' }
+                    };
+                    cell.alignment = {
+                        horizontal: 'center',
+                        vertical: 'middle',
+                        wrapText: true
+                    };
+                    cell.border = {
+                        top: { style: 'medium', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FFFFFFFF' } },
+                        bottom: { style: 'medium', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FFFFFFFF' } }
+                    };
+                });
+
+                // Agregar datos
+                bibliotecasExportar.forEach((biblioteca, index) => {
+                    const row = worksheet.addRow({
+                        numero: index + 1,
+                        id: `BIB-${String(biblioteca.id).padStart(3, '0')}`,
+                        nombre: biblioteca.nombre,
+                        direccion: biblioteca.direccion || 'No especificada',
+                        colegio: biblioteca.colegio_nombre || 'Sin colegio',
+                        administradores: biblioteca.total_admins || 0,
+                        libros: biblioteca.total_libros || 0,
+                        estado: biblioteca.total_admins > 0 ? 'Activa' : 'Sin administrador',
+                        fecha: new Date().toLocaleDateString('es-ES')
+                    });
+
+                    // Configurar altura de fila
+                    row.height = 20;
+
+                    // Aplicar estilos a cada celda
+                    row.eachCell((cell, colNumber) => {
+                        // Estilo base
+                        const isEvenRow = (index + 1) % 2 === 0;
+                        cell.fill = {
+                            type: 'pattern',
+                            pattern: 'solid',
+                            fgColor: { argb: isEvenRow ? 'FFEDEDE9' : 'FFFFFFFF' } // --color-light / Blanco
+                        };
+                        cell.font = {
+                            name: 'Segoe UI',
+                            size: 11,
+                            color: { argb: 'FF463F3A' } // --color-dark del sistema
+                        };
+                        cell.alignment = {
+                            horizontal: (colNumber === 1 || colNumber === 2) ? 'center' : 'left',
+                            vertical: 'middle',
+                            wrapText: true
+                        };
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+                            left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+                            bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+                            right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+                        };
+
+                        // Formato especial para números (Administradores y Libros)
+                        if (colNumber === 6 || colNumber === 7) {
+                            cell.alignment.horizontal = 'center';
+                            cell.font.bold = true;
+                            cell.font.color = { argb: 'FF7F5539' }; // --primary-accent del sistema
+                            cell.fill.fgColor = { argb: 'FFDDBEA9' }; // --primary-accent-light del sistema
+                        }
+
+                        // Formato especial para Estado
+                        if (colNumber === 8) {
+                            cell.alignment.horizontal = 'center';
+                            cell.font.bold = true;
+                            
+                            const estado = cell.value;
+                            if (estado === 'Activa') {
+                                cell.font.color = { argb: 'FF2D5A27' }; // Verde oscuro
+                                cell.fill.fgColor = { argb: 'FFD4EDDA' }; // Fondo verde claro
+                            } else {
+                                cell.font.color = { argb: 'FF721C24' }; // Rojo oscuro
+                                cell.fill.fgColor = { argb: 'FFF8D7DA' }; // Fondo rojo claro
+                            }
+                        }
+
+                        // Formato especial para ID
+                        if (colNumber === 2) {
+                            cell.font.bold = true;
+                            cell.font.color = { argb: 'FF7F5539' }; // --primary-accent del sistema
+                            cell.fill.fgColor = { argb: 'FFDDBEA9' }; // --primary-accent-light del sistema
+                        }
+                    });
+                });
+
+                // Generar nombre de archivo con fecha y hora
+                const ahora = new Date();
+                const fecha = ahora.toISOString().split('T')[0];
+                const hora = ahora.toTimeString().split(' ')[0].replace(/:/g, '-');
+                const nombreArchivo = `Reporte_Bibliotecas_${fecha}_${hora}.xlsx`;
+
+                // Generar buffer y descargar
+                const buffer = await workbook.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                saveAs(blob, nombreArchivo);
+                
+                console.log('✅ [EXPORT] Archivo Excel generado exitosamente con ExcelJS:', nombreArchivo);
+                mostrarExito(`Archivo Excel "${nombreArchivo}" descargado exitosamente`);
+
+            } catch (error) {
+                console.error('❌ [EXPORT] Error exportando bibliotecas:', error);
+                mostrarError('Error exportando bibliotecas: ' + error.message);
+            } finally {
+                // Restaurar botón
+                btnExportar.disabled = false;
+                btnExportar.innerHTML = iconoOriginal;
+            }
+        }
+
+        // Funciones auxiliares
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        function mostrarExito(mensaje) {
+            // Crear elemento de notificación de éxito
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remover después de 5 segundos
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+    </script>
+</body>
+</html>

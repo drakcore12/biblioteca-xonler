@@ -7,10 +7,13 @@ const {
   crearUsuario,
   actualizarUsuario,
   actualizarUsuarioActual,
+  actualizarUsuarioCompleto,
   eliminarUsuario,
+  eliminarUsuarioCompleto,
   loginUsuario,
   cambiarPasswordUsuario,
-  actualizarPreferenciasUsuario
+  actualizarPreferenciasUsuario,
+  debugUsuarioReferencias
 } = require('../controllers/usuarios.controller');
 
 const { hybridAuth } = require('../middleware/hybrid-auth');
@@ -27,10 +30,217 @@ router.put('/me/preferencias', hybridAuth, actualizarPreferenciasUsuario); // Ac
 router.put('/me/password', hybridAuth, cambiarPasswordUsuario);       // Cambiar contraseña usuario actual
 
 router.get('/',           hybridAuth, obtenerUsuarios);               // Lista de usuarios
+router.post('/',          hybridAuth, crearUsuario);                  // Crear usuario (super admin)
 router.get('/:id',        hybridAuth, obtenerUsuarioPorId);           // Usuario por ID
 router.put('/:id',        hybridAuth, actualizarUsuario);             // Actualizar usuario por ID
 router.put('/:id/password', hybridAuth, cambiarPasswordUsuario);      // Cambiar contraseña por ID
+router.put('/:id/completo', hybridAuth, actualizarUsuarioCompleto);   // Actualizar usuario completo (super admin)
 
 router.delete('/:id',     hybridAuth, eliminarUsuario);               // Eliminar usuario
+router.delete('/:id/completo', hybridAuth, eliminarUsuarioCompleto);  // Eliminar usuario completo (super admin)
+
+// Test simple
+router.get('/test', (req, res) => {
+  res.json({ message: 'Test endpoint funcionando', timestamp: new Date().toISOString() });
+});
+
+// Debug simple para verificar usuario
+router.get('/check/:id', hybridAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pool } = require('../config/database');
+    
+    console.log(`🔍 [DEBUG] Verificando usuario ID: ${id}`);
+    
+    // Verificar si el usuario existe
+    const usuario = await pool.query('SELECT id, nombre, email FROM usuarios WHERE id = $1', [id]);
+    console.log(`👤 [DEBUG] Usuario encontrado:`, usuario.rows.length > 0 ? 'Sí' : 'No');
+    
+    // Verificar préstamos
+    const prestamos = await pool.query('SELECT COUNT(*) as total FROM prestamos WHERE usuario_id = $1', [id]);
+    console.log(`📚 [DEBUG] Total préstamos:`, prestamos.rows[0].total);
+    
+    // Verificar admin_bibliotecas
+    const adminBibliotecas = await pool.query('SELECT COUNT(*) as total FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
+    console.log(`🏛️ [DEBUG] Admin bibliotecas:`, adminBibliotecas.rows[0].total);
+    
+    // Verificar usuario_biblioteca
+    const usuarioBiblioteca = await pool.query('SELECT COUNT(*) as total FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
+    console.log(`🔗 [DEBUG] Usuario biblioteca:`, usuarioBiblioteca.rows[0].total);
+    
+    res.json({
+      usuario_id: id,
+      usuario_existe: usuario.rows.length > 0,
+      usuario_data: usuario.rows[0] || null,
+      prestamos_total: parseInt(prestamos.rows[0].total),
+      admin_bibliotecas_total: parseInt(adminBibliotecas.rows[0].total),
+      usuario_biblioteca_total: parseInt(usuarioBiblioteca.rows[0].total)
+    });
+  } catch (error) {
+    console.error('❌ [DEBUG] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test de eliminación simple
+router.delete('/test-delete/:id', hybridAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pool } = require('../config/database');
+    
+    console.log(`🧪 [TEST DELETE] Iniciando eliminación de usuario ID: ${id}`);
+    
+    // Verificar si el usuario existe
+    const usuario = await pool.query('SELECT id, nombre, email FROM usuarios WHERE id = $1', [id]);
+    if (usuario.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    console.log(`👤 [TEST DELETE] Usuario encontrado:`, usuario.rows[0]);
+    
+    // Iniciar transacción
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      console.log(`🔄 [TEST DELETE] Transacción iniciada`);
+      
+      // Eliminar préstamos primero
+      const prestamosEliminados = await client.query('DELETE FROM prestamos WHERE usuario_id = $1', [id]);
+      console.log(`🗑️ [TEST DELETE] Préstamos eliminados:`, prestamosEliminados.rowCount);
+      
+      // Eliminar relaciones usuario-biblioteca
+      const usuarioBibliotecaEliminados = await client.query('DELETE FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
+      console.log(`🗑️ [TEST DELETE] Usuario-biblioteca eliminados:`, usuarioBibliotecaEliminados.rowCount);
+      
+      // Eliminar relaciones admin-biblioteca
+      const adminBibliotecaEliminados = await client.query('DELETE FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
+      console.log(`🗑️ [TEST DELETE] Admin-biblioteca eliminados:`, adminBibliotecaEliminados.rowCount);
+      
+      // Eliminar usuario
+      const usuarioEliminado = await client.query('DELETE FROM usuarios WHERE id = $1', [id]);
+      console.log(`🗑️ [TEST DELETE] Usuario eliminado:`, usuarioEliminado.rowCount);
+      
+      await client.query('COMMIT');
+      console.log(`✅ [TEST DELETE] Transacción completada`);
+      
+      res.json({
+        success: true,
+        message: 'Usuario eliminado exitosamente',
+        detalles: {
+          prestamos_eliminados: prestamosEliminados.rowCount,
+          usuario_biblioteca_eliminados: usuarioBibliotecaEliminados.rowCount,
+          admin_biblioteca_eliminados: adminBibliotecaEliminados.rowCount,
+          usuario_eliminado: usuarioEliminado.rowCount
+        }
+      });
+      
+    } catch (transactionError) {
+      console.error(`❌ [TEST DELETE] Error en transacción:`, transactionError);
+      console.error(`❌ [TEST DELETE] Error code:`, transactionError.code);
+      console.error(`❌ [TEST DELETE] Error detail:`, transactionError.detail);
+      console.error(`❌ [TEST DELETE] Error constraint:`, transactionError.constraint);
+      await client.query('ROLLBACK');
+      throw transactionError;
+    } finally {
+      client.release();
+    }
+    
+  } catch (error) {
+    console.error('❌ [TEST DELETE] Error:', error);
+    res.status(500).json({ 
+      error: error.message, 
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint
+    });
+  }
+});
+
+// Test de eliminación directa (sin transacción)
+router.delete('/direct-delete/:id', hybridAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pool } = require('../config/database');
+    
+    console.log(`🧪 [DIRECT DELETE] Iniciando eliminación directa de usuario ID: ${id}`);
+    
+    // Verificar si el usuario existe
+    const usuario = await pool.query('SELECT id, nombre, email FROM usuarios WHERE id = $1', [id]);
+    if (usuario.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    console.log(`👤 [DIRECT DELETE] Usuario encontrado:`, usuario.rows[0]);
+    
+    // Eliminar préstamos primero
+    console.log(`🔄 [DIRECT DELETE] Eliminando préstamos...`);
+    const prestamosEliminados = await pool.query('DELETE FROM prestamos WHERE usuario_id = $1', [id]);
+    console.log(`🗑️ [DIRECT DELETE] Préstamos eliminados:`, prestamosEliminados.rowCount);
+    
+    // Eliminar relaciones usuario-biblioteca
+    console.log(`🔄 [DIRECT DELETE] Eliminando relaciones usuario-biblioteca...`);
+    const usuarioBibliotecaEliminados = await pool.query('DELETE FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
+    console.log(`🗑️ [DIRECT DELETE] Usuario-biblioteca eliminados:`, usuarioBibliotecaEliminados.rowCount);
+    
+    // Eliminar relaciones admin-biblioteca
+    console.log(`🔄 [DIRECT DELETE] Eliminando relaciones admin-biblioteca...`);
+    const adminBibliotecaEliminados = await pool.query('DELETE FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
+    console.log(`🗑️ [DIRECT DELETE] Admin-biblioteca eliminados:`, adminBibliotecaEliminados.rowCount);
+    
+    // Eliminar usuario
+    console.log(`🔄 [DIRECT DELETE] Eliminando usuario...`);
+    const usuarioEliminado = await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
+    console.log(`🗑️ [DIRECT DELETE] Usuario eliminado:`, usuarioEliminado.rowCount);
+    
+    res.json({
+      success: true,
+      message: 'Usuario eliminado exitosamente',
+      detalles: {
+        prestamos_eliminados: prestamosEliminados.rowCount,
+        usuario_biblioteca_eliminados: usuarioBibliotecaEliminados.rowCount,
+        admin_biblioteca_eliminados: adminBibliotecaEliminados.rowCount,
+        usuario_eliminado: usuarioEliminado.rowCount
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ [DIRECT DELETE] Error:', error);
+    res.status(500).json({ 
+      error: error.message, 
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint
+    });
+  }
+});
+
+// Debug simple
+router.get('/debug/:id', hybridAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { pool } = require('../config/database');
+    
+    // Verificar préstamos
+    const prestamos = await pool.query('SELECT id, fecha_prestamo, fecha_devolucion FROM prestamos WHERE usuario_id = $1', [id]);
+    
+    // Verificar admin_bibliotecas
+    const adminBibliotecas = await pool.query('SELECT biblioteca_id FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
+    
+    // Verificar usuario_biblioteca
+    const usuarioBiblioteca = await pool.query('SELECT biblioteca_id FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
+    
+    res.json({
+      usuario_id: id,
+      prestamos: prestamos.rows,
+      admin_bibliotecas: adminBibliotecas.rows,
+      usuario_biblioteca: usuarioBiblioteca.rows
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug route
+router.get('/:id/debug', hybridAuth, debugUsuarioReferencias);        // Debug referencias del usuario
 
 module.exports = router;

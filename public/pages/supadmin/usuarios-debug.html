@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <title>Debug Usuarios - Super Admin</title>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Debug - Gestión de Usuarios</h1>
+        
+        <div id="loading" class="text-center" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+        
+        <div id="error" class="alert alert-danger" style="display: none;"></div>
+        
+        <div id="usuarios-container">
+            <h3>Usuarios:</h3>
+            <div id="usuarios-list"></div>
+        </div>
+        
+        <button class="btn btn-primary" onclick="testAPI()">Probar API</button>
+        <button class="btn btn-secondary" onclick="testService()">Probar Servicio</button>
+    </div>
+
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    
+    <script>
+        console.log('🔍 [DEBUG] Página cargada');
+        console.log('🔍 [DEBUG] AuthService disponible:', typeof authService);
+        console.log('🔍 [DEBUG] SupAdminService disponible:', typeof supadminService);
+        
+        // Verificar autenticación
+        function verificarAuth() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            
+            console.log('🔍 [DEBUG] Token:', !!token);
+            console.log('🔍 [DEBUG] Role:', role);
+            
+            if (!token || role !== 'supadmin') {
+                document.getElementById('error').textContent = 'No autenticado o rol incorrecto';
+                document.getElementById('error').style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+        
+        // Probar API directamente
+        async function testAPI() {
+            console.log('🔄 [DEBUG] Probando API directamente...');
+            
+            if (!verificarAuth()) return;
+            
+            try {
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const response = await fetch('/api/usuarios?limit=5', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 [DEBUG] Respuesta API:', response.status);
+                const data = await response.json();
+                console.log('📊 [DEBUG] Datos API:', data);
+                
+                document.getElementById('usuarios-list').innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('❌ [DEBUG] Error API:', error);
+                document.getElementById('error').textContent = 'Error API: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+        
+        // Probar servicio
+        async function testService() {
+            console.log('🔄 [DEBUG] Probando servicio...');
+            
+            if (!verificarAuth()) return;
+            
+            try {
+                const response = await supadminService.obtenerUsuarios({ limit: 5 });
+                console.log('📊 [DEBUG] Respuesta servicio:', response);
+                
+                document.getElementById('usuarios-list').innerHTML = `
+                    <pre>${JSON.stringify(response, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('❌ [DEBUG] Error servicio:', error);
+                document.getElementById('error').textContent = 'Error servicio: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ [DEBUG] DOM cargado');
+            verificarAuth();
+        });
+    </script>
+</body>
+</html>

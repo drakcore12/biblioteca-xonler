@@ -1,27 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {
-  obtenerRoles,
-  obtenerRolPorId,
-  crearRol,
-  actualizarRol,
-  eliminarRol
-} = require('../controllers/roles.controller');
+const { obtenerRoles, obtenerRolPorId } = require('../controllers/roles.controller');
+const { hybridAuth } = require('../middleware/hybrid-auth');
 
-const { auth, requireRole } = require('../middleware/auth');
-
-// Ruta pública para ver roles (sin autenticación)
-router.get('/public', obtenerRoles);
-
-// Todas las demás rutas requieren autenticación y rol de admin
-router.use(auth);
-router.use(requireRole('admin'));
-
-// Rutas CRUD para roles
-router.get('/', obtenerRoles);
-router.get('/:id', obtenerRolPorId);
-router.post('/', crearRol);
-router.put('/:id', actualizarRol);
-router.delete('/:id', eliminarRol);
+// Rutas protegidas (requieren autenticación)
+router.get('/', hybridAuth, obtenerRoles);           // Lista de roles
+router.get('/:id', hybridAuth, obtenerRolPorId);     // Rol por ID
 
 module.exports = router;

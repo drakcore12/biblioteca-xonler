@@ -836,8 +836,12 @@ export async function verDetalleLibro(libroId) {
       });
       
       if (response.ok) {
-        const libro = await response.json();
-        console.log('📚 Datos del libro obtenidos:', libro);
+        const data = await response.json();
+        console.log('📚 Datos del libro obtenidos:', data);
+        
+        // ✅ ARREGLADO: Extraer libro del objeto de respuesta
+        const libro = data.libro || data;
+        console.log('📚 Libro extraído:', libro);
         
         // ✅ ARREGLADO: Mostrar datos reales del libro
         modalTitle.textContent = libro.titulo || 'Título no disponible';
@@ -854,16 +858,25 @@ export async function verDetalleLibro(libroId) {
         // ✅ NUEVO: Mostrar disponibilidad y configurar botón de préstamo
         const disponibilidadElement = document.getElementById('modalBookDisponibilidad');
         if (disponibilidadElement) {
-          disponibilidadElement.textContent = libro.disponibilidad ? 'Disponible' : 'No disponible';
-          disponibilidadElement.className = `badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'}`;
+          // ✅ ARREGLADO: Verificar disponibilidad correctamente
+          const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
+          disponibilidadElement.textContent = disponible ? 'Disponible' : 'No disponible';
+          disponibilidadElement.className = `badge ${disponible ? 'bg-success' : 'bg-danger'}`;
+          
+          console.log('🔍 [DEBUG] Disponibilidad del libro:', {
+            disponibilidad: libro.disponibilidad,
+            disponible: libro.disponible,
+            resultado: disponible
+          });
         }
         
         // Configurar botón de préstamo
         if (btnPrestamo) {
-          btnPrestamo.disabled = !libro.disponibilidad;
+          const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
+          btnPrestamo.disabled = !disponible;
           btnPrestamo.dataset.libroId = libro.id;
-          btnPrestamo.className = `btn ${libro.disponibilidad ? 'btn-primary' : 'btn-secondary'}`;
-          btnPrestamo.innerHTML = libro.disponibilidad ? 
+          btnPrestamo.className = `btn ${disponible ? 'btn-primary' : 'btn-secondary'}`;
+          btnPrestamo.innerHTML = disponible ? 
             '<i class="bi bi-book me-1"></i>Solicitar préstamo' : 
             '<i class="bi bi-x-circle me-1"></i>No disponible';
         }

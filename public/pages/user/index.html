@@ -123,6 +123,27 @@
 
   </main>
 
+  <!-- Modal para detalles del libro -->
+  <div class="modal fade" id="modalDetalleLibro" tabindex="-1" aria-labelledby="modalDetalleLibroLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleLibroLabel">Detalles del Libro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="modalDetalleLibroBody">
+          <!-- Se cargará dinámicamente -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-primary" id="btnSolicitarPrestamo" onclick="solicitarPrestamo()">
+            <i class="bi bi-book me-1"></i>Solicitar Préstamo
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="bg-dark text-white py-4 mt-5">
     <div class="container">
@@ -490,6 +511,171 @@
           </div>
         </div>
       `;
+    }
+    
+    // Variable global para almacenar el libro seleccionado
+    let libroSeleccionado = null;
+    
+    // Hacer las funciones globales para que funcionen con onclick
+    window.verDetalleLibro = verDetalleLibro;
+    window.solicitarPrestamo = solicitarPrestamo;
+    
+    // Función para mostrar detalles del libro
+    async function verDetalleLibro(libroId) {
+      try {
+        console.log('🔍 Mostrando detalles del libro ID:', libroId);
+        
+        // Obtener detalles del libro
+        const response = await fetch(`/api/libros/${libroId}`, {
+          headers: authHeaders()
+        });
+        
+        if (!response.ok) {
+          throw new Error('Error obteniendo detalles del libro');
+        }
+        
+        const data = await response.json();
+        const libro = data.libro || data;
+        
+        // Almacenar libro seleccionado
+        libroSeleccionado = libro;
+        
+        // Construir contenido del modal
+        const modalBody = document.getElementById('modalDetalleLibroBody');
+        const btnSolicitar = document.getElementById('btnSolicitarPrestamo');
+        
+        modalBody.innerHTML = `
+          <div class="row">
+            <div class="col-md-4">
+              <img src="${libro.imagen_url || '/assets/images/libro-placeholder.jpg'}" 
+                   class="img-fluid rounded shadow" 
+                   alt="${libro.titulo}"
+                   style="max-height: 300px; object-fit: cover;">
+            </div>
+            <div class="col-md-8">
+              <h4 class="mb-3">${libro.titulo}</h4>
+              <p class="text-muted mb-3">
+                <i class="bi bi-person me-1"></i>${libro.autor}
+              </p>
+              
+              <div class="mb-3">
+                <span class="badge bg-primary me-2">${libro.categoria}</span>
+                <span class="badge bg-${(libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true) ? 'success' : 'warning'}">
+                  ${(libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true) ? 'Disponible' : 'En préstamo'}
+                </span>
+              </div>
+              
+              ${libro.descripcion ? `
+                <div class="mb-3">
+                  <h6>Descripción:</h6>
+                  <p class="text-muted">${libro.descripcion}</p>
+                </div>
+              ` : ''}
+              
+              ${libro.isbn ? `
+                <div class="mb-3">
+                  <h6>ISBN:</h6>
+                  <code class="text-muted">${libro.isbn}</code>
+                </div>
+              ` : ''}
+              
+              ${libro.anio_publicacion ? `
+                <div class="mb-3">
+                  <h6>Año de publicación:</h6>
+                  <span class="text-muted">${libro.anio_publicacion}</span>
+                </div>
+              ` : ''}
+              
+              ${libro.biblioteca_nombre ? `
+                <div class="mb-3">
+                  <h6>Biblioteca:</h6>
+                  <span class="text-muted">
+                    <i class="bi bi-building me-1"></i>${libro.biblioteca_nombre}
+                  </span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        
+        // Configurar botón de préstamo
+        // ✅ ARREGLADO: Verificar disponibilidad correctamente
+        const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
+        const enPrestamo = libro.en_prestamo === true || libro.en_prestamo === 'true';
+        
+        console.log('🔍 [DEBUG] Estado del libro:', {
+          disponibilidad: libro.disponibilidad,
+          disponible: libro.disponible,
+          en_prestamo: libro.en_prestamo,
+          disponibleCalculado: disponible,
+          enPrestamoCalculado: enPrestamo
+        });
+        
+        if (disponible && !enPrestamo) {
+          btnSolicitar.disabled = false;
+          btnSolicitar.innerHTML = '<i class="bi bi-book me-1"></i>Solicitar Préstamo';
+          btnSolicitar.className = 'btn btn-primary';
+        } else if (enPrestamo) {
+          btnSolicitar.disabled = true;
+          btnSolicitar.innerHTML = '<i class="bi bi-bookmark-check me-1"></i>Ya en préstamo';
+          btnSolicitar.className = 'btn btn-secondary';
+        } else {
+          btnSolicitar.disabled = true;
+          btnSolicitar.innerHTML = '<i class="bi bi-x-circle me-1"></i>No disponible';
+          btnSolicitar.className = 'btn btn-outline-secondary';
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('modalDetalleLibro'));
+        modal.show();
+        
+      } catch (error) {
+        console.error('❌ Error mostrando detalles del libro:', error);
+        alert('Error cargando detalles del libro. Intenta de nuevo.');
+      }
+    }
+    
+    // Función para solicitar préstamo
+    async function solicitarPrestamo() {
+      if (!libroSeleccionado) {
+        console.error('No hay libro seleccionado');
+        return;
+      }
+      
+      try {
+        console.log('📚 Solicitando préstamo para libro:', libroSeleccionado.id);
+        
+        const response = await fetch('/api/prestamos', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({
+            libro_id: libroSeleccionado.id,
+            biblioteca_id: libroSeleccionado.biblioteca_id
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Error solicitando préstamo');
+        }
+        
+        const data = await response.json();
+        
+        // Mostrar mensaje de éxito
+        alert('¡Préstamo solicitado exitosamente!');
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('modalDetalleLibro'));
+        modal.hide();
+        
+        // Recargar datos
+        await loadStats();
+        await loadPrestamosRecientes();
+        
+      } catch (error) {
+        console.error('❌ Error solicitando préstamo:', error);
+        alert('Error solicitando préstamo: ' + error.message);
+      }
     }
     
     function logout() {

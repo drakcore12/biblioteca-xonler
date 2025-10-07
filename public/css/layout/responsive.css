@@ -2,40 +2,385 @@
    MEDIA QUERIES - RESPONSIVE
    ======================================== */
 
-/* Ajustes generales para móviles */
-@media (max-width: 575.98px) {
-  .container {
-    padding-left: 1rem;
-    padding-right: 1rem;
+/* Ajustes generales para laptops pequeñas y tablets apaisadas */
+@media (max-width: 991.98px) {
+  .btn-toolbar {
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
-  h1 {
-    font-size: 1.75rem;
+  .btn-toolbar .btn,
+  .btn-toolbar .dropdown,
+  .btn-toolbar .btn-group {
+    flex: 1 1 auto;
   }
 
   .card-body {
-    padding: 1rem;
+    padding: 1.5rem;
+  }
+
+  .card-header,
+  .card-footer {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .table-responsive {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Responsive para sidebar del admin y paneles con navegación fija */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding-top: 0;
+    z-index: 1;
+    box-shadow: none;
+  }
+
+  .mobile-top-nav {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1030;
+    min-height: var(--mobile-nav-height);
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-top-nav .navbar-brand {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .mobile-top-nav .dropdown-menu {
+    min-width: 12rem;
+  }
+
+  .mobile-top-nav + .container-fluid,
+  .mobile-top-nav + .container {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .mobile-top-nav + .container-fluid main,
+  .mobile-top-nav + .container main {
+    padding-top: calc(var(--mobile-nav-height) + 1rem);
+  }
+
+  main {
+    margin-left: 0 !important;
+  }
+
+  .row.g-3 > [class*='col-md-'],
+  .row.g-4 > [class*='col-md-'] {
+    flex: 1 1 100%;
+  }
+}
+
+/* Ajustes generales para móviles */
+@media (max-width: 575.98px) {
+  body {
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  h1,
+  .h1 {
+    font-size: clamp(1.75rem, 4vw + 1rem, 2.125rem);
+  }
+
+  h2,
+  .h2 {
+    font-size: clamp(1.5rem, 3.5vw + 1rem, 1.9rem);
+  }
+
+  h3,
+  .h3 {
+    font-size: clamp(1.3rem, 3vw + 0.9rem, 1.6rem);
+  }
+
+  .lead {
+    font-size: 1.05rem;
+  }
+
+  header .row.align-items-center {
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  header .row.align-items-center > [class^='col-'] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header .navbar {
+    width: 100%;
+    justify-content: center;
+  }
+
+  header .navbar-collapse {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+  }
+
+  header .navbar-nav {
+    gap: 0.25rem;
+  }
+
+  header .navbar-nav .nav-item {
+    padding-top: 0.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  header .navbar-nav .nav-item:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  header .navbar-nav .nav-link {
+    padding: 0.5rem 0;
+    font-size: 1.05rem;
+  }
+
+  main,
+  .container,
+  .container-fluid {
+    padding-left: var(--mobile-gutter);
+    padding-right: var(--mobile-gutter);
+  }
+
+  main.container,
+  main.container-fluid {
+    padding-top: 2rem;
+  }
+
+  .mobile-top-nav + .container-fluid main,
+  .mobile-top-nav + .container main {
+    padding-left: var(--mobile-gutter);
+    padding-right: var(--mobile-gutter);
+  }
+
+  section,
+  .content-section {
+    margin-bottom: var(--mobile-section-spacing);
+  }
+
+  .content-section,
+  .card,
+  .alert {
+    border-radius: var(--mobile-card-radius);
+    box-shadow: 0 12px 24px rgba(15, 15, 15, 0.08);
+  }
+
+  .card,
+  .content-section {
+    margin-bottom: var(--mobile-card-spacing);
+  }
+
+  .card-header,
+  .card-footer,
+  .card-body,
+  .alert {
+    padding: 1.25rem;
   }
 
   .nav-tabs .nav-link {
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.75rem;
+  }
+
+  .form-control,
+  .form-select {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+
+  .form-check {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-check-input {
+    margin-top: 0;
+  }
+
+  .btn,
+  .btn-sm,
+  .btn-group .btn,
+  .btn-toolbar .btn,
+  .btn-toolbar .dropdown > .btn {
+    min-height: 44px;
+  }
+
+  .btn-group,
+  .btn-toolbar {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .btn-group .btn,
+  .btn-toolbar .btn,
+  .btn-toolbar .btn-group,
+  .btn-toolbar .dropdown {
+    flex: 1 1 100%;
+  }
+
+  .btn-group .btn,
+  .btn-toolbar .btn,
+  .btn-toolbar .dropdown > .btn {
+    width: 100%;
+  }
+
+  .table-responsive {
+    margin: 0 calc(-1 * var(--mobile-gutter));
+    padding: 0 var(--mobile-gutter);
+    border-radius: var(--mobile-card-radius);
+  }
+
+  .table {
+    font-size: 0.95rem;
+  }
+
+  .table td,
+  .table th {
+    padding: 0.75rem 0.5rem;
+    vertical-align: middle;
+  }
+
+  .table td .btn-group {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .table td .btn-group .btn {
+    flex: 1 1 100%;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .pagination .page-link {
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-img-top {
+    height: 160px;
+  }
+
+  footer .row > [class*='col-'] {
+    text-align: center;
+  }
+
+  footer .row > [class*='col-'] + [class*='col-'] {
+    margin-top: 1.25rem;
+  }
+
+  footer address {
+    font-style: normal;
+  }
+}
+
+/* Ajustes específicos para login en móviles */
+@media (max-width: 575.98px) {
+  .login-card {
+    margin: 0;
+    border-radius: var(--mobile-card-radius);
+  }
+
+  .login-card .card-header {
+    padding: 1rem;
+  }
+
+  .login-card .card-body {
+    padding: 1.5rem;
+  }
+
+  .nav-tabs .nav-link {
+    font-size: 0.9rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  .login-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
   }
 
   .form-label {
-    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control {
+    font-size: 1rem;
+    padding: 0.75rem;
   }
 
   .btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+  }
+
+  /* Arreglar el botón "¿Olvidaste tu contraseña?" en móviles */
+  .d-flex.justify-content-between.align-items-center {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch !important;
+  }
+
+  .d-flex.justify-content-between.align-items-center .btn {
     width: 100%;
     margin-bottom: 0.5rem;
   }
 
-  .login-card .card-header {
-    padding: 0.75rem 1rem;
+  .d-flex.justify-content-between.align-items-center a {
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 0.5rem;
   }
 
-  .login-card .nav-tabs {
-    margin-bottom: -0.75rem;
+  /* Mejorar el header en móviles */
+  header .navbar-toggler {
+    border: none;
+    padding: 0.25rem 0.5rem;
+  }
+
+  header .navbar-toggler:focus {
+    box-shadow: none;
+  }
+
+  header .navbar-collapse {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 0.5rem;
+  }
+
+  header .navbar-nav {
+    text-align: center;
+  }
+
+  header .navbar-nav .nav-link {
+    padding: 0.75rem 0;
+    font-size: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  header .navbar-nav .nav-link:last-child {
+    border-bottom: none;
   }
 }
 
@@ -49,6 +394,21 @@
     max-width: 540px;
     margin: 0 auto;
   }
+
+  .d-flex.justify-content-between.align-items-center {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .d-flex.justify-content-between.align-items-center .btn {
+    width: auto;
+    margin-bottom: 0;
+  }
+
+  .d-flex.justify-content-between.align-items-center a {
+    text-align: right;
+    font-size: 0.9rem;
+  }
 }
 
 /* Ajustes para escritorio */
@@ -61,29 +421,20 @@
   .btn {
     min-width: 140px;
   }
-}
 
-/* Responsive para sidebar del admin */
-@media (max-width: 767.98px) {
-  .sidebar {
-    position: static;
-    width: 100%;
-    padding-top: 0;
-    z-index: 1;
-    box-shadow: none;
+  .d-flex.justify-content-between.align-items-center {
+    flex-direction: row;
+    gap: 1rem;
   }
 
-  main {
-    margin-left: 0 !important;
-    padding-top: 70px; /* si hay top nav fija en móvil */
+  .d-flex.justify-content-between.align-items-center .btn {
+    width: auto;
+    margin-bottom: 0;
   }
 
-  .mobile-top-nav {
-    position: fixed;
-    top: 0;
-    right: 0;
-    left: 0;
-    z-index: 1030;
+  .d-flex.justify-content-between.align-items-center a {
+    text-align: right;
+    font-size: 0.9rem;
   }
 }
 

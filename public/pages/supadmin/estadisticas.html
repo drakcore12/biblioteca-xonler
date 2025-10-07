@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Estadísticas Globales - Super Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Super Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4><i class="bi bi-shield-check me-2"></i>Super Admin</h4>
+                        <p class="small">Panel de super administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="bibliotecas.html">
+                                <i class="bi bi-building me-2"></i> Gestión de Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas Globales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="logs.html">
+                                <i class="bi bi-file-text me-2"></i> Logs y Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="monitoring.html">
+                                <i class="bi bi-shield-check me-2"></i> Monitoreo de Seguridad
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Estadísticas Globales</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary me-2" onclick="actualizarEstadisticas()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportarEstadisticas()">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros de fecha -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="fechaInicio">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="fechaFin" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="fechaFin">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipoGrafico" class="form-label">Tipo de Gráfico</label>
+                        <select class="form-select" id="tipoGrafico">
+                            <option value="line">Línea</option>
+                            <option value="bar">Barras</option>
+                            <option value="pie">Circular</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="bi bi-funnel me-1"></i> Aplicar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando estadísticas...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Tarjetas de resumen -->
+                <div class="row mb-4" id="resumen-cards">
+                    <!-- Se llenan dinámicamente -->
+                </div>
+
+                <!-- Gráficos principales -->
+                <div class="row mb-4">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Usuarios por Rol</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="usuariosRolChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Bibliotecas por Colegio</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="bibliotecasColegioChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos de actividad -->
+                <div class="row mb-4">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Actividad del Sistema (Últimos 30 días)</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="actividadChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Préstamos por Categoría</h5>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="prestamosCategoriaChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tablas de datos -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Top 10 Libros Más Prestados</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="topLibrosTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Libro</th>
+                                                <th>Autor</th>
+                                                <th>Préstamos</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Top 10 Usuarios Más Activos</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="topUsuariosTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuario</th>
+                                                <th>Email</th>
+                                                <th>Préstamos</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Métricas de rendimiento -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Métricas de Rendimiento del Sistema</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-primary" id="tiempoRespuesta">0ms</h3>
+                                            <p class="text-muted">Tiempo de Respuesta Promedio</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-success" id="uptime">99.9%</h3>
+                                            <p class="text-muted">Uptime del Sistema</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-info" id="requestsHora">0</h3>
+                                            <p class="text-muted">Requests por Hora</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <h3 class="text-warning" id="erroresHora">0</h3>
+                                            <p class="text-muted">Errores por Hora</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    
+    <script>
+        // Variables globales
+        let estadisticas = null;
+        let charts = {};
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para asegurar que los scripts se carguen
+            setTimeout(function() {
+                verificarAutenticacion();
+                configurarFechas();
+                cargarEstadisticas();
+            }, 100);
+        });
+
+        // Verificar autenticación
+        function verificarAutenticacion() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            
+            if (!token || role !== 'supadmin') {
+                window.location.replace('/pages/guest/login.html');
+                return;
+            }
+        }
+
+        // Configurar fechas por defecto
+        function configurarFechas() {
+            const hoy = new Date();
+            const hace30Dias = new Date(hoy.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('fechaInicio').value = hace30Dias.toISOString().split('T')[0];
+            document.getElementById('fechaFin').value = hoy.toISOString().split('T')[0];
+        }
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+            try {
+                mostrarLoading(true);
+                
+                const filtros = {
+                    fecha_inicio: document.getElementById('fechaInicio').value,
+                    fecha_fin: document.getElementById('fechaFin').value
+                };
+
+                const response = await supadminService.obtenerEstadisticasGlobales(filtros);
+                estadisticas = response.data || response;
+
+                mostrarResumenCards();
+                crearGraficos();
+                mostrarTablas();
+
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                mostrarError('Error cargando estadísticas: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar tarjetas de resumen
+        function mostrarResumenCards() {
+            const container = document.getElementById('resumen-cards');
+            container.innerHTML = `
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Usuarios</h5>
+                                    <h2>${estadisticas.total_usuarios || 0}</h2>
+                                </div>
+                                <div>
+                                    <i class="bi bi-people fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Bibliotecas</h5>
+                                    <h2>${estadisticas.total_bibliotecas || 0}</h2>
+                                </div>
+                                <div>
+                                    <i class="bi bi-building fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Libros</h5>
+                                    <h2>${estadisticas.total_libros || 0}</h2>
+                                </div>
+                                <div>
+                                    <i class="bi bi-journals fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Préstamos Activos</h5>
+                                    <h2>${estadisticas.prestamos_activos || 0}</h2>
+                                </div>
+                                <div>
+                                    <i class="bi bi-arrow-left-right fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Crear gráficos
+        function crearGraficos() {
+            crearGraficoUsuariosRol();
+            crearGraficoBibliotecasColegio();
+            crearGraficoActividad();
+            crearGraficoPrestamosCategoria();
+        }
+
+        // Gráfico de usuarios por rol
+        function crearGraficoUsuariosRol() {
+            const ctx = document.getElementById('usuariosRolChart').getContext('2d');
+            
+            if (charts.usuariosRol) {
+                charts.usuariosRol.destroy();
+            }
+
+            charts.usuariosRol = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Usuarios', 'Admins', 'Super Admins'],
+                    datasets: [{
+                        data: [
+                            estadisticas.usuarios_por_rol?.usuario || 0,
+                            estadisticas.usuarios_por_rol?.admin || 0,
+                            estadisticas.usuarios_por_rol?.supadmin || 0
+                        ],
+                        backgroundColor: ['#6c757d', '#0d6efd', '#dc3545'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de bibliotecas por colegio
+        function crearGraficoBibliotecasColegio() {
+            const ctx = document.getElementById('bibliotecasColegioChart').getContext('2d');
+            
+            if (charts.bibliotecasColegio) {
+                charts.bibliotecasColegio.destroy();
+            }
+
+            const colegios = estadisticas.bibliotecas_por_colegio || [];
+            
+            charts.bibliotecasColegio = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: colegios.map(c => c.nombre),
+                    datasets: [{
+                        label: 'Bibliotecas',
+                        data: colegios.map(c => c.total),
+                        backgroundColor: '#28a745',
+                        borderColor: '#1e7e34',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de actividad
+        function crearGraficoActividad() {
+            const ctx = document.getElementById('actividadChart').getContext('2d');
+            
+            if (charts.actividad) {
+                charts.actividad.destroy();
+            }
+
+            const actividad = estadisticas.actividad_30_dias || [];
+            const tipoGrafico = document.getElementById('tipoGrafico').value;
+            
+            charts.actividad = new Chart(ctx, {
+                type: tipoGrafico,
+                data: {
+                    labels: actividad.map(a => a.fecha),
+                    datasets: [{
+                        label: 'Usuarios Activos',
+                        data: actividad.map(a => a.usuarios_activos),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Préstamos',
+                        data: actividad.map(a => a.prestamos),
+                        borderColor: '#28a745',
+                        backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Gráfico de préstamos por categoría
+        function crearGraficoPrestamosCategoria() {
+            const ctx = document.getElementById('prestamosCategoriaChart').getContext('2d');
+            
+            if (charts.prestamosCategoria) {
+                charts.prestamosCategoria.destroy();
+            }
+
+            const categorias = estadisticas.prestamos_por_categoria || [];
+            
+            charts.prestamosCategoria = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categorias.map(c => c.categoria),
+                    datasets: [{
+                        data: categorias.map(c => c.total),
+                        backgroundColor: [
+                            '#ffc107', '#17a2b8', '#6f42c1', '#fd7e14', 
+                            '#20c997', '#e83e8c', '#6c757d', '#28a745'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Mostrar tablas
+        function mostrarTablas() {
+            mostrarTopLibros();
+            mostrarTopUsuarios();
+            mostrarMetricasRendimiento();
+        }
+
+        // Mostrar top libros
+        function mostrarTopLibros() {
+            const tbody = document.querySelector('#topLibrosTable tbody');
+            const libros = estadisticas.top_libros || [];
+            
+            if (libros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay datos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = libros.map(libro => `
+                <tr>
+                    <td>${libro.titulo}</td>
+                    <td>${libro.autor}</td>
+                    <td><span class="badge bg-primary">${libro.total_prestamos}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Mostrar top usuarios
+        function mostrarTopUsuarios() {
+            const tbody = document.querySelector('#topUsuariosTable tbody');
+            const usuarios = estadisticas.top_usuarios || [];
+            
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">No hay datos</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = usuarios.map(usuario => `
+                <tr>
+                    <td>${usuario.nombre} ${usuario.apellido || ''}</td>
+                    <td>${usuario.email}</td>
+                    <td><span class="badge bg-success">${usuario.total_prestamos}</span></td>
+                </tr>
+            `).join('');
+        }
+
+        // Mostrar métricas de rendimiento
+        function mostrarMetricasRendimiento() {
+            document.getElementById('tiempoRespuesta').textContent = `${estadisticas.metricas?.tiempo_respuesta || 0}ms`;
+            document.getElementById('uptime').textContent = `${estadisticas.metricas?.uptime || 99.9}%`;
+            document.getElementById('requestsHora').textContent = estadisticas.metricas?.requests_hora || 0;
+            document.getElementById('erroresHora').textContent = estadisticas.metricas?.errores_hora || 0;
+        }
+
+        // Actualizar estadísticas
+        function actualizarEstadisticas() {
+            cargarEstadisticas();
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            cargarEstadisticas();
+        }
+
+        // Exportar estadísticas
+        function exportarEstadisticas() {
+            // Implementar exportación
+            mostrarError('Funcionalidad de exportación en desarrollo');
+        }
+
+        // Funciones auxiliares
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+    </script>
+</body>
+</html>

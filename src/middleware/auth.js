@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const simpleJWT = require('../utils/simple-jwt');
 
 // Middleware de autenticación
 function auth(req, res, next) {
@@ -24,7 +24,7 @@ function auth(req, res, next) {
     }
     
     // Verificar el token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+    const decoded = simpleJWT.verifyToken(token);
     
     // Agregar información del usuario al request
     req.user = {
@@ -78,7 +78,8 @@ function requireRole(role) {
     }
     
     // Verificar que el usuario tenga el rol requerido
-    if (req.user.role !== role && req.user.role !== 'admin') {
+    // Supadmin tiene acceso a todo, admin tiene acceso a la mayoría de recursos
+    if (req.user.role !== role && req.user.role !== 'admin' && req.user.role !== 'supadmin') {
       return res.status(403).json({ 
         error: 'Acceso denegado',
         message: `Se requiere rol '${role}' para acceder a este recurso. Tu rol actual es '${req.user.role}'`
@@ -101,7 +102,8 @@ function requireAnyRole(roles) {
     }
     
     // Verificar que el usuario tenga al menos uno de los roles requeridos
-    const hasRequiredRole = roles.includes(req.user.role) || req.user.role === 'admin';
+    // Supadmin tiene acceso a todo, admin tiene acceso a la mayoría de recursos
+    const hasRequiredRole = roles.includes(req.user.role) || req.user.role === 'admin' || req.user.role === 'supadmin';
     
     if (!hasRequiredRole) {
       return res.status(403).json({ 
@@ -127,9 +129,9 @@ function requireOwnershipOrAdmin(resourceIdParam = 'id') {
     
     const resourceId = req.params[resourceIdParam];
     
-    // Los administradores pueden acceder a cualquier recurso
-    if (req.user.role === 'admin') {
-      console.log(`🔒 Admin ${req.user.id} accediendo a recurso ${resourceId}`);
+    // Los administradores y supadmin pueden acceder a cualquier recurso
+    if (req.user.role === 'admin' || req.user.role === 'supadmin') {
+      console.log(`🔒 ${req.user.role} ${req.user.id} accediendo a recurso ${resourceId}`);
       return next();
     }
     
@@ -167,7 +169,7 @@ function checkPermission(permission) {
     
     const requiredRoles = allowedRoles[permission] || ['admin'];
     
-    if (!requiredRoles.includes(req.user.role) && req.user.role !== 'admin') {
+    if (!requiredRoles.includes(req.user.role) && req.user.role !== 'admin' && req.user.role !== 'supadmin') {
       return res.status(403).json({ 
         error: 'Permiso denegado',
         message: `No tienes permisos para realizar la acción: ${permission}`

@@ -10,4 +10,9 @@
   --primary-accent: #7f5539;
   --primary-accent-light: #ddbea9;
   --sidebar-w: 260px; /* Ancho de la sidebar del panel de administración */
+  --mobile-gutter: 1.25rem; /* Padding horizontal base en móviles */
+  --mobile-card-spacing: 1.25rem; /* Espacio vertical entre tarjetas en móviles */
+  --mobile-section-spacing: 2rem; /* Separación entre secciones principales en móviles */
+  --mobile-card-radius: 0.85rem; /* Bordes redondeados suaves para tarjetas en móviles */
+  --mobile-nav-height: 3.5rem; /* Altura aproximada de la navegación móvil fija */
 }

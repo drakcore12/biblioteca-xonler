@@ -323,41 +323,46 @@
             // Cargar libros usando el servicio
             console.log('Cargando libros...');
             
-            // ✅ ARREGLADO: Importar y usar el servicio de libros
-            import('/services/libros.services.js').then(module => {
-                // Inicializar toda la página (incluye cargar bibliotecas)
-                if (module.default) {
-                    module.default(); // Esto llama a initLibrosPage()
-                } else {
-                    // Fallback: solo cargar libros si no hay initLibrosPage
-                    module.cargarLibros();
-                    if (module.cargarBibliotecas) {
-                        module.cargarBibliotecas();
-                    }
+        // ✅ ARREGLADO: Importar y usar el servicio de libros
+        import('/services/libros.services.js').then(module => {
+            // Inicializar toda la página (incluye cargar bibliotecas)
+            if (module.default) {
+                module.default(); // Esto llama a initLibrosPage()
+            } else {
+                // Fallback: solo cargar libros si no hay initLibrosPage
+                module.cargarLibros();
+                if (module.cargarBibliotecas) {
+                    module.cargarBibliotecas();
                 }
-                
-                // Debug de autenticación si está disponible
-                if (module.debugAuth) {
-                    module.debugAuth();
-                }
-                
-                console.log('✅ Servicio de libros cargado correctamente');
-            }).catch(error => {
-                console.error('❌ Error cargando servicio de libros:', error);
-                // Fallback: mostrar mensaje de error en la página
-                const librosGrid = document.getElementById('librosGrid');
-                if (librosGrid) {
-                    librosGrid.innerHTML = `
-                        <div class="col-12 text-center py-5">
-                            <div class="alert alert-danger">
-                                <i class="bi bi-exclamation-triangle me-2"></i>
-                                <strong>Error al cargar el servicio:</strong><br>
-                                ${error.message}
-                            </div>
+            }
+            
+            // Debug de autenticación si está disponible
+            if (module.debugAuth) {
+                module.debugAuth();
+            }
+            
+            // ✅ NUEVO: Hacer verDetalleLibro global para compatibilidad
+            if (module.verDetalleLibro) {
+                window.verDetalleLibro = module.verDetalleLibro;
+            }
+            
+            console.log('✅ Servicio de libros cargado correctamente');
+        }).catch(error => {
+            console.error('❌ Error cargando servicio de libros:', error);
+            // Fallback: mostrar mensaje de error en la página
+            const librosGrid = document.getElementById('librosGrid');
+            if (librosGrid) {
+                librosGrid.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Error al cargar el servicio:</strong><br>
+                            ${error.message}
                         </div>
-                    `;
-                }
-            });
+                    </div>
+                `;
+            }
+        });
         }
         
         function applyFilters() {

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Logs y Auditoría - Super Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Super Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4><i class="bi bi-shield-check me-2"></i>Super Admin</h4>
+                        <p class="small">Panel de super administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="bibliotecas.html">
+                                <i class="bi bi-building me-2"></i> Gestión de Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas Globales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="logs.html">
+                                <i class="bi bi-file-text me-2"></i> Logs y Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="monitoring.html">
+                                <i class="bi bi-shield-check me-2"></i> Monitoreo de Seguridad
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Logs y Auditoría</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-outline-primary me-2" onclick="actualizarLogs()">
+                            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+                        </button>
+                        <button class="btn btn-outline-success me-2" onclick="exportarLogs()">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="limpiarLogs()">
+                            <i class="bi bi-trash me-1"></i> Limpiar Logs
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="row mb-4">
+                    <div class="col-md-2">
+                        <label for="filtroTipo" class="form-label">Tipo</label>
+                        <select class="form-select" id="filtroTipo">
+                            <option value="">Todos</option>
+                            <option value="application">Aplicación</option>
+                            <option value="security">Seguridad</option>
+                            <option value="error">Error</option>
+                            <option value="audit">Auditoría</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filtroNivel" class="form-label">Nivel</label>
+                        <select class="form-select" id="filtroNivel">
+                            <option value="">Todos</option>
+                            <option value="info">Info</option>
+                            <option value="warn">Warning</option>
+                            <option value="error">Error</option>
+                            <option value="debug">Debug</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filtroFechaInicio" class="form-label">Fecha Inicio</label>
+                        <input type="datetime-local" class="form-control" id="filtroFechaInicio">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filtroFechaFin" class="form-label">Fecha Fin</label>
+                        <input type="datetime-local" class="form-control" id="filtroFechaFin">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filtroUsuario" class="form-label">Usuario</label>
+                        <input type="text" class="form-control" id="filtroUsuario" placeholder="ID o email">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary" onclick="aplicarFiltros()">
+                            <i class="bi bi-funnel me-1"></i> Filtrar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Estadísticas de logs -->
+                <div class="row mb-4" id="stats-logs">
+                    <!-- Se llenan dinámicamente -->
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando logs...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Tabs de logs -->
+                <ul class="nav nav-tabs" id="logsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="application-tab" data-bs-toggle="tab" data-bs-target="#application" type="button" role="tab">
+                            <i class="bi bi-app me-1"></i> Aplicación
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                            <i class="bi bi-shield-exclamation me-1"></i> Seguridad
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="error-tab" data-bs-toggle="tab" data-bs-target="#error" type="button" role="tab">
+                            <i class="bi bi-exclamation-triangle me-1"></i> Errores
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="audit-tab" data-bs-toggle="tab" data-bs-target="#audit" type="button" role="tab">
+                            <i class="bi bi-clipboard-check me-1"></i> Auditoría
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="logsTabContent">
+                    <!-- Tab Aplicación -->
+                    <div class="tab-pane fade show active" id="application" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Logs de Aplicación</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm" id="applicationLogsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Nivel</th>
+                                                <th>Mensaje</th>
+                                                <th>Usuario</th>
+                                                <th>IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Seguridad -->
+                    <div class="tab-pane fade" id="security" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Logs de Seguridad</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm" id="securityLogsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Evento</th>
+                                                <th>Usuario</th>
+                                                <th>IP</th>
+                                                <th>Estado</th>
+                                                <th>Detalles</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Errores -->
+                    <div class="tab-pane fade" id="error" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Logs de Errores</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm" id="errorLogsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Error</th>
+                                                <th>Stack Trace</th>
+                                                <th>Usuario</th>
+                                                <th>IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab Auditoría -->
+                    <div class="tab-pane fade" id="audit" role="tabpanel">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Logs de Auditoría</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-sm" id="auditLogsTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Acción</th>
+                                                <th>Usuario</th>
+                                                <th>Recurso</th>
+                                                <th>Resultado</th>
+                                                <th>IP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Se llena dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Paginación -->
+                <nav aria-label="Paginación de logs" class="mt-3">
+                    <ul class="pagination justify-content-center" id="pagination-logs">
+                        <!-- Se llena dinámicamente -->
+                    </ul>
+                </nav>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Ver Detalles del Log -->
+    <div class="modal fade" id="modalLogDetalle" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles del Log</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="logDetalleContent">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Limpieza -->
+    <div class="modal fade" id="modalConfirmarLimpieza" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmar Limpieza de Logs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que quieres limpiar los logs?</p>
+                    <p class="text-muted">Esta acción eliminará todos los logs antiguos y no se puede deshacer.</p>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirmarLimpieza">
+                        <label class="form-check-label" for="confirmarLimpieza">
+                            Confirmo que quiero proceder con la limpieza
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarLimpiezaLogs()">Limpiar Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    
+    <script>
+        // Variables globales
+        let logs = {
+            application: [],
+            security: [],
+            error: [],
+            audit: []
+        };
+        let paginacion = { current: 1, total: 0, limit: 50 };
+        let tipoLogActual = 'application';
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para asegurar que los scripts se carguen
+            setTimeout(function() {
+                verificarAutenticacion();
+                configurarFechas();
+                cargarLogs();
+            }, 100);
+        });
+
+        // Verificar autenticación
+        function verificarAutenticacion() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            
+            if (!token || role !== 'supadmin') {
+                window.location.replace('/pages/guest/login.html');
+                return;
+            }
+        }
+
+        // Configurar fechas por defecto
+        function configurarFechas() {
+            const ahora = new Date();
+            const hace24Horas = new Date(ahora.getTime() - (24 * 60 * 60 * 1000));
+            
+            document.getElementById('filtroFechaInicio').value = formatearFechaParaInput(hace24Horas);
+            document.getElementById('filtroFechaFin').value = formatearFechaParaInput(ahora);
+        }
+
+        // Cargar logs
+        async function cargarLogs() {
+            try {
+                mostrarLoading(true);
+                
+                const filtros = {
+                    tipo: document.getElementById('filtroTipo').value,
+                    nivel: document.getElementById('filtroNivel').value,
+                    fecha_desde: document.getElementById('filtroFechaInicio').value,
+                    fecha_hasta: document.getElementById('filtroFechaFin').value,
+                    usuario: document.getElementById('filtroUsuario').value,
+                    limit: paginacion.limit,
+                    offset: (paginacion.current - 1) * paginacion.limit
+                };
+
+                const response = await supadminService.obtenerLogs(filtros);
+                logs = response.data || { application: [], security: [], error: [], audit: [] };
+                paginacion.total = response.total || 0;
+
+                mostrarEstadisticasLogs();
+                mostrarLogs();
+                mostrarPaginacion();
+
+            } catch (error) {
+                console.error('Error cargando logs:', error);
+                mostrarError('Error cargando logs: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar estadísticas de logs
+        function mostrarEstadisticasLogs() {
+            const container = document.getElementById('stats-logs');
+            const totalLogs = logs.application.length + logs.security.length + logs.error.length + logs.audit.length;
+            
+            container.innerHTML = `
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Total Logs</h5>
+                            <h2>${totalLogs}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Aplicación</h5>
+                            <h2>${logs.application.length}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Seguridad</h5>
+                            <h2>${logs.security.length}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">Errores</h5>
+                            <h2>${logs.error.length}</h2>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mostrar logs en las tablas
+        function mostrarLogs() {
+            mostrarLogsTabla('application', logs.application);
+            mostrarLogsTabla('security', logs.security);
+            mostrarLogsTabla('error', logs.error);
+            mostrarLogsTabla('audit', logs.audit);
+        }
+
+        // Mostrar logs en una tabla específica
+        function mostrarLogsTabla(tipo, logsData) {
+            const tbody = document.querySelector(`#${tipo}LogsTable tbody`);
+            
+            if (logsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No hay logs</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = logsData.map(log => {
+                const timestamp = formatearFecha(log.timestamp);
+                const nivel = getNivelBadge(log.nivel);
+                
+                if (tipo === 'application') {
+                    return `
+                        <tr onclick="verDetalleLog('${tipo}', ${JSON.stringify(log).replace(/"/g, '&quot;')})" style="cursor: pointer;">
+                            <td>${timestamp}</td>
+                            <td>${nivel}</td>
+                            <td>${log.mensaje || log.message || ''}</td>
+                            <td>${log.usuario || 'N/A'}</td>
+                            <td>${log.ip || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'security') {
+                    return `
+                        <tr onclick="verDetalleLog('${tipo}', ${JSON.stringify(log).replace(/"/g, '&quot;')})" style="cursor: pointer;">
+                            <td>${timestamp}</td>
+                            <td>${log.evento || log.event || ''}</td>
+                            <td>${log.usuario || 'N/A'}</td>
+                            <td>${log.ip || 'N/A'}</td>
+                            <td><span class="badge bg-${log.estado === 'exitoso' ? 'success' : 'danger'}">${log.estado || 'N/A'}</span></td>
+                            <td>${log.detalles || log.details || ''}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'error') {
+                    return `
+                        <tr onclick="verDetalleLog('${tipo}', ${JSON.stringify(log).replace(/"/g, '&quot;')})" style="cursor: pointer;">
+                            <td>${timestamp}</td>
+                            <td>${log.error || log.message || ''}</td>
+                            <td><code>${(log.stack || '').substring(0, 100)}...</code></td>
+                            <td>${log.usuario || 'N/A'}</td>
+                            <td>${log.ip || 'N/A'}</td>
+                        </tr>
+                    `;
+                } else if (tipo === 'audit') {
+                    return `
+                        <tr onclick="verDetalleLog('${tipo}', ${JSON.stringify(log).replace(/"/g, '&quot;')})" style="cursor: pointer;">
+                            <td>${timestamp}</td>
+                            <td>${log.accion || log.action || ''}</td>
+                            <td>${log.usuario || 'N/A'}</td>
+                            <td>${log.recurso || log.resource || ''}</td>
+                            <td><span class="badge bg-${log.resultado === 'exitoso' ? 'success' : 'danger'}">${log.resultado || 'N/A'}</span></td>
+                            <td>${log.ip || 'N/A'}</td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Obtener badge del nivel
+        function getNivelBadge(nivel) {
+            const colores = {
+                'info': 'bg-info',
+                'warn': 'bg-warning',
+                'error': 'bg-danger',
+                'debug': 'bg-secondary'
+            };
+            return `<span class="badge ${colores[nivel] || 'bg-secondary'}">${nivel}</span>`;
+        }
+
+        // Ver detalle del log
+        function verDetalleLog(tipo, log) {
+            const container = document.getElementById('logDetalleContent');
+            
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Información General</h6>
+                        <table class="table table-sm">
+                            <tr><td><strong>Tipo:</strong></td><td>${tipo}</td></tr>
+                            <tr><td><strong>Timestamp:</strong></td><td>${formatearFecha(log.timestamp)}</td></tr>
+                            <tr><td><strong>Usuario:</strong></td><td>${log.usuario || 'N/A'}</td></tr>
+                            <tr><td><strong>IP:</strong></td><td>${log.ip || 'N/A'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Detalles</h6>
+                        <pre class="bg-light p-3" style="max-height: 200px; overflow-y: auto;">${JSON.stringify(log, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalLogDetalle'));
+            modal.show();
+        }
+
+        // Mostrar paginación
+        function mostrarPaginacion() {
+            const container = document.getElementById('pagination-logs');
+            const totalPages = Math.ceil(paginacion.total / paginacion.limit);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // Botón anterior
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current - 1})">Anterior</a>
+                </li>
+            `;
+
+            // Páginas
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === paginacion.current || i === 1 || i === totalPages || (i >= paginacion.current - 2 && i <= paginacion.current + 2)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === paginacion.current ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="cambiarPagina(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === paginacion.current - 3 || i === paginacion.current + 3) {
+                    paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            // Botón siguiente
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current + 1})">Siguiente</a>
+                </li>
+            `;
+
+            container.innerHTML = paginationHTML;
+        }
+
+        // Cambiar página
+        function cambiarPagina(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(paginacion.total / paginacion.limit)) return;
+            paginacion.current = pagina;
+            cargarLogs();
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            paginacion.current = 1;
+            cargarLogs();
+        }
+
+        // Actualizar logs
+        function actualizarLogs() {
+            cargarLogs();
+        }
+
+        // Exportar logs
+        function exportarLogs() {
+            // Implementar exportación
+            mostrarError('Funcionalidad de exportación en desarrollo');
+        }
+
+        // Limpiar logs
+        function limpiarLogs() {
+            const modal = new bootstrap.Modal(document.getElementById('modalConfirmarLimpieza'));
+            modal.show();
+        }
+
+        // Confirmar limpieza
+        async function confirmarLimpiezaLogs() {
+            if (!document.getElementById('confirmarLimpieza').checked) {
+                mostrarError('Debes confirmar la limpieza de logs');
+                return;
+            }
+
+            try {
+                // Implementar limpieza de logs
+                mostrarError('Funcionalidad de limpieza en desarrollo');
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarLimpieza'));
+                modal.hide();
+                
+            } catch (error) {
+                console.error('Error limpiando logs:', error);
+                mostrarError('Error limpiando logs: ' + error.message);
+            }
+        }
+
+        // Funciones auxiliares
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        function formatearFecha(fecha) {
+            return new Date(fecha).toLocaleString('es-ES');
+        }
+
+        function formatearFechaParaInput(fecha) {
+            const d = new Date(fecha);
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+    </script>
+</body>
+</html>

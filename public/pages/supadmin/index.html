@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Super Administrador - Xonler</title>
+</head>
+<body>
+    <!-- Navbar móvil (solo visible en dispositivos pequeños) -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Super Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                    <li><a class="dropdown-item" href="#" onclick="mostrarSeccion('perfil')">Perfil</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="mostrarSeccion('configuracion')">Configuración</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4><i class="bi bi-shield-check me-2"></i>Super Admin</h4>
+                        <p class="small">Panel de super administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="#" onclick="mostrarSeccion('dashboard')">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="bibliotecas.html">
+                                <i class="bi bi-building me-2"></i> Gestión de Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas Globales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="logs.html">
+                                <i class="bi bi-file-text me-2"></i> Logs y Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="monitoring.html">
+                                <i class="bi bi-shield-check me-2"></i> Monitoreo de Seguridad
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">Dashboard</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0 d-none d-md-flex">
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i> <span id="admin-name">Super Admin</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                                <li><a class="dropdown-item" href="#" onclick="mostrarSeccion('perfil')">Perfil</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="mostrarSeccion('configuracion')">Configuración</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando datos...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- DASHBOARD SECTION -->
+                <div id="dashboard-section" class="content-section">
+                    <!-- Tarjetas de estadísticas globales -->
+                    <div class="row mb-4" id="stats-cards">
+                        <!-- Se llenan dinámicamente -->
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Actividad reciente del sistema -->
+                        <div class="col-lg-8 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Actividad Reciente del Sistema</h5>
+                                        <a href="#" onclick="mostrarSeccion('logs')" class="btn btn-sm btn-outline-primary">Ver todos</a>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover" id="recent-activity-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Usuario</th>
+                                                    <th>Acción</th>
+                                                    <th>Fecha</th>
+                                                    <th>Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Se llena dinámicamente -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información del sistema -->
+                        <div class="col-lg-4 mb-4">
+                            <div class="card border-0 shadow-sm h-100">
+                                <div class="card-header bg-white">
+                                    <h5 class="mb-0">Información del Sistema</h5>
+                                </div>
+                                <div class="card-body" id="system-info">
+                                    <!-- Se llena dinámicamente -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-people fs-1 mb-3"></i>
+                                    <h5>Gestión de Usuarios</h5>
+                                    <p class="mb-3">Administra usuarios y roles del sistema</p>
+                                    <a href="#" onclick="mostrarSeccion('usuarios')" class="btn btn-light">Gestionar Usuarios</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-building fs-1 mb-3"></i>
+                                    <h5>Gestión de Bibliotecas</h5>
+                                    <p class="mb-3">Administra bibliotecas y administradores</p>
+                                    <a href="#" onclick="mostrarSeccion('bibliotecas')" class="btn btn-light">Gestionar Bibliotecas</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-graph-up fs-1 mb-3"></i>
+                                    <h5>Estadísticas Globales</h5>
+                                    <p class="mb-3">Analiza el rendimiento del sistema</p>
+                                    <a href="#" onclick="mostrarSeccion('estadisticas')" class="btn btn-light">Ver Estadísticas</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white h-100">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-shield-check fs-1 mb-3"></i>
+                                    <h5>Monitoreo</h5>
+                                    <p class="mb-3">Monitoreo de seguridad y logs</p>
+                                    <a href="monitoring.html" class="btn btn-light">Ver Monitoreo</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Otras secciones se cargarán dinámicamente -->
+                <div id="usuarios-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+
+                <div id="bibliotecas-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+
+                <div id="estadisticas-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+
+                <div id="logs-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+
+                <div id="perfil-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+
+                <div id="configuracion-section" class="content-section" style="display: none;">
+                    <!-- Se cargará dinámicamente -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-6 offset-md-3 col-lg-6 offset-lg-2">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <span>© 2025 Xonler - Red de Bibliotecas Estudiantiles</span>
+                        </div>
+                        <div>
+                            <a href="../index.html" class="text-white text-decoration-none">Volver al sitio principal</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    <script src="../../js/admin-functions.js"></script>
+    
+    <script>
+        // Variables globales
+        let estadisticasGlobales = null;
+        let usuarios = [];
+        let bibliotecas = [];
+
+        // Mostrar/ocultar loading
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        // Mostrar error
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        // Mostrar sección específica
+        function mostrarSeccion(seccion) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Mostrar la sección seleccionada
+            document.getElementById(seccion + '-section').style.display = 'block';
+
+            // Actualizar título
+            const titulos = {
+                'dashboard': 'Dashboard',
+                'usuarios': 'Gestión de Usuarios',
+                'bibliotecas': 'Gestión de Bibliotecas',
+                'estadisticas': 'Estadísticas Globales',
+                'logs': 'Logs y Auditoría',
+                'perfil': 'Perfil',
+                'configuracion': 'Configuración'
+            };
+            document.getElementById('page-title').textContent = titulos[seccion] || 'Dashboard';
+
+            // Actualizar navegación activa
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Cargar contenido específico si es necesario
+            if (seccion === 'usuarios') {
+                cargarUsuarios();
+            } else if (seccion === 'bibliotecas') {
+                cargarBibliotecas();
+            } else if (seccion === 'estadisticas') {
+                cargarEstadisticas();
+            } else if (seccion === 'logs') {
+                cargarLogs();
+            }
+        }
+
+        // Cargar dashboard
+        async function cargarDashboard() {
+            try {
+                mostrarLoading(true);
+                
+                // Cargar estadísticas globales
+                const response = await supadminService.obtenerEstadisticasGlobales();
+                console.log('🔍 [DASHBOARD] Respuesta completa:', response);
+                
+                // Extraer datos de la respuesta
+                const stats = response.data || response;
+                console.log('📊 [DASHBOARD] Estadísticas extraídas:', stats);
+                estadisticasGlobales = stats;
+
+                // Mostrar estadísticas
+                mostrarEstadisticasCards(stats);
+                
+                // Mostrar información del sistema
+                mostrarInformacionSistema(stats);
+                
+                // Cargar actividad reciente
+                await cargarActividadReciente();
+
+            } catch (error) {
+                console.error('Error cargando dashboard:', error);
+                mostrarError('Error cargando el dashboard: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar tarjetas de estadísticas
+        function mostrarEstadisticasCards(stats) {
+            console.log('🎯 [DASHBOARD] Mostrando estadísticas:', stats);
+            console.log('🎯 [DASHBOARD] Valores específicos:', {
+                total_usuarios: stats.total_usuarios,
+                total_bibliotecas: stats.total_bibliotecas,
+                total_libros: stats.total_libros,
+                prestamos_activos: stats.prestamos_activos
+            });
+            
+            const container = document.getElementById('stats-cards');
+            container.innerHTML = `
+                <div class="col-sm-6 col-md-3 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Usuarios</h5>
+                                    <h2>${stats.total_usuarios || 0}</h2>
+                                </div>
+                                <div class="text-primary">
+                                    <i class="bi bi-people fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Bibliotecas</h5>
+                                    <h2>${stats.total_bibliotecas || 0}</h2>
+                                </div>
+                                <div class="text-success">
+                                    <i class="bi bi-building fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Total Libros</h5>
+                                    <h2>${stats.total_libros || 0}</h2>
+                                </div>
+                                <div class="text-warning">
+                                    <i class="bi bi-journals fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-md-3 mb-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="card-title">Préstamos Activos</h5>
+                                    <h2>${stats.prestamos_activos || 0}</h2>
+                                </div>
+                                <div class="text-info">
+                                    <i class="bi bi-arrow-left-right fs-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mostrar información del sistema
+        function mostrarInformacionSistema(stats) {
+            const container = document.getElementById('system-info');
+            container.innerHTML = `
+                <div class="mb-3">
+                    <h6 class="text-muted">Versión del Sistema</h6>
+                    <p class="mb-0">Xonler v2.0</p>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-muted">Estado del Servidor</h6>
+                    <p class="mb-0"><span class="badge bg-success">En línea</span></p>
+                </div>
+                <div class="mb-3">
+                    <h6 class="text-muted">Última Actualización</h6>
+                    <p class="mb-0">${new Date().toLocaleDateString()}</p>
+                </div>
+            `;
+        }
+
+        // Cargar actividad reciente
+        async function cargarActividadReciente() {
+            try {
+                const response = await supadminService.obtenerActividadReciente({ limit: 5 });
+                const tbody = document.querySelector('#recent-activity-table tbody');
+                
+                if (response.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay actividad reciente</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = response.data.map(actividad => `
+                    <tr>
+                        <td>${actividad.usuario_nombre}</td>
+                        <td>${actividad.accion}</td>
+                        <td>${formatearFecha(actividad.fecha)}</td>
+                        <td><span class="badge bg-${actividad.estado === 'exitoso' ? 'success' : 'danger'}">${actividad.estado}</span></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error cargando actividad reciente:', error);
+            }
+        }
+
+        // Funciones auxiliares
+        function formatearFecha(fecha) {
+            return new Date(fecha).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Cargar usuarios
+        async function cargarUsuarios() {
+            const container = document.getElementById('usuarios-section');
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Gestión de Usuarios</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Redirigiendo a la página de gestión de usuarios...</p>
+                        <div class="text-center">
+                            <a href="usuarios.html" class="btn btn-primary">
+                                <i class="bi bi-people me-1"></i> Ir a Gestión de Usuarios
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Cargar bibliotecas
+        async function cargarBibliotecas() {
+            const container = document.getElementById('bibliotecas-section');
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Gestión de Bibliotecas</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Redirigiendo a la página de gestión de bibliotecas...</p>
+                        <div class="text-center">
+                            <a href="bibliotecas.html" class="btn btn-success">
+                                <i class="bi bi-building me-1"></i> Ir a Gestión de Bibliotecas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+            const container = document.getElementById('estadisticas-section');
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Estadísticas Globales</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Redirigiendo a la página de estadísticas globales...</p>
+                        <div class="text-center">
+                            <a href="estadisticas.html" class="btn btn-warning">
+                                <i class="bi bi-graph-up me-1"></i> Ir a Estadísticas Globales
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Cargar logs
+        async function cargarLogs() {
+            const container = document.getElementById('logs-section');
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Logs y Auditoría</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Redirigiendo a la página de logs y auditoría...</p>
+                        <div class="text-center">
+                            <a href="logs.html" class="btn btn-info">
+                                <i class="bi bi-file-text me-1"></i> Ir a Logs y Auditoría
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Inicializar aplicación
+        async function inicializar() {
+            try {
+                // Verificar que los servicios estén cargados
+                if (typeof supadminService === 'undefined') {
+                    console.error('supadminService no está disponible');
+                    mostrarError('Error: Servicios no cargados correctamente');
+                    return;
+                }
+
+                const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+                const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+                
+                console.log('🔍 [SUPADMIN] Verificando autenticación:', {
+                    hasToken: !!token,
+                    tokenLength: token ? token.length : 0,
+                    role: role,
+                    isSupAdmin: role === 'supadmin'
+                });
+                
+                if (!token || role !== 'supadmin') {
+                    console.log('❌ [SUPADMIN] No autenticado o rol incorrecto, redirigiendo al login');
+                    window.location.replace('/pages/guest/login.html');
+                    return;
+                }
+
+                console.log('✅ [SUPADMIN] Usuario autenticado, cargando dashboard...');
+                await cargarDashboard();
+                
+            } catch (error) {
+                console.error('Error inicializando aplicación:', error);
+                mostrarError('Error inicializando la aplicación: ' + error.message);
+            }
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para asegurar que los scripts se carguen
+            setTimeout(inicializar, 100);
+        });
+    </script>
+</body>
+</html>

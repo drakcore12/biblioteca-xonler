@@ -489,7 +489,7 @@ COPY public.prestamos (id, usuario_id, biblioteca_libro_id, fecha_prestamo, fech
 COPY public.roles (id, name) FROM stdin;
 1	usuario
 2	admin
-3	adminAdvanced
+3	supadmin
 \.
 
 

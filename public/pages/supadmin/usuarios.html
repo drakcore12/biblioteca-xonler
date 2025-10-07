@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../../css/main.css">
+    <title>Gestión de Usuarios - Super Admin</title>
+</head>
+<body>
+    <!-- Navbar móvil -->
+    <nav class="navbar navbar-dark bg-dark d-md-none mobile-top-nav">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Xonler Super Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="dropdown ms-auto">
+                <button class="btn btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="index.html">Dashboard</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="logout()">Cerrar sesión</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-dark sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <div class="p-3 text-white">
+                        <h4><i class="bi bi-shield-check me-2"></i>Super Admin</h4>
+                        <p class="small">Panel de super administración</p>
+                    </div>
+                    <hr class="text-white">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="index.html">
+                                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white active" href="usuarios.html">
+                                <i class="bi bi-people me-2"></i> Gestión de Usuarios
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="bibliotecas.html">
+                                <i class="bi bi-building me-2"></i> Gestión de Bibliotecas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="estadisticas.html">
+                                <i class="bi bi-graph-up me-2"></i> Estadísticas Globales
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="logs.html">
+                                <i class="bi bi-file-text me-2"></i> Logs y Auditoría
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" href="monitoring.html">
+                                <i class="bi bi-shield-check me-2"></i> Monitoreo de Seguridad
+                            </a>
+                        </li>
+                    </ul>
+                    <hr class="text-white">
+                    <div class="px-3">
+                        <a class="btn btn-sm btn-outline-light w-100" href="../index.html">
+                            <i class="bi bi-box-arrow-left me-2"></i> Volver al sitio
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Gestión de Usuarios</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <button class="btn btn-primary" onclick="mostrarModalCrearUsuario()">
+                            <i class="bi bi-person-plus me-1"></i> Nuevo Usuario
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filtros -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="busquedaUsuarios" placeholder="Buscar usuarios...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="filtroRol">
+                            <option value="">Todos los roles</option>
+                            <option value="1">Usuario</option>
+                            <option value="2">Admin</option>
+                            <option value="3">Super Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary" onclick="aplicarFiltros()">
+                            <i class="bi bi-funnel me-1"></i> Filtrar
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-primary" onclick="exportarUsuarios()">
+                            <i class="bi bi-download me-1"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="text-center py-5" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2">Cargando usuarios...</p>
+                </div>
+
+                <!-- Error message -->
+                <div id="error-message" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="error-text"></span>
+                </div>
+
+                <!-- Tabla de usuarios -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Lista de Usuarios</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="usuarios-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
+                                        <th>Fecha Registro</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Se llena dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de usuarios">
+                            <ul class="pagination justify-content-center" id="pagination-usuarios">
+                                <!-- Se llena dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar Usuario -->
+    <div class="modal fade" id="modalUsuario" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalUsuarioTitulo">Crear Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formUsuario">
+                        <input type="hidden" id="usuarioId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="nombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="apellido" class="form-label">Apellido</label>
+                                <input type="text" class="form-control" id="apellido">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="telefono">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="rol" class="form-label">Rol *</label>
+                                <select class="form-select" id="rol" required>
+                                    <option value="">Seleccionar rol</option>
+                                    <option value="1">Usuario</option>
+                                    <option value="2">Admin</option>
+                                    <option value="3">Super Admin</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaNacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="fechaNacimiento">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="genero" class="form-label">Género</label>
+                                <select class="form-select" id="genero">
+                                    <option value="">Seleccionar</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                    <option value="O">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="ciudad" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudad">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="direccion" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="direccion" rows="2"></textarea>
+                        </div>
+                        <div id="passwordSection">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Contraseña *</label>
+                                    <input type="password" class="form-control" id="password" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirmar Contraseña *</label>
+                                    <input type="password" class="form-control" id="confirmPassword" required>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Devolución -->
+    <div class="modal fade" id="modalConfirmarDevolucion" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-clockwise text-info me-2"></i>
+                        Confirmar Devolución de Préstamos
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Información:</strong> Esta acción marcará todos los préstamos activos como devueltos.
+                    </div>
+                    <p><strong>¿Estás seguro de que quieres devolver los siguientes préstamos?</strong></p>
+                    <div id="prestamos-a-devolver" class="mt-3">
+                        <!-- Lista de préstamos a devolver -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="volverAModalEliminacion()">
+                        <i class="bi bi-arrow-left me-1"></i> Volver
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="procesarDevolucionPrestamos()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Devolver Préstamos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación -->
+    <div class="modal fade" id="modalConfirmarEliminar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Advertencia:</strong> Esta acción eliminará permanentemente el usuario y todos sus datos relacionados.
+                    </div>
+                    <p><strong>¿Estás seguro de que quieres eliminar este usuario?</strong></p>
+                    <ul class="text-muted small">
+                        <li>Se eliminarán todos los préstamos del usuario</li>
+                        <li>Se eliminarán las asociaciones con bibliotecas</li>
+                        <li>Esta acción no se puede deshacer</li>
+                    </ul>
+                    <div id="eliminacion-info" class="mt-3 p-2 bg-light rounded">
+                        <!-- Información del usuario a eliminar -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-info" id="btnDevolverPrestamos" onclick="devolverPrestamosUsuario()" style="display: none;">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Devolver Préstamos
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="confirmarEliminarUsuario()">
+                        <i class="bi bi-trash me-1"></i> Eliminar Usuario
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../services/auth.services.js"></script>
+    <script src="../../services/supadmin.services.js"></script>
+    
+    <script>
+        // Variables globales
+        let usuarios = [];
+        let usuarioSeleccionado = null;
+        let paginacion = { current: 1, total: 0, limit: 10 };
+
+        // Inicializar página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Esperar un poco para asegurar que los scripts se carguen
+            setTimeout(function() {
+                verificarAutenticacion();
+                cargarUsuarios();
+                cargarRoles();
+            }, 100);
+        });
+
+        // Verificar autenticación
+        function verificarAutenticacion() {
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            const role = localStorage.getItem('role') || sessionStorage.getItem('role');
+            
+            console.log('🔍 [USUARIOS] Verificando autenticación:', {
+                hasToken: !!token,
+                tokenLength: token ? token.length : 0,
+                role: role,
+                isSupAdmin: role === 'supadmin'
+            });
+            
+            if (!token || role !== 'supadmin') {
+                console.log('❌ [USUARIOS] No autenticado o rol incorrecto, redirigiendo al login');
+                window.location.replace('/pages/guest/login.html');
+                return;
+            }
+            
+            console.log('✅ [USUARIOS] Usuario autenticado correctamente');
+        }
+
+        // Cargar usuarios
+        async function cargarUsuarios() {
+            try {
+                console.log('🔄 [USUARIOS] Iniciando carga de usuarios...');
+                mostrarLoading(true);
+                
+                const filtros = {
+                    busqueda: document.getElementById('busquedaUsuarios').value,
+                    rol: document.getElementById('filtroRol').value,
+                    limit: paginacion.limit,
+                    offset: (paginacion.current - 1) * paginacion.limit
+                };
+
+                console.log('🔍 [USUARIOS] Filtros aplicados:', filtros);
+                console.log('🔍 [USUARIOS] SupAdminService disponible:', typeof supadminService);
+
+                const response = await supadminService.obtenerUsuarios(filtros);
+                console.log('✅ [USUARIOS] Respuesta recibida:', response);
+                
+                usuarios = response.data || [];
+                paginacion.total = response.total || 0;
+
+                console.log('📊 [USUARIOS] Usuarios cargados:', usuarios.length);
+                console.log('📊 [USUARIOS] Total registros:', paginacion.total);
+
+                mostrarUsuarios();
+                mostrarPaginacion();
+
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error cargando usuarios:', error);
+                mostrarError('Error cargando usuarios: ' + error.message);
+            } finally {
+                mostrarLoading(false);
+            }
+        }
+
+        // Mostrar usuarios en la tabla
+        function mostrarUsuarios() {
+            console.log('🔄 [USUARIOS] Mostrando usuarios en la tabla...');
+            const tbody = document.querySelector('#usuarios-table tbody');
+            
+            if (!tbody) {
+                console.error('❌ [USUARIOS] No se encontró el elemento tbody');
+                return;
+            }
+            
+            console.log('📊 [USUARIOS] Usuarios a mostrar:', usuarios.length);
+            
+            if (usuarios.length === 0) {
+                console.log('📝 [USUARIOS] No hay usuarios, mostrando mensaje vacío');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay usuarios</td></tr>';
+                return;
+            }
+
+            console.log('✅ [USUARIOS] Generando HTML para usuarios...');
+            tbody.innerHTML = usuarios.map(usuario => `
+                <tr>
+                    <td>${usuario.id}</td>
+                    <td>${usuario.nombre} ${usuario.apellido || ''}</td>
+                    <td>${usuario.email}</td>
+                    <td><span class="badge bg-${getRolColor(usuario.rol)}">${usuario.rol}</span></td>
+                    <td>${formatearFecha(usuario.created_at)}</td>
+                    <td><span class="badge bg-success">Activo</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editarUsuario(${usuario.id})" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarUsuario(${usuario.id})" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            console.log('✅ [USUARIOS] HTML generado y aplicado correctamente');
+        }
+
+        // Obtener color del rol
+        function getRolColor(rol) {
+            switch (rol) {
+                case 'usuario': return 'secondary';
+                case 'admin': return 'primary';
+                case 'supadmin': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        // Mostrar paginación
+        function mostrarPaginacion() {
+            const container = document.getElementById('pagination-usuarios');
+            const totalPages = Math.ceil(paginacion.total / paginacion.limit);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            // Botón anterior
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current - 1})">Anterior</a>
+                </li>
+            `;
+
+            // Páginas
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === paginacion.current || i === 1 || i === totalPages || (i >= paginacion.current - 2 && i <= paginacion.current + 2)) {
+                    paginationHTML += `
+                        <li class="page-item ${i === paginacion.current ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="cambiarPagina(${i})">${i}</a>
+                        </li>
+                    `;
+                } else if (i === paginacion.current - 3 || i === paginacion.current + 3) {
+                    paginationHTML += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            // Botón siguiente
+            paginationHTML += `
+                <li class="page-item ${paginacion.current === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="cambiarPagina(${paginacion.current + 1})">Siguiente</a>
+                </li>
+            `;
+
+            container.innerHTML = paginationHTML;
+        }
+
+        // Cambiar página
+        function cambiarPagina(pagina) {
+            if (pagina < 1 || pagina > Math.ceil(paginacion.total / paginacion.limit)) return;
+            paginacion.current = pagina;
+            cargarUsuarios();
+        }
+
+        // Aplicar filtros
+        function aplicarFiltros() {
+            paginacion.current = 1;
+            cargarUsuarios();
+        }
+
+        // Mostrar modal crear usuario
+        function mostrarModalCrearUsuario() {
+            console.log('🔄 [USUARIOS] Mostrando modal crear usuario');
+            document.getElementById('modalUsuarioTitulo').textContent = 'Crear Usuario';
+            document.getElementById('formUsuario').reset();
+            document.getElementById('usuarioId').value = '';
+            document.getElementById('passwordSection').style.display = 'block';
+            document.getElementById('password').required = true;
+            document.getElementById('confirmPassword').required = true;
+            
+            // Asegurar que el select de roles esté cargado
+            if (document.getElementById('rol').options.length <= 1) {
+                console.log('🔄 [USUARIOS] Cargando roles antes de mostrar modal');
+                cargarRoles().then(() => {
+                    const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+                    modal.show();
+                });
+            } else {
+                const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+                modal.show();
+            }
+        }
+
+        // Editar usuario
+        async function editarUsuario(id) {
+            try {
+                console.log('🔄 [USUARIOS] Editando usuario ID:', id);
+                const response = await supadminService.obtenerUsuarioPorId(id);
+                console.log('📊 [USUARIOS] Respuesta usuario:', response);
+                
+                const usuario = response.data || response; // Manejar ambos formatos
+                
+                if (!usuario || !usuario.id) {
+                    throw new Error('Usuario no encontrado o datos inválidos');
+                }
+                
+                console.log('✅ [USUARIOS] Usuario encontrado:', usuario);
+                
+                document.getElementById('modalUsuarioTitulo').textContent = 'Editar Usuario';
+                document.getElementById('usuarioId').value = usuario.id;
+                document.getElementById('nombre').value = usuario.nombre || '';
+                document.getElementById('apellido').value = usuario.apellido || '';
+                document.getElementById('email').value = usuario.email || '';
+                document.getElementById('telefono').value = usuario.telefono || '';
+                document.getElementById('rol').value = usuario.rol_id || '';
+                document.getElementById('fechaNacimiento').value = usuario.fecha_nacimiento || '';
+                document.getElementById('genero').value = usuario.genero || '';
+                document.getElementById('ciudad').value = usuario.ciudad || '';
+                document.getElementById('direccion').value = usuario.direccion || '';
+                
+                // Ocultar sección de contraseña para edición
+                document.getElementById('passwordSection').style.display = 'none';
+                document.getElementById('password').required = false;
+                document.getElementById('confirmPassword').required = false;
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalUsuario'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error cargando usuario:', error);
+                mostrarError('Error cargando usuario: ' + error.message);
+            }
+        }
+
+        // Guardar usuario
+        async function guardarUsuario() {
+            try {
+                console.log('🔄 [USUARIOS] Guardando usuario...');
+                const form = document.getElementById('formUsuario');
+                if (!form.checkValidity()) {
+                    form.reportValidity();
+                    return;
+                }
+
+                const datos = {
+                    nombre: document.getElementById('nombre').value,
+                    apellido: document.getElementById('apellido').value,
+                    email: document.getElementById('email').value,
+                    telefono: document.getElementById('telefono').value,
+                    rol_id: parseInt(document.getElementById('rol').value),
+                    fecha_nacimiento: document.getElementById('fechaNacimiento').value,
+                    genero: document.getElementById('genero').value,
+                    ciudad: document.getElementById('ciudad').value,
+                    direccion: document.getElementById('direccion').value
+                };
+
+                console.log('📊 [USUARIOS] Datos a guardar:', datos);
+
+                // Agregar contraseña solo si es nuevo usuario
+                const usuarioId = document.getElementById('usuarioId').value;
+                console.log('🔍 [USUARIOS] Usuario ID:', usuarioId);
+                
+                if (!usuarioId || usuarioId === 'undefined') {
+                    // Crear nuevo usuario
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+                    
+                    if (password !== confirmPassword) {
+                        mostrarError('Las contraseñas no coinciden');
+                        return;
+                    }
+                    
+                    datos.password = password;
+                    console.log('🆕 [USUARIOS] Creando nuevo usuario');
+                    await supadminService.crearUsuario(datos);
+                } else {
+                    // Actualizar usuario existente
+                    console.log('✏️ [USUARIOS] Actualizando usuario existente');
+                    await supadminService.actualizarUsuario(usuarioId, datos);
+                }
+
+                // Cerrar modal y recargar
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalUsuario'));
+                modal.hide();
+                cargarUsuarios();
+                
+                console.log('✅ [USUARIOS] Usuario guardado exitosamente');
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error guardando usuario:', error);
+                mostrarError('Error guardando usuario: ' + error.message);
+            }
+        }
+
+        // Eliminar usuario
+        async function eliminarUsuario(id) {
+            try {
+                console.log('🔄 [USUARIOS] Preparando eliminación de usuario ID:', id);
+                usuarioSeleccionado = id;
+                
+                // Obtener información del usuario para mostrar en el modal
+                const response = await supadminService.obtenerUsuarioPorId(id);
+                const usuario = response.data || response;
+                
+                // Verificar préstamos activos
+                console.log('🔍 [USUARIOS] Verificando préstamos activos...');
+                const prestamosResponse = await fetch(`/api/prestamos?usuario_id=${id}`, {
+                    headers: supadminService.getAuthHeaders()
+                });
+                const prestamosData = await prestamosResponse.json();
+                const prestamosActivos = prestamosData.prestamos ? prestamosData.prestamos.filter(p => p.activo) : [];
+                
+                console.log('📊 [USUARIOS] Préstamos activos encontrados:', prestamosActivos.length);
+                
+                // Mostrar información del usuario en el modal
+                const infoDiv = document.getElementById('eliminacion-info');
+                
+                let prestamosHTML = '';
+                if (prestamosActivos.length > 0) {
+                    prestamosHTML = `
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Préstamos activos encontrados:</strong>
+                            <ul class="mb-0 mt-2">
+                                ${prestamosActivos.map(p => `
+                                    <li><strong>${p.titulo}</strong> por ${p.autor} (Vence: ${new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')})</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                infoDiv.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-person-circle text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">${usuario.nombre} ${usuario.apellido || ''}</h6>
+                            <p class="mb-1 text-muted small">${usuario.email}</p>
+                            <span class="badge bg-${getRolColor(usuario.rol)}">${usuario.rol}</span>
+                        </div>
+                    </div>
+                    ${prestamosHTML}
+                `;
+                
+                // Deshabilitar botón de eliminación si hay préstamos activos
+                const eliminarBtn = document.querySelector('#modalConfirmarEliminar .btn-danger');
+                const devolverBtn = document.getElementById('btnDevolverPrestamos');
+                
+                if (prestamosActivos.length > 0) {
+                    eliminarBtn.disabled = true;
+                    eliminarBtn.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> No se puede eliminar (tiene préstamos activos)';
+                    eliminarBtn.className = 'btn btn-warning';
+                    devolverBtn.style.display = 'inline-block';
+                } else {
+                    eliminarBtn.disabled = false;
+                    eliminarBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Eliminar Usuario';
+                    eliminarBtn.className = 'btn btn-danger';
+                    devolverBtn.style.display = 'none';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error obteniendo información del usuario:', error);
+                mostrarError('Error obteniendo información del usuario: ' + error.message);
+            }
+        }
+
+        // Confirmar eliminación
+        async function confirmarEliminarUsuario() {
+            try {
+                console.log('🔄 [USUARIOS] Eliminando usuario ID:', usuarioSeleccionado);
+                
+                // Verificar nuevamente si hay préstamos activos
+                const prestamosResponse = await fetch(`/api/prestamos?usuario_id=${usuarioSeleccionado}`, {
+                    headers: supadminService.getAuthHeaders()
+                });
+                const prestamosData = await prestamosResponse.json();
+                const prestamosActivos = prestamosData.prestamos ? prestamosData.prestamos.filter(p => p.activo) : [];
+                
+                if (prestamosActivos.length > 0) {
+                    mostrarError(`No se puede eliminar el usuario. Tiene ${prestamosActivos.length} préstamo(s) activo(s). Debe devolver todos los libros primero.`);
+                    return;
+                }
+                
+                const response = await supadminService.eliminarUsuario(usuarioSeleccionado);
+                console.log('✅ [USUARIOS] Usuario eliminado:', response);
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar'));
+                modal.hide();
+                cargarUsuarios();
+                
+                // Mostrar mensaje de éxito
+                mostrarExito(response.message || 'Usuario eliminado exitosamente');
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error eliminando usuario:', error);
+                
+                // Extraer mensaje de error más específico
+                let errorMessage = 'Error eliminando usuario: ' + error.message;
+                
+                if (error.message.includes('400')) {
+                    errorMessage = 'No se puede eliminar el usuario. Verifique que no tenga préstamos activos.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Error interno del servidor. Intente nuevamente.';
+                }
+                
+                mostrarError(errorMessage);
+            }
+        }
+
+        // Variable global para almacenar préstamos a devolver
+        let prestamosADevolver = [];
+
+        // Devolver préstamos del usuario
+        async function devolverPrestamosUsuario() {
+            try {
+                console.log('🔄 [USUARIOS] Devolviendo préstamos del usuario ID:', usuarioSeleccionado);
+                
+                // Obtener préstamos activos del usuario
+                const prestamosResponse = await fetch(`/api/prestamos?usuario_id=${usuarioSeleccionado}`, {
+                    headers: supadminService.getAuthHeaders()
+                });
+                const prestamosData = await prestamosResponse.json();
+                const prestamosActivos = prestamosData.prestamos ? prestamosData.prestamos.filter(p => p.activo) : [];
+                
+                if (prestamosActivos.length === 0) {
+                    mostrarError('No hay préstamos activos para devolver');
+                    return;
+                }
+                
+                // Mostrar modal de confirmación de devolución
+                await mostrarModalConfirmacionDevolucion(prestamosActivos);
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error obteniendo préstamos:', error);
+                mostrarError('Error obteniendo préstamos: ' + error.message);
+            }
+        }
+
+        // Mostrar modal de confirmación de devolución
+        async function mostrarModalConfirmacionDevolucion(prestamosActivos) {
+            prestamosADevolver = prestamosActivos;
+            
+            // Cerrar el modal de eliminación primero
+            const modalEliminacion = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar'));
+            if (modalEliminacion) {
+                modalEliminacion.hide();
+            }
+            
+            // Esperar un momento para que se cierre completamente
+            setTimeout(() => {
+                // Mostrar lista de préstamos en el modal
+                const prestamosDiv = document.getElementById('prestamos-a-devolver');
+                prestamosDiv.innerHTML = prestamosActivos.map(prestamo => `
+                    <div class="card mb-2">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${prestamo.titulo}</h6>
+                                    <p class="mb-1 text-muted small">${prestamo.autor}</p>
+                                </div>
+                                <div class="text-end">
+                                    <small class="text-muted">Vence: ${new Date(prestamo.fecha_vencimiento).toLocaleDateString('es-ES')}</small>
+                                    <br>
+                                    <span class="badge bg-warning">Activo</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmarDevolucion'));
+                modal.show();
+            }, 300); // Esperar 300ms para que se cierre el primer modal
+        }
+
+        // Procesar devolución de préstamos
+        async function procesarDevolucionPrestamos() {
+            try {
+                console.log('🔄 [USUARIOS] Procesando devolución de préstamos...');
+                
+                // Devolver todos los préstamos activos
+                const devoluciones = [];
+                for (const prestamo of prestamosADevolver) {
+                    try {
+                        console.log(`🔄 [USUARIOS] Devolviendo préstamo ${prestamo.id}: ${prestamo.titulo}`);
+                        const response = await fetch(`/api/admin/prestamos/${prestamo.id}/devolver`, {
+                            method: 'PATCH',
+                            headers: supadminService.getAuthHeaders()
+                        });
+                        
+                        if (response.ok) {
+                            devoluciones.push(prestamo.titulo);
+                            console.log(`✅ [USUARIOS] Préstamo devuelto: ${prestamo.titulo}`);
+                        } else {
+                            const errorData = await response.json().catch(() => ({}));
+                            console.error(`❌ [USUARIOS] Error devolviendo préstamo ${prestamo.id}:`, response.status, errorData);
+                        }
+                    } catch (error) {
+                        console.error(`❌ [USUARIOS] Error devolviendo préstamo ${prestamo.id}:`, error);
+                    }
+                }
+                
+                // Cerrar modal de devolución
+                const modalDevolucion = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarDevolucion'));
+                modalDevolucion.hide();
+                
+                if (devoluciones.length > 0) {
+                    mostrarExito(`Se devolvieron ${devoluciones.length} préstamo(s): ${devoluciones.join(', ')}`);
+                    
+                    // Recargar usuarios y volver a mostrar el modal de eliminación
+                    cargarUsuarios();
+                    
+                    // Esperar un momento y volver a mostrar el modal de eliminación
+                    setTimeout(() => {
+                        // Verificar si aún hay préstamos activos
+                        verificarPrestamosYMostrarModalEliminacion();
+                    }, 500);
+                } else {
+                    mostrarError('No se pudieron devolver los préstamos');
+                }
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error procesando devolución:', error);
+                mostrarError('Error procesando devolución: ' + error.message);
+            }
+        }
+
+        // Volver al modal de eliminación
+        function volverAModalEliminacion() {
+            // Cerrar modal de devolución
+            const modalDevolucion = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarDevolucion'));
+            if (modalDevolucion) {
+                modalDevolucion.hide();
+            }
+            
+            // Esperar un momento y mostrar el modal de eliminación
+            setTimeout(() => {
+                verificarPrestamosYMostrarModalEliminacion();
+            }, 300);
+        }
+
+        // Verificar préstamos y mostrar modal de eliminación
+        async function verificarPrestamosYMostrarModalEliminacion() {
+            try {
+                console.log('🔄 [USUARIOS] Verificando préstamos después de devolución...');
+                
+                // Obtener préstamos activos del usuario
+                const prestamosResponse = await fetch(`/api/prestamos?usuario_id=${usuarioSeleccionado}`, {
+                    headers: supadminService.getAuthHeaders()
+                });
+                const prestamosData = await prestamosResponse.json();
+                const prestamosActivos = prestamosData.prestamos ? prestamosData.prestamos.filter(p => p.activo) : [];
+                
+                console.log('📊 [USUARIOS] Préstamos activos después de devolución:', prestamosActivos.length);
+                
+                // Obtener información del usuario
+                const response = await supadminService.obtenerUsuarioPorId(usuarioSeleccionado);
+                const usuario = response.data || response;
+                
+                // Mostrar información del usuario en el modal
+                const infoDiv = document.getElementById('eliminacion-info');
+                
+                let prestamosHTML = '';
+                if (prestamosActivos.length > 0) {
+                    prestamosHTML = `
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Préstamos activos encontrados:</strong>
+                            <ul class="mb-0 mt-2">
+                                ${prestamosActivos.map(p => `
+                                    <li><strong>${p.titulo}</strong> por ${p.autor} (Vence: ${new Date(p.fecha_vencimiento).toLocaleDateString('es-ES')})</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+                
+                infoDiv.innerHTML = `
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-person-circle text-primary" style="font-size: 2rem;"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">${usuario.nombre} ${usuario.apellido || ''}</h6>
+                            <p class="mb-1 text-muted small">${usuario.email}</p>
+                            <span class="badge bg-${getRolColor(usuario.rol)}">${usuario.rol}</span>
+                        </div>
+                    </div>
+                    ${prestamosHTML}
+                `;
+                
+                // Configurar botones según si hay préstamos activos
+                const eliminarBtn = document.querySelector('#modalConfirmarEliminar .btn-danger');
+                const devolverBtn = document.getElementById('btnDevolverPrestamos');
+                
+                if (prestamosActivos.length > 0) {
+                    eliminarBtn.disabled = true;
+                    eliminarBtn.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> No se puede eliminar (tiene préstamos activos)';
+                    eliminarBtn.className = 'btn btn-warning';
+                    devolverBtn.style.display = 'inline-block';
+                } else {
+                    eliminarBtn.disabled = false;
+                    eliminarBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Eliminar Usuario';
+                    eliminarBtn.className = 'btn btn-danger';
+                    devolverBtn.style.display = 'none';
+                }
+                
+                // Mostrar el modal de eliminación
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmarEliminar'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error verificando préstamos:', error);
+                mostrarError('Error verificando préstamos: ' + error.message);
+            }
+        }
+
+        // Cargar roles
+        async function cargarRoles() {
+            try {
+                console.log('🔄 [USUARIOS] Cargando roles...');
+                const response = await supadminService.obtenerRoles();
+                console.log('📊 [USUARIOS] Respuesta roles:', response);
+                
+                const roles = response.data || response; // Manejar ambos formatos
+                const select = document.getElementById('rol');
+                
+                if (!select) {
+                    console.error('❌ [USUARIOS] No se encontró el select de roles');
+                    return;
+                }
+                
+                select.innerHTML = '<option value="">Seleccionar rol</option>';
+                
+                if (Array.isArray(roles)) {
+                    roles.forEach(rol => {
+                        select.innerHTML += `<option value="${rol.id}">${rol.name}</option>`;
+                    });
+                    console.log('✅ [USUARIOS] Roles cargados:', roles.length);
+                } else {
+                    console.error('❌ [USUARIOS] Los roles no son un array:', roles);
+                }
+                
+            } catch (error) {
+                console.error('❌ [USUARIOS] Error cargando roles:', error);
+            }
+        }
+
+        // Exportar usuarios
+        function exportarUsuarios() {
+            // Implementar exportación
+            mostrarError('Funcionalidad de exportación en desarrollo');
+        }
+
+        // Funciones auxiliares
+        function mostrarLoading(mostrar = true) {
+            document.getElementById('loading-spinner').style.display = mostrar ? 'block' : 'none';
+        }
+
+        function mostrarError(mensaje) {
+            document.getElementById('error-text').textContent = mensaje;
+            document.getElementById('error-message').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-message').style.display = 'none';
+            }, 5000);
+        }
+
+        function mostrarExito(mensaje) {
+            // Crear o actualizar mensaje de éxito
+            let successDiv = document.getElementById('success-message');
+            if (!successDiv) {
+                successDiv = document.createElement('div');
+                successDiv.id = 'success-message';
+                successDiv.className = 'alert alert-success';
+                successDiv.style.position = 'fixed';
+                successDiv.style.top = '20px';
+                successDiv.style.right = '20px';
+                successDiv.style.zIndex = '9999';
+                successDiv.style.minWidth = '300px';
+                document.body.appendChild(successDiv);
+            }
+            
+            successDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                <span>${mensaje}</span>
+                <button type="button" class="btn-close float-end" onclick="this.parentElement.style.display='none'"></button>
+            `;
+            successDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function formatearFecha(fecha) {
+            return new Date(fecha).toLocaleDateString('es-ES');
+        }
+
+    </script>
+</body>
+</html>

@@ -124,6 +124,9 @@ function persistSessionAndGo(payload, remember) {
   // Redirección por rol
   console.log('🔄 [LOGIN] Redirigiendo por rol:', role);
   switch (role) {
+    case 'supadmin':
+      window.location.replace('/pages/supadmin/index.html');
+      break;
     case 'admin':
     case 'adminadvanced':
       window.location.replace('/pages/admin/index.html');

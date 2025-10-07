@@ -1,5 +1,5 @@
 // Servicio unificado de autenticación
-export class AuthService {
+class AuthService {
   constructor() {
     this.baseURL = '/api';
     this.tokenKey = 'token';
@@ -42,6 +42,11 @@ export class AuthService {
   // Verificar si el usuario es admin
   isAdmin() {
     return this.hasRole('admin');
+  }
+
+  // Verificar si el usuario es supadmin
+  isSupAdmin() {
+    return this.hasRole('supadmin');
   }
 
   // Headers de autenticación para las peticiones
@@ -130,10 +135,10 @@ export class AuthService {
   logout() {
     // Limpiar almacenamiento local y de sesión
     [localStorage, sessionStorage].forEach(storage => {
-      storage.removeItem(this.tokenKey);
-      storage.removeItem(this.roleKey);
-      storage.removeItem(this.userIdKey);
-      storage.removeItem(this.userNameKey);
+      storage.removeItem('token');
+      storage.removeItem('role');
+      storage.removeItem('userId');
+      storage.removeItem('userName');
     });
     
     // Redirigir al login
@@ -286,17 +291,31 @@ export class AuthService {
 }
 
 // Instancia singleton del servicio
-export const authService = new AuthService();
+const authService = new AuthService();
 
 // Funciones de conveniencia para uso directo
-export const {
+const {
   login,
   register,
   logout,
   isAuthenticated,
   hasRole,
   isAdmin,
+  isSupAdmin,
   getCurrentUser,
   getAuthHeaders,
   debugAuth
 } = authService;
+
+// Hacer disponible globalmente
+window.authService = authService;
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.isAuthenticated = isAuthenticated;
+window.hasRole = hasRole;
+window.isAdmin = isAdmin;
+window.isSupAdmin = isSupAdmin;
+window.getCurrentUser = getCurrentUser;
+window.getAuthHeaders = getAuthHeaders;
+window.debugAuth = debugAuth;
