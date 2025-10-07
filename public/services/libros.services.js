@@ -2,7 +2,6 @@
 // MODULE INITIALIZATION
 // ============================================================================
 
-// Módulo para la página de libros
 export default function initLibrosPage() {
   console.log('Página de libros inicializada');
   cargarLibros();
