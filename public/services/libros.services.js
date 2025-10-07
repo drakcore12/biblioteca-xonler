@@ -1,3 +1,7 @@
+// ============================================================================
+// MODULE INITIALIZATION
+// ============================================================================
+
 // Módulo para la página de libros
 export default function initLibrosPage() {
   console.log('Página de libros inicializada');
@@ -6,48 +10,58 @@ export default function initLibrosPage() {
   cargarBibliotecas();
 }
 
-// ✅ NUEVO: función helper para headers de autenticación
-export function authHeaders() {
+// ============================================================================
+// AUTHENTICATION & UTILITIES
+// ============================================================================
+
+export function authHeaders(method = 'GET') {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token) {
     console.warn('⚠️ No se encontró token de autenticación');
     return {};
   }
-  
+  const h = { 'Authorization': `Bearer ${token}` };
+  if (['POST','PUT','PATCH','DELETE'].includes(String(method).toUpperCase())) {
+    h['Content-Type'] = 'application/json';
+  }
   console.log('🔐 Usando token para autenticación');
-  return { 
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
+  return h;
 }
 
-// ✅ ARREGLADO: Resolver rutas de imágenes con fallback
 function resolveImg(libro) {
-  // Si viene URL absoluta, úsala
   if (libro.imagen_url && /^https?:\/\//i.test(libro.imagen_url)) {
     return libro.imagen_url;
   }
   
-  // Si viene solo el nombre del archivo, apunta a tu carpeta estática
   if (libro.imagen_url) {
-    // ✅ ARREGLADO: Evitar doble ruta - si ya empieza con /assets/, no añadir
     if (libro.imagen_url.startsWith('/assets/')) {
       return libro.imagen_url;
     }
-    // Si es solo el nombre del archivo, añadir la ruta base
+    if (libro.imagen_url.startsWith('assets/')) {
+      return `/${libro.imagen_url}`;
+    }
+    if (libro.imagen_url.startsWith('./')) {
+      return `/assets/images/${libro.imagen_url.slice(2)}`;
+    }
+
     return `/assets/images/${libro.imagen_url}`;
   }
   
-  // Fallback por defecto
   return '/assets/images/libro-placeholder.jpg';
 }
 
-// ✅ ARREGLADO: Configurar fallbacks de imágenes
+
+// ============================================================================
+// UI HELPERS & DOM MANIPULATION
+// ============================================================================
+
 function setupImageFallbacks() {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) return;
-  
+
   librosGrid.querySelectorAll('img.libro-img').forEach(img => {
+    if (img._fallbackBound) return;
+    img._fallbackBound = true;
     img.addEventListener('error', () => {
       console.log('🖼️ Imagen fallida, usando placeholder:', img.src);
       img.src = '/assets/images/libro-placeholder.jpg';
@@ -55,18 +69,14 @@ function setupImageFallbacks() {
   });
 }
 
-// ✅ ARREGLADO: Configurar delegación de eventos para botones de detalle
 function setupEventDelegation() {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) return;
   
-  // ✅ ARREGLADO: Usar event delegation simple sin clonar (más eficiente)
-  // Remover listeners previos si existen
   if (librosGrid._clickHandler) {
     librosGrid.removeEventListener('click', librosGrid._clickHandler);
   }
   
-  // Crear y guardar referencia al handler
   librosGrid._clickHandler = (e) => {
     const btn = e.target.closest('.ver-detalle');
     if (!btn) return;
@@ -76,11 +86,9 @@ function setupEventDelegation() {
     verDetalleLibro(libroId);
   };
   
-  // Añadir el listener
   librosGrid.addEventListener('click', librosGrid._clickHandler);
 }
 
-// ✅ NUEVO: función para debug de autenticación
 export function debugAuth() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   const role = localStorage.getItem('role') || sessionStorage.getItem('role');
@@ -97,21 +105,25 @@ export function debugAuth() {
   return { token, role };
 }
 
-// ===== Estado Global y Paginación 3x3 =====
+// ============================================================================
+// STATE MANAGEMENT & PAGINATION
+// ============================================================================
+
 const STATE = {
-  lastVisibles: [],          // último lote renderizado (para re-render en cambio de vista)
+  lastVisibles: [],         
 };
 
 const PAGINATION = {
   page: 1,
-  pageSize: 9, // 3x3 SIEMPRE
+  pageSize: 9, 
   totalPages: 1,
   libros: [],
 };
 
+let _librosAbortController = null;
 
 
-// ✅ RESTAURADO: Funciones de paginación client-side para rescate
+
 function setLibros(data) {
   PAGINATION.libros = Array.isArray(data) ? data : [];
   PAGINATION.totalPages = Math.max(1, Math.ceil(PAGINATION.libros.length / PAGINATION.pageSize));
@@ -125,15 +137,10 @@ function getPageSlice(page) {
 }
 
 function goToPage(page) {
-  console.log('🔍 [DEBUG] goToPage llamado con página:', page);
   PAGINATION.page = Math.min(Math.max(1, page), PAGINATION.totalPages);
   const visibles = getPageSlice(PAGINATION.page);
 
-  // 👇 guarda para re-render al cambiar vista
   STATE.lastVisibles = visibles;
-
-  console.log('🔍 [DEBUG] Libros visibles en página', page, ':', visibles.length);
-  console.log('🔍 [DEBUG] Llamando renderizarLibros con', visibles.length, 'libros');
   renderizarLibros(visibles);
   renderPagination();
   actualizarContadorResultados(visibles.length, PAGINATION.libros.length, PAGINATION.page, PAGINATION.totalPages);
@@ -142,7 +149,10 @@ function goToPage(page) {
 
 let filtrosActuales = {};
 
-// ✅ ARREGLADO: cargar libros con lógica híbrida (backend + rescate client-side)
+// ============================================================================
+// CORE DATA FETCHING & API INTERACTIONS
+// ============================================================================
+
 export async function cargarLibros(filtros = {}, pagina = 1) {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) {
@@ -150,22 +160,18 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     return;
   }
 
-  console.log('🔍 [DEBUG] cargarLibros llamado con:', { filtros, pagina });
 
-  // ✅ Actualizar estado global y asegurar 3×3
   filtrosActuales = { ...filtros };
-  PAGINATION.pageSize = 9;                   // 3×3 SIEMPRE
+  PAGINATION.pageSize = 9;                
   PAGINATION.page = Math.max(1, pagina);
 
-  // 👈 IMPORTANTE: Asegurar que siempre haya un orden por defecto
   if (!filtrosActuales.orden) {
     filtrosActuales.orden = 'popularidad';
   }
 
-  // Mostrar loader
   librosGrid.innerHTML = `
     <div class="col-12 text-center py-5">
-      <div class="spinner-border text-primary" role="status">
+      <div class="spinner-border text-primary" role="status" aria-live="polite">
         <span class="visually-hidden">Cargando...</span>
       </div>
       <p class="mt-2 text-muted">Cargando libros...</p>
@@ -173,42 +179,45 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
   `;
 
   try {
-    // ✅ Construir URL con paginación correcta
+    if (_librosAbortController) _librosAbortController.abort();
+    _librosAbortController = new AbortController();
+    const { signal } = _librosAbortController;
+
     const limit = PAGINATION.pageSize;
     const offset = (PAGINATION.page - 1) * PAGINATION.pageSize;
     const url = buildLibrosUrl({ ...filtrosActuales, limit, offset });
     
     console.log('📚 Cargando libros desde:', url);
     const response = await fetch(url, {
-      headers: { ...authHeaders() }
+      headers: { ...authHeaders('GET') },
+      signal
     });
     
     console.log('📥 Status respuesta:', response.status);
+    
+    if (response.status === 401 || response.status === 403) {
+      librosGrid.innerHTML = `
+        <div class="col-12 text-center py-5">
+          <div class="alert alert-warning">
+            <strong>Sesión expirada.</strong> Vuelve a iniciar sesión para ver los libros.
+            <div class="mt-2">
+              <a href="/login" class="btn btn-sm btn-primary">Ir a iniciar sesión</a>
+            </div>
+          </div>
+        </div>`;
+      actualizarContadorResultados(0, 0, 1, 1);
+      return;
+    }
+    
     if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
     const payload = await response.json();
     console.log('📚 Libros recibidos:', payload);
 
-    // Extraer datos normalizando diferentes formatos de respuesta
     const crudos = payload?.libros || payload?.data || payload || [];
     const totalBackend = payload?.paginacion?.total ?? (Array.isArray(crudos) ? crudos.length : 0);
     
-    console.log('🔍 [DEBUG] Datos extraídos:', { crudos, esArray: Array.isArray(crudos), longitud: crudos.length });
     
-    // 👈 DEBUG: Verificar si el backend está devolviendo popularidad
-    if (crudos.length > 0) {
-      const primerLibro = crudos[0];
-      console.log('🔍 [DEBUG] Primer libro recibido:', {
-        id: primerLibro.id,
-        titulo: primerLibro.titulo,
-        popularidad: primerLibro.popularidad,
-        total_prestamos: primerLibro.total_prestamos,
-        tienePopularidad: 'popularidad' in primerLibro
-      });
-    }
-    
-    // --- Heurística: ¿el backend ignoró limit/offset o el filtro?
-    // ✅ ARREGLADO: Mejor detección de si el backend está funcionando correctamente
     const backendFuncionaCorrectamente = Array.isArray(crudos) && crudos.length <= limit && crudos.length > 0;
     const hayTitulo = filtrosActuales.titulo?.trim()?.length >= 2;
     const hayAutor = filtrosActuales.autor?.trim()?.length >= 2;
@@ -217,21 +226,9 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     const hayBiblioteca = filtrosActuales.biblioteca && filtrosActuales.biblioteca !== 'todas';
     const hayFiltro = hayTitulo || hayAutor || hayCategoria || hayDisp || hayBiblioteca;
 
-    console.log('🔍 [DEBUG] Heurística backend:', {
-      backendFuncionaCorrectamente,
-      hayFiltro,
-      hayTitulo,
-      hayAutor,
-      hayCategoria,
-      hayDisp,
-      hayBiblioteca,
-      crudosRecibidos: crudos.length,
-      limitSolicitado: limit
-    });
 
     let dataset = crudos;
 
-    // Si hay filtros y parece que el backend NO filtró, filtramos en cliente
     if (hayFiltro) {
       const t = (filtrosActuales.titulo || '').trim().toLowerCase();
       const a = (filtrosActuales.autor || '').trim().toLowerCase();
@@ -243,7 +240,6 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
         const tituloOk = t ? String(l.titulo || '').toLowerCase().includes(t) : true;
         const autorOk = a ? String(l.autor || '').toLowerCase().includes(a) : true;
         
-        // ✅ Filtro de categoría (múltiples con OR)
         let catOk = true;
         if (hayCategoria && filtrosActuales.categorias && filtrosActuales.categorias.length > 0) {
           const libroCategoria = String(l.categoria || '');
@@ -255,37 +251,19 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
         const dispOk = disp && disp !== 'todos'
           ? (disp === 'disponibles' ? !!l.disponibilidad : !l.disponibilidad)
           : true;
-        // ✅ Filtro de biblioteca (asumiendo que los libros tienen biblioteca_id)
         const bibOk = bib ? (l.biblioteca_id === bib || l.biblioteca_id === parseInt(bib)) : true;
         return tituloOk && autorOk && catOk && dispOk && bibOk;
       });
 
-      console.log('🔍 [DEBUG] Filtrado en cliente:', {
-        totalOriginal: crudos.length,
-        totalFiltrado: dataset.length,
-        filtrosAplicados: { 
-          titulo: t, 
-          autor: a, 
-          categorias: filtrosActuales.categorias, 
-          disponibilidad: disp, 
-          biblioteca: bib 
-        }
-      });
     }
 
-    // Si el backend NO está funcionando correctamente o estamos filtrando en cliente, paginamos nosotros
     if (!backendFuncionaCorrectamente || hayFiltro) {
-      console.log('🔄 [DEBUG] Usando paginación client-side');
-      
-      // 👇 NUEVO: orden en cliente cuando el backend no lo hace
       const criterio = filtrosActuales.orden || 'popularidad';
       const datasetOrdenado = ordenarDataset(dataset, criterio, filtrosActuales);
-      
-      console.log('🔄 [DEBUG] Dataset ordenado por:', criterio, 'Total libros:', datasetOrdenado.length);
 
-      setLibros(datasetOrdenado);               // guarda TODO ya ordenado
+      setLibros(datasetOrdenado);               
       PAGINATION.totalPages = Math.max(1, Math.ceil(datasetOrdenado.length / PAGINATION.pageSize));
-      goToPage(PAGINATION.page);        // esto llama a renderizarLibros con el slice 3×3
+      goToPage(PAGINATION.page);    
       actualizarContadorResultados(
         getPageSlice(PAGINATION.page).length,
         datasetOrdenado.length,
@@ -296,19 +274,20 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
       return;
     }
 
-    // Caso feliz: backend sí paginó y sí filtró
-    console.log('✅ [DEBUG] Backend funcionando correctamente, usando paginación server-side');
-    setLibros(crudos); // guarda el lote por consistencia (aunque ya venga paginado)
+    setLibros(crudos); 
     PAGINATION.totalPages = Math.max(1, Math.ceil(totalBackend / PAGINATION.pageSize));
-    STATE.lastVisibles = crudos;            // 👈 asegura re-render al cambiar vista
-    renderizarLibros(crudos);           // ya es un slice del backend
+    STATE.lastVisibles = crudos;            
+    renderizarLibros(crudos);           
     renderPagination();
     actualizarContadorResultados(crudos.length, totalBackend, PAGINATION.page, PAGINATION.totalPages);
 
-    // Scroll al inicio del grid
     document.getElementById('librosGrid')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (error) {
+    if (error.name === 'AbortError') {
+      console.log('⏭️ Petición cancelada por nueva búsqueda/paginación');
+      return;
+    }
     console.error('❌ Error cargando libros:', error);
     librosGrid.innerHTML = `
       <div class="col-12 text-center py-5">
@@ -323,36 +302,32 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
   }
 }
 
-// ✅ NUEVO: renderizar libros en grid 3x3 o lista
 function renderizarLibros(libros) {
-  console.log('🔍 [DEBUG] renderizarLibros llamado con', libros.length, 'libros');
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) {
-    console.error('❌ [DEBUG] Elemento #librosGrid no encontrado en renderizarLibros');
+    console.error('❌ Elemento #librosGrid no encontrado');
     return;
   }
   
   const isListView = librosGrid.classList.contains('list-group');
-  console.log('🔍 [DEBUG] Modo lista:', isListView);
   
-  // 👉 Solo fuerza clases de grid si NO estás en lista
   if (!isListView) {
     librosGrid.classList.remove('list-group');
     librosGrid.classList.add('row', 'row-cols-1', 'row-cols-md-3', 'g-3');
   }
   
   if (isListView) {
-    // Modo lista
     librosGrid.innerHTML = libros.map(libro => `
       <div class="list-group-item list-group-item-action">
         <div class="d-flex align-items-center">
           <img src="${resolveImg(libro)}"
-               class="me-3"
+               class="me-3 libro-img"
                alt="${libro.titulo}"
+               loading="lazy" decoding="async"
                style="width:80px;height:100px;object-fit:cover;">
           <div class="flex-grow-1">
             <h6 class="mb-1">${libro.titulo}</h6>
-            <p class="mb-1 small text-muted">${libro.autor || 'Autor desconocido'}</p>
+            <p class="mb-1 small text-muted">${libro.autor || 'Sin autor'}</p>
             <div class="mb-2">
               ${libro.categoria ? `<span class="badge bg-primary me-2">${libro.categoria}</span>` : ''}
               ${libro.disponibilidad !== undefined
@@ -371,17 +346,17 @@ function renderizarLibros(libros) {
       </div>
     `).join('');
   } else {
-    // Modo grid 3x3
     librosGrid.innerHTML = libros.map(libro => `
       <div class="col-12 col-md-6 col-lg-4 mb-3">
         <div class="card h-100 shadow-sm libro-card" data-id="${libro.id}">
           <img src="${resolveImg(libro)}"
                class="card-img-top libro-img"
                alt="${libro.titulo}"
+               loading="lazy" decoding="async"
                style="height:200px;object-fit:cover;">
           <div class="card-body d-flex flex-column">
             <h6 class="card-title">${libro.titulo}</h6>
-            <p class="card-text small text-muted">${libro.autor || 'Autor desconocido'}</p>
+            <p class="card-text small text-muted">${libro.autor || 'Sin autor'}</p>
             ${libro.categoria ? `<span class="badge bg-primary mb-2">${libro.categoria}</span>` : ''}
             ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
             ${libro.disponibilidad !== undefined
@@ -399,13 +374,10 @@ function renderizarLibros(libros) {
     `).join('');
   }
   
-  // ✅ ARREGLADO: Configurar fallback de imágenes y delegación de eventos
   setupImageFallbacks();
   setupEventDelegation();
   
-  STATE.lastVisibles = libros; // 👈 siempre reflejar último render
-  
-  console.log('🔍 [DEBUG] renderizarLibros completado. HTML generado:', librosGrid.innerHTML.substring(0, 200) + '...');
+  STATE.lastVisibles = libros;
 }
 
 function actualizarContadorResultados(countVisibles, total = countVisibles, page = 1, totalPages = 1) {
@@ -418,11 +390,6 @@ function actualizarContadorResultados(countVisibles, total = countVisibles, page
   }
 }
 
-
-
-// ✅ Función de test debug eliminada - ya no es necesaria
-
-// ✅ ARREGLADO: Cargar bibliotecas reales desde la API
 export async function cargarBibliotecas() {
   const bibliotecaSelect = document.getElementById('biblioteca');
   if (!bibliotecaSelect) return;
@@ -430,7 +397,6 @@ export async function cargarBibliotecas() {
   try {
     console.log('📚 Cargando bibliotecas para el selector...');
     
-    // Llamada pública sin autenticación (las bibliotecas son públicas)
     const response = await fetch('/api/bibliotecas');
     
     if (!response.ok) {
@@ -440,18 +406,12 @@ export async function cargarBibliotecas() {
     const bibliotecas = await response.json();
     console.log('📚 Bibliotecas recibidas:', bibliotecas);
     
-    // Normalizar el array de bibliotecas
-    const bibliotecasArray = Array.isArray(bibliotecas) 
-      ? bibliotecas 
-      : (bibliotecas?.bibliotecas || bibliotecas?.data || []);
+    const bibliotecasArray = bibliotecas?.bibliotecas || bibliotecas?.data || bibliotecas || [];
     
     if (!Array.isArray(bibliotecasArray) || bibliotecasArray.length === 0) {
-      console.warn('⚠️ No se encontraron bibliotecas, usando solo opción por defecto');
-      bibliotecaSelect.innerHTML = '<option value="todas">Todas las bibliotecas</option>';
-      return;
+      throw new Error('No se encontraron bibliotecas');
     }
     
-    // Construir opciones del selector
     let options = '<option value="todas">Todas las bibliotecas</option>';
     
     bibliotecasArray.forEach(biblioteca => {
@@ -465,21 +425,18 @@ export async function cargarBibliotecas() {
     
   } catch (error) {
     console.error('❌ Error cargando bibliotecas:', error);
-    
-    // Fallback: mostrar solo opción por defecto
-    bibliotecaSelect.innerHTML = '<option value="todas">Todas las bibliotecas</option>';
-    
-    // Opcional: mostrar error en la consola
-    console.warn('⚠️ Usando opción por defecto debido al error');
+    bibliotecaSelect.innerHTML = '<option value="todas">Error cargando bibliotecas</option>';
   }
 }
 
-// ✅ ARREGLADO: inicializar búsqueda y filtros con debounce mejorado
+// ============================================================================
+// SEARCH & FILTERING LOGIC
+// ============================================================================
+
 function initLibrosSearch() {
   const applyFiltersBtn = document.getElementById('applyFiltersBtn');
   if (!applyFiltersBtn) return;
   
-  // ✅ ARREGLADO: limpiar listeners previos para evitar duplicados
   const newBtn = applyFiltersBtn.cloneNode(true);
   applyFiltersBtn.parentNode.replaceChild(newBtn, applyFiltersBtn);
   
@@ -488,7 +445,6 @@ function initLibrosSearch() {
     aplicarFiltros();
   });
   
-  // ✅ NUEVO: Event listener para ordenamiento automático
   const sortBySelect = document.getElementById('sortBy');
   if (sortBySelect) {
     sortBySelect.addEventListener('change', () => {
@@ -497,36 +453,34 @@ function initLibrosSearch() {
     });
   }
   
-  // ✅ ARREGLADO: búsqueda en tiempo real con debounce y minLength
   const searchTitle = document.getElementById('searchTitle');
   const searchAuthor = document.getElementById('searchAuthor');
   
   if (searchTitle) {
     searchTitle.addEventListener('input', debounce(() => {
       const valor = searchTitle.value.trim();
-      if (valor.length >= 2) { // ✅ ARREGLADO: minLength = 2 (no 3)
+      if (valor.length >= 2) { 
         aplicarFiltrosEnTiempoReal();
       } else if (valor.length === 0) {
-        // Si se borra todo, recargar sin filtros
+
         cargarLibros();
       }
-    }, 300)); // ✅ ARREGLADO: debounce = 300ms (no 500ms)
+    }, 300));
   }
   
   if (searchAuthor) {
     searchAuthor.addEventListener('input', debounce(() => {
       const valor = searchAuthor.value.trim();
-      if (valor.length >= 2) { // ✅ ARREGLADO: minLength = 2 (no 3)
+      if (valor.length >= 2) { 
         aplicarFiltrosEnTiempoReal();
       } else if (valor.length === 0) {
-        // Si se borra todo, recargar sin filtros
+
         cargarLibros();
       }
-    }, 300)); // ✅ ARREGLADO: debounce = 300ms (no 500ms)
+    }, 300)); 
   }
 }
 
-// ✅ ARREGLADO: Función para aplicar filtros (centralizada)
 export function aplicarFiltros() {
   const filtros = {
     titulo: document.getElementById('searchTitle')?.value?.trim() || '',
@@ -538,10 +492,9 @@ export function aplicarFiltros() {
   };
   
   console.log('🔍 Filtros aplicados:', filtros);
-  cargarLibros(filtros, 1); // 👈 siempre desde la página 1
+  cargarLibros(filtros, 1); 
 }
 
-// ✅ NUEVO: obtener categorías seleccionadas
 function obtenerCategoriasSeleccionadas() {
   const categorias = [];
   const checkboxes = document.querySelectorAll('input[name="categoriasFavoritas"]:checked');
@@ -553,12 +506,14 @@ function obtenerCategoriasSeleccionadas() {
   return categorias;
 }
 
-// ✅ ARREGLADO: aplicar filtros en tiempo real usando función centralizada
 function aplicarFiltrosEnTiempoReal() {
-  aplicarFiltros(); // Esto ya llama a cargarLibros(filtros, 1)
+  aplicarFiltros(); 
 }
 
-// ✅ NUEVO: Funciones helper para ordenamiento en cliente
+// ============================================================================
+// DATA PROCESSING & SORTING UTILITIES
+// ============================================================================
+
 function normalizarTexto(v) {
   return String(v || '').toLowerCase().trim();
 }
@@ -567,8 +522,6 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
   const arr = [...dataset];
   const key = (criterio || 'relevancia').toLowerCase();
 
-  // Atajos: si el backend ya ordenó y trajo LIMIT/OFFSET, no hace falta reordenar
-  // (pero mantenemos el orden por si venimos de paginación client-side)
   const byNumDesc = (field) => (a, b) => (Number(b?.[field]) || 0) - (Number(a?.[field]) || 0);
 
   switch (key) {
@@ -580,29 +533,31 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
       arr.sort((a, b) => normalizarTexto(a.autor).localeCompare(normalizarTexto(b.autor)));
       break;
 
-    case 'recientes':
-      arr.sort((a, b) => (b.id || 0) - (a.id || 0));
+    case 'recientes': {
+      const getTs = (x) => {
+        const c = x?.created_at || x?.updated_at || x?.fecha_alta;
+        const t = c ? Date.parse(c) : NaN;
+        return Number.isNaN(t) ? 0 : t;
+      };
+      arr.sort((a, b) => getTs(b) - getTs(a) || normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo)));
       break;
+    }
 
     case 'popularidad':
-      // 👇 IMPORTANTE: Popularidad es un ORDEN, no un filtro
-      // Ordenar por popularidad real del backend (conteo de préstamos)
+
       arr.sort((a, b) => {
         const getPop = (x) => Number(x?.popularidad ?? 0);
         const pa = getPop(a);
         const pb = getPop(b);
         
-        // Si tienen diferente popularidad, ordenar por popularidad descendente
         if (pb !== pa) return pb - pa;
         
-        // Si tienen la misma popularidad, ordenar alfabéticamente por título
         return normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo));
       });
       break;
 
     case 'relevancia':
     default:
-      // 👇 primero relevancia del backend; si no viene, cae a popularidad; luego título
       arr.sort((a, b) => {
         const r = byNumDesc('relevancia')(a, b);
         if (r !== 0) return r;
@@ -611,7 +566,6 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
         return normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo));
       });
 
-      // (Opcional) si NO hay relevancia/popularidad y sí hay búsqueda de texto, aplica tu heurística:
       const q = normalizarTexto(filtros?.titulo || filtros?.autor || filtros?.q || '');
       if (q && !arr.some(x => x.relevancia || x.popularidad)) {
         const score = (libro) => {
@@ -630,7 +584,6 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
   return arr;
 }
 
-// ✅ ARREGLADO: función debounce mejorada para búsqueda en tiempo real
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -639,50 +592,37 @@ function debounce(func, wait) {
   };
 }
 
-// ✅ ARREGLADO: Construir URL de filtros de manera robusta
+// ============================================================================
+// URL BUILDING & API PARAMETER HANDLING
+// ============================================================================
+
 function buildLibrosUrl(filtros = {}) {
-  console.log('🔍 [DEBUG] buildLibrosUrl llamado con filtros:', filtros);
   const params = new URLSearchParams();
   
-  // 👈 IMPORTANTE: Siempre enviar orden por defecto
   const orden = filtros.orden || 'popularidad';
   params.set('orden', orden);
-  console.log('🔍 [DEBUG] Agregando filtro orden:', orden);
   
-  // Parámetros de búsqueda - usar 'q' para búsqueda general
   const titulo = filtros.titulo?.trim();
   const autor = filtros.autor?.trim();
   
-  // ✅ Mandamos varios por compatibilidad
-  if (titulo && titulo.length >= 2) {
-    params.set('q', titulo);
-    params.set('titulo', titulo);
-    console.log('🔍 [DEBUG] Agregando filtro título:', titulo);
-  } else if (autor && autor.length >= 2) {
-    params.set('q', autor);
-    params.set('autor', autor);
-    console.log('🔍 [DEBUG] Agregando filtro autor:', autor);
+  if (titulo && titulo.length >= 2) params.set('titulo', titulo);
+  if (autor && autor.length >= 2) params.set('autor', autor);
+  if ((titulo && titulo.length >= 2) || (autor && autor.length >= 2)) {
+    params.set('q', [titulo, autor].filter(Boolean).join(' '));
   }
   
-  // Categorías: repetir 'categoria' (como espera tu backend actual)
   if (Array.isArray(filtros.categorias) && filtros.categorias.length > 0) {
-    filtros.categorias.forEach(cat => params.append('categoria', cat));
-    console.log('🔍 [DEBUG] Agregando filtros categoría (multi):', filtros.categorias);
+    filtros.categorias.forEach(cat => params.append('categoria', String(cat)));
   }
   
-  // Disponibilidad: true/false (como espera tu backend actual)
   if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
     params.set('disponibilidad', filtros.disponibilidad === 'disponibles' ? 'true' : 'false');
-    console.log('🔍 [DEBUG] Agregando filtro disponibilidad:', params.get('disponibilidad'));
   }
   
-  // Biblioteca: usa el nombre que soporte el backend actual
   if (filtros.biblioteca && filtros.biblioteca !== 'todas') {
-    params.set('biblioteca', filtros.biblioteca); // o 'biblioteca_id' si tu backend ya lo cambió
-    console.log('🔍 [DEBUG] Agregando filtro biblioteca:', filtros.biblioteca);
+    params.set('biblioteca', filtros.biblioteca);
   }
 
-  // ✅ usa los que llegan por parámetro (importante para filtros)
   const limit = Number.isFinite(filtros.limit) ? filtros.limit : PAGINATION.pageSize;
   const offset = Number.isFinite(filtros.offset) ? filtros.offset : (PAGINATION.page - 1) * PAGINATION.pageSize;
   params.set('limit', String(limit));
@@ -693,6 +633,10 @@ function buildLibrosUrl(filtros = {}) {
   console.log('🔗 URL construida:', url);
   return url;
 }
+
+// ============================================================================
+// PAGINATION & UI RENDERING
+// ============================================================================
 
 function renderPagination() {
   const ul = document.getElementById('pagination');
@@ -707,10 +651,8 @@ function renderPagination() {
     </li>
   `;
 
-  // Prev
   let html = mkItem('«', page - 1, page === 1);
 
-  // Números (máximo 5 visibles)
   const max = 5;
   let start = Math.max(1, page - Math.floor(max / 2));
   let end = Math.min(totalPages, start + max - 1);
@@ -720,12 +662,10 @@ function renderPagination() {
     html += mkItem(String(p), p, false, p === page);
   }
 
-  // Next
   html += mkItem('»', page + 1, page === totalPages);
 
   ul.innerHTML = html;
 
-  // ✅ Paginador que siempre pide la página correcta
   ul.querySelectorAll('a.page-link').forEach(a => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
@@ -735,11 +675,13 @@ function renderPagination() {
   });
 }
 
-// ✅ ARREGLADO: ver detalle de libro (funcional)
+// ============================================================================
+// MODAL & DETAIL VIEW FUNCTIONALITY
+// ============================================================================
+
 export async function verDetalleLibro(libroId) {
   console.log('📖 Ver detalle del libro:', libroId);
-  
-  // Función para solicitar préstamo
+
   window.solicitarPrestamo = async function(libroId) {
     try {
       const btnPrestamo = document.getElementById('btnSolicitarPrestamo');
@@ -751,7 +693,7 @@ export async function verDetalleLibro(libroId) {
       const response = await fetch('/api/prestamos', {
         method: 'POST',
         headers: {
-          ...authHeaders()
+          ...authHeaders('POST')
         },
         body: JSON.stringify({
           libro_id: parseInt(libroId)
@@ -764,8 +706,7 @@ export async function verDetalleLibro(libroId) {
       }
       
       const data = await response.json();
-      
-      // Actualizar UI
+
       btnPrestamo.classList.remove('btn-primary');
       btnPrestamo.classList.add('btn-success');
       btnPrestamo.innerHTML = '<i class="bi bi-check-circle me-1"></i>Préstamo solicitado';
@@ -779,12 +720,10 @@ export async function verDetalleLibro(libroId) {
           </small>
         </div>
       `;
-      
-      // Actualizar disponibilidad en el modal
+
       document.getElementById('modalBookDisponibilidad').textContent = 'Prestado';
       document.getElementById('modalBookDisponibilidad').className = 'badge bg-warning';
 
-      // Actualizar disponibilidad en la lista
       const libroCard = document.querySelector(`.libro-card[data-id="${libroId}"]`);
       if (libroCard) {
         const badgeDisponibilidad = libroCard.querySelector('.badge-disponibilidad');
@@ -794,7 +733,6 @@ export async function verDetalleLibro(libroId) {
         }
       }
 
-      // Recargar la lista de libros para actualizar todo
       cargarLibros(filtrosActuales, PAGINATION.page);
     } catch (error) {
       console.error('❌ Error solicitando préstamo:', error);
@@ -815,8 +753,7 @@ export async function verDetalleLibro(libroId) {
       `;
     }
   };
-  
-  // ✅ ARREGLADO: Implementación funcional del modal
+
   const modal = document.getElementById('bookDetailModal');
   const modalTitle = document.getElementById('bookDetailModalLabel');
   const modalImg = document.getElementById('modalBookImg');
@@ -830,47 +767,36 @@ export async function verDetalleLibro(libroId) {
     modalTitle.textContent = 'Cargando...';
     
     try {
-      // ✅ ARREGLADO: Obtener datos completos del libro desde la API
+
       const response = await fetch(`/api/libros/${libroId}`, {
-        headers: { ...authHeaders() }
+        headers: { ...authHeaders('GET') }
       });
       
       if (response.ok) {
         const data = await response.json();
         console.log('📚 Datos del libro obtenidos:', data);
-        
-        // ✅ ARREGLADO: Extraer libro del objeto de respuesta
+
         const libro = data.libro || data;
         console.log('📚 Libro extraído:', libro);
-        
-        // ✅ ARREGLADO: Mostrar datos reales del libro
-        modalTitle.textContent = libro.titulo || 'Título no disponible';
-        modalAuthor.textContent = libro.autor || 'Autor no disponible';
-        modalISBN.textContent = libro.isbn || 'ISBN no disponible';
-        modalDescription.textContent = libro.descripcion || 'Descripción no disponible para este libro.';
-        
-        // ✅ NUEVO: Mostrar categoría
+
+        modalTitle.textContent = libro.titulo || 'Sin título';
+        modalAuthor.textContent = libro.autor || 'Sin autor';
+        modalISBN.textContent = libro.isbn || 'Sin ISBN';
+        modalDescription.textContent = libro.descripcion || 'Sin descripción';
+
         if (modalCategoria) {
           modalCategoria.textContent = libro.categoria || 'Sin categoría';
           modalCategoria.className = 'badge bg-secondary';
         }
-        
-        // ✅ NUEVO: Mostrar disponibilidad y configurar botón de préstamo
+
         const disponibilidadElement = document.getElementById('modalBookDisponibilidad');
         if (disponibilidadElement) {
-          // ✅ ARREGLADO: Verificar disponibilidad correctamente
           const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
           disponibilidadElement.textContent = disponible ? 'Disponible' : 'No disponible';
           disponibilidadElement.className = `badge ${disponible ? 'bg-success' : 'bg-danger'}`;
           
-          console.log('🔍 [DEBUG] Disponibilidad del libro:', {
-            disponibilidad: libro.disponibilidad,
-            disponible: libro.disponible,
-            resultado: disponible
-          });
         }
         
-        // Configurar botón de préstamo
         if (btnPrestamo) {
           const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
           btnPrestamo.disabled = !disponible;
@@ -880,43 +806,16 @@ export async function verDetalleLibro(libroId) {
             '<i class="bi bi-book me-1"></i>Solicitar préstamo' : 
             '<i class="bi bi-x-circle me-1"></i>No disponible';
         }
-        
-        // ✅ ARREGLADO: Mostrar imagen del libro en el modal
+
         if (modalImg) {
           modalImg.src = resolveImg(libro);
           modalImg.alt = libro.titulo || 'Portada del libro';
         }
         
       } else {
-        // Fallback si la API falla
-        const libroCard = document.querySelector(`[data-id="${libroId}"]`);
-        if (libroCard) {
-          const card = libroCard.closest('.card');
-          const titulo = card.querySelector('.card-title')?.textContent || 'Título no disponible';
-          const autor = card.querySelector('.card-text')?.textContent || 'Autor no disponible';
-          
-          const isbnElement = card.querySelector('small.text-muted');
-          const isbn = isbnElement?.textContent?.replace('ISBN: ', '') || 'No disponible';
-          
-          modalTitle.textContent = titulo;
-          modalAuthor.textContent = autor;
-          modalISBN.textContent = isbn;
-          modalDescription.textContent = 'Descripción no disponible. Error al cargar datos del servidor.';
-          
-          const imgElement = card.querySelector('.libro-img');
-          if (imgElement && modalImg) {
-            modalImg.src = imgElement.src;
-            modalImg.alt = titulo;
-          }
-        } else {
-          modalTitle.textContent = 'Libro no encontrado';
-          modalAuthor.textContent = 'N/A';
-          modalISBN.textContent = 'N/A';
-          modalDescription.textContent = 'No se pudo cargar la información del libro.';
-        }
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
-      
-      // Mostrar modal
+
       if (window.bootstrap) {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
@@ -924,30 +823,25 @@ export async function verDetalleLibro(libroId) {
       
     } catch (error) {
       console.error('❌ Error obteniendo detalles del libro:', error);
-      
-      // Fallback en caso de error
       modalTitle.textContent = 'Error al cargar';
-      modalAuthor.textContent = 'N/A';
-      modalISBN.textContent = 'N/A';
-      modalDescription.textContent = 'Error al conectar con el servidor. Intenta nuevamente.';
+      modalDescription.textContent = error.message;
       
       if (window.bootstrap) {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
       }
     }
-  } else {
-    // Fallback si no hay modal
-    alert(`Detalle del libro ${libroId} - Función en desarrollo`);
   }
 }
 
-// ✅ ARREGLADO: Hacer la función global para compatibilidad (async)
 window.verDetalleLibro = async function(libroId) {
   return await verDetalleLibro(libroId);
 };
 
-// ✅ ARREGLADO: cambiar vista sin romper el 3×3
+// ============================================================================
+// VIEW CONTROLS & USER INTERACTIONS
+// ============================================================================
+
 export function cambiarVista(modo) {
   const grid = document.getElementById('librosGrid');
   const viewGrid = document.getElementById('viewGrid');
@@ -961,37 +855,33 @@ export function cambiarVista(modo) {
     viewGrid.classList.remove('active');
   } else {
     grid.classList.remove('list-group');
-    grid.classList.add('row', 'row-cols-1', 'row-cols-md-3', 'g-3'); // 👈 3×3 consistente
+    grid.classList.add('row', 'row-cols-1', 'row-cols-md-3', 'g-3'); 
     viewGrid.classList.add('active'); 
     viewList.classList.remove('active');
   }
-  // ✅ Re-render del lote visible actual (no re-fetch)
+
   const lote = (STATE.lastVisibles && STATE.lastVisibles.length)
     ? STATE.lastVisibles
     : getPageSlice(PAGINATION.page);
   renderizarLibros(lote);
 }
 
-// ✅ NUEVO: ordenar libros
+
 export function ordenarLibros(criterio) {
   console.log('📚 Ordenando libros por:', criterio);
   
-  // Guarda el criterio en el estado de filtros
   filtrosActuales = { ...(filtrosActuales || {}), orden: criterio || 'popularidad' };
   
-  // Recarga con el nuevo criterio (preserva 3×3)
   cargarLibros(filtrosActuales, 1);
 }
 
-// ✅ ARREGLADO: función para limpiar filtros
 export function limpiarFiltros() {
   const filterForm = document.getElementById('filterForm');
   if (filterForm) {
     filterForm.reset();
   }
-  
-  // ✅ ARREGLADO: Recargar libros sin filtros
-  cargarLibros({}, 1); // 👈 vuelve a página 1
+
+  cargarLibros({}, 1); 
   
   console.log('🧹 Filtros limpiados, recargando todos los libros...');
 }
