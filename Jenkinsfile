@@ -109,7 +109,8 @@ pipeline {
             # Crear una versión limpia del script sin comandos restrict y unrestrict
             # que son específicos de pg_dump y no funcionan en psql normal
             # Usar awk para evitar problemas con backslashes en Groovy
-            awk '!/^\\\\restrict/ && !/^\\\\unrestrict/ && !/^--/ {print}' db.sql > db_clean.sql || cp db.sql db_clean.sql
+            # Escapar correctamente los backslashes para que el shell los vea
+            awk '!/^[\\]restrict/ && !/^[\\]unrestrict/ && !/^--/ {print}' db.sql > db_clean.sql || cp db.sql db_clean.sql
             
             # Ejecutar el script limpio
             psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler -f db_clean.sql > /dev/null 2>&1 || {
