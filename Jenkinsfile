@@ -108,8 +108,9 @@ pipeline {
           if [ -f db.sql ]; then
             # Crear una versión limpia del script sin comandos restrict y unrestrict
             # que son específicos de pg_dump y no funcionan en psql normal
-            # Usar grep -v para filtrar líneas problemáticas
-            grep -v "^[[:space:]]*restrict" db.sql | grep -v "^[[:space:]]*unrestrict" | grep -v "^--" > db_clean.sql || cp db.sql db_clean.sql
+            # Usar una variable para el backslash para evitar problemas en Groovy
+            BS='\\'
+            grep -v "^${BS}restrict" db.sql | grep -v "^${BS}unrestrict" | grep -v "^${BS}connect" > db_clean.sql || cp db.sql db_clean.sql
             
             # Ejecutar el script limpio
             psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler -f db_clean.sql > /dev/null 2>&1 || {
