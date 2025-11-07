@@ -1,11 +1,7 @@
-const SimpleJWT = require('../../src/utils/simple-jwt');
+const jwt = require('../../src/utils/simple-jwt');
 
 describe('SimpleJWT', () => {
-  let jwt;
-
-  beforeEach(() => {
-    jwt = new SimpleJWT();
-  });
+  // jwt ya es una instancia exportada del módulo
 
   test('debe generar un token JWT válido', () => {
     const payload = { id: 1, email: 'test@example.com', role: 'user' };
