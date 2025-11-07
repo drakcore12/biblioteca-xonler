@@ -228,7 +228,7 @@ pipeline {
                         '''
                     } else {
                         powershell '''
-                            $cloudflaredPath = "$env:USERPROFILE\\cloudflared.exe"
+                            $cloudflaredPath = Join-Path $env:USERPROFILE "cloudflared.exe"
                             if (-not (Test-Path $cloudflaredPath)) {
                                 Write-Host "⚠️  cloudflared no está instalado en $cloudflaredPath"
                                 Write-Host "Por favor, instala cloudflared manualmente:"
@@ -248,7 +248,7 @@ pipeline {
                         '''
                     } else {
                         powershell '''
-                            $cloudflaredPath = "$env:USERPROFILE\\cloudflared.exe"
+                            $cloudflaredPath = Join-Path $env:USERPROFILE "cloudflared.exe"
                             Start-Process -FilePath $cloudflaredPath -ArgumentList "tunnel", "--config", "NUL", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput "cloudflare.log" -RedirectStandardError "cloudflare.log"
                             Start-Sleep -Seconds 5
                             Write-Host "✅ Cloudflare Tunnel iniciado"
