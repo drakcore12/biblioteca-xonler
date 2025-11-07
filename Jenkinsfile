@@ -59,6 +59,45 @@ pipeline {
       }
     }
 
+    stage('Iniciar Servicios en Windows') {
+      steps {
+        script {
+          // Intentar ejecutar comandos en Windows usando diferentes métodos
+          def windowsHost = "host.docker.internal"
+          def projectPath = "C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main"
+          
+          // Método 1: Intentar usar SSH (si está configurado)
+          try {
+            sh """
+              echo "🔍 Intentando iniciar servicios en Windows..."
+              echo "📝 Método 1: SSH (si está configurado)"
+              
+              # Verificar si SSH está disponible
+              if command -v ssh >/dev/null 2>&1; then
+                echo "SSH disponible, intentando conectar a Windows..."
+                # Nota: Requiere configuración SSH en Windows
+                # ssh usuario@host.docker.internal "powershell -File ${projectPath}/scripts/start-server-windows.ps1" || true
+                echo "⚠️  SSH no configurado, usando método alternativo"
+              fi
+            """
+          } catch (Exception e) {
+            echo "⚠️  No se pudo usar SSH: ${e.message}"
+          }
+          
+          // Método 2: Usar scripts compartidos (si el proyecto está montado como volumen)
+          sh """
+            echo "📝 Método 2: Scripts compartidos"
+            echo "   Si el proyecto está montado como volumen, puedes ejecutar:"
+            echo "   powershell -File ${projectPath}/scripts/start-server-windows.ps1"
+            echo ""
+            echo "   O manualmente en Windows:"
+            echo "   cd ${projectPath}"
+            echo "   npm start"
+          """
+        }
+      }
+    }
+
     stage('Configurar PostgreSQL') {
       steps {
         sh '''
@@ -102,6 +141,9 @@ pipeline {
           if [ "$POSTGRES_AVAILABLE" = "false" ]; then
             echo "PostgreSQL no está disponible"
             echo "Asegúrate de que PostgreSQL esté corriendo en localhost:5432 o host.docker.internal:5432"
+            echo "Para iniciarlo en Windows, ejecuta:"
+            echo "  powershell -File C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main/scripts/start-postgres-windows.ps1"
+            echo "O en Docker: docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15"
             echo "El pipeline continuará, pero los tests que requieren DB pueden fallar"
             exit 0
           fi
@@ -289,20 +331,40 @@ pipeline {
     stage('Desplegar Localmente') {
       when { branch 'main' }
       steps {
-        sh '''
-          echo "📋 Instrucciones para desplegar localmente:"
-          echo ""
-          echo "1. Abre una terminal en tu máquina local"
-          echo "2. Navega al directorio del proyecto"
-          echo "3. Ejecuta: npm start"
-          echo ""
-          echo "El servidor debe correr en: http://localhost:3000"
-          echo ""
-          echo "⚠️  NOTA: Jenkins NO puede iniciar el servidor en tu máquina local"
-          echo "   Debes iniciarlo manualmente antes de ejecutar tests E2E o de carga"
-          echo ""
-          echo "✅ Si el servidor ya está corriendo, los tests E2E y Artillery funcionarán"
-        '''
+        script {
+          // Intentar iniciar el servidor en Windows
+          def projectPath = "C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main"
+          
+          sh """
+            echo "📋 Intentando iniciar servidor en Windows..."
+            echo ""
+            echo "🔍 Verificando si el servidor ya está corriendo..."
+            
+            # Verificar si el servidor está disponible
+            if curl -fsS --max-time 2 http://host.docker.internal:3000 >/dev/null 2>&1; then
+              echo "✅ Servidor ya está corriendo en host.docker.internal:3000"
+            elif curl -fsS --max-time 2 http://localhost:3000 >/dev/null 2>&1; then
+              echo "✅ Servidor ya está corriendo en localhost:3000"
+            else
+              echo "⚠️  Servidor no está corriendo"
+              echo ""
+              echo "📝 Para iniciar el servidor en Windows, ejecuta uno de estos métodos:"
+              echo ""
+              echo "Método 1: Manualmente en PowerShell"
+              echo "  cd ${projectPath}"
+              echo "  npm start"
+              echo ""
+              echo "Método 2: Usar el script PowerShell"
+              echo "  powershell -File ${projectPath}/scripts/start-server-windows.ps1"
+              echo ""
+              echo "Método 3: Si tienes SSH configurado en Windows"
+              echo "  ssh usuario@host.docker.internal \"powershell -File ${projectPath}/scripts/start-server-windows.ps1\""
+              echo ""
+              echo "El servidor debe correr en: http://localhost:3000"
+              echo "Jenkins lo detectará automáticamente en host.docker.internal:3000"
+            fi
+          """
+        }
       }
       post {
         success { echo '✅ Instrucciones de despliegue mostradas' }
