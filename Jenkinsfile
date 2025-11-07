@@ -206,7 +206,7 @@ pipeline {
         sh '''
           # Verificar si el servidor está disponible
           if [ -f server-status.env ]; then
-            source server-status.env
+            . server-status.env
           else
             SERVER_AVAILABLE=false
           fi
@@ -251,7 +251,7 @@ pipeline {
         sh '''
           # Verificar si el servidor está disponible
           if [ -f server-status.env ]; then
-            source server-status.env
+            . server-status.env
           else
             SERVER_AVAILABLE=false
           fi
