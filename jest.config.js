@@ -11,6 +11,12 @@ module.exports = {
     '**/__tests__/**/*.js',
     '**/?(*.)+(spec|test).js'
   ],
+  // Excluir tests de Playwright (E2E)
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/e2e/',
+    '/playwright-report/'
+  ],
   verbose: true,
   forceExit: true,
   clearMocks: true,
