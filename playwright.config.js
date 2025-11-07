@@ -22,9 +22,10 @@ module.exports = defineConfig({
     ['json', { outputFile: 'test-results/results.json' }]
   ],
   /* Configuración compartida para todos los proyectos */
-  use: {
-    /* URL base para usar en navegación */
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+          use: {
+            /* URL base para usar en navegación */
+            /* Si Jenkins está en Docker, usa host.docker.internal para acceder al host */
+            baseURL: process.env.BASE_URL || (process.env.JENKINS_DOCKER ? 'http://host.docker.internal:3000' : 'http://localhost:3000'),
     /* Recopilar trace cuando se reintenta el test fallido */
     trace: 'on-first-retry',
     /* Captura de pantalla en fallos */
