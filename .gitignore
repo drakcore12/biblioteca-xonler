@@ -1,7 +1,64 @@
+# Variables de entorno
 .env
+.env.local
+.env.*.local
+
+# Dependencias
 node_modules/
+# package-lock.json debe estar en el repo para versiones consistentes
+
+# Build y distribución
 dist/
+build/
+
+# IDE y editores
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
 *.log
+logs/
+*.log.*
+server.log
+cloudflare.log
+
+# Testing
 coverage/
+.nyc_output/
+test-results/
+playwright-report/
+.playwright/
+*.pid
+cloudflare-url.env
+temp_url.txt
+
+# Archivos temporales
 tmp/
+temp/
+*.tmp
+*.temp
+
+# Archivos de procesos
+server.pid
+cloudflare.pid
+
+# Backups y archivos sensibles
+backups/
+secure/
+encryption-config.json
+security-report.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# CI/CD (mantener estos archivos)
+# !Jenkinsfile
+# !.github/
+# !artillery-config.yml
+# !jest.config.js
+# !playwright.config.js

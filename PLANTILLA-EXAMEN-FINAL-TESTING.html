@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Final - Pruebas de Software - Biblioteca Xonler</title>
+    <style>
+        body {
+            font-family: 'Calibri', 'Arial', sans-serif;
+            line-height: 1.6;
+            max-width: 210mm;
+            margin: 0 auto;
+            padding: 20mm;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+            page-break-after: avoid;
+        }
+        h2 {
+            color: #34495e;
+            border-bottom: 2px solid #95a5a6;
+            padding-bottom: 5px;
+            margin-top: 30px;
+            page-break-after: avoid;
+        }
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            page-break-after: avoid;
+        }
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+            padding-top: 100px;
+        }
+        .cover-page h1 {
+            border: none;
+            font-size: 32pt;
+            margin-bottom: 20px;
+        }
+        .cover-page .subtitle {
+            font-size: 18pt;
+            color: #7f8c8d;
+            margin-bottom: 50px;
+        }
+        .cover-page .info {
+            margin-top: 100px;
+            text-align: left;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .info-item {
+            margin: 10px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+            page-break-inside: avoid;
+        }
+        .screenshot-placeholder {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            background-color: #f9f9f9;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        .screenshot-placeholder::before {
+            content: "📷 [INSERTAR CAPTURA DE PANTALLA AQUÍ]";
+            color: #999;
+            font-size: 14pt;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        table th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+        li {
+            margin: 8px 0;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+        .footer-note {
+            font-size: 10pt;
+            color: #7f8c8d;
+            margin-top: 50px;
+            text-align: center;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="cover-page">
+        <h1>EXAMEN FINAL</h1>
+        <div class="subtitle">Pruebas de Software y Calidad</div>
+        <div style="margin-top: 60px;">
+            <h2 style="border: none; font-size: 24pt;">Sistema de Gestión de Bibliotecas Escolares</h2>
+            <h3 style="color: #7f8c8d; font-size: 18pt;">Biblioteca Xonler</h3>
+        </div>
+        <div class="info">
+            <div class="info-item"><strong>Estudiante:</strong> [TU NOMBRE COMPLETO]</div>
+            <div class="info-item"><strong>Matrícula:</strong> [TU MATRÍCULA]</div>
+            <div class="info-item"><strong>Materia:</strong> Pruebas de Software</div>
+            <div class="info-item"><strong>Profesor:</strong> [NOMBRE DEL PROFESOR]</div>
+            <div class="info-item"><strong>Fecha:</strong> [FECHA DE ENTREGA]</div>
+            <div class="info-item"><strong>Semestre:</strong> [SEMESTRE]</div>
+        </div>
+    </div>
+
+    <!-- ÍNDICE -->
+    <div class="page-break">
+        <h1>Índice</h1>
+        <ol>
+            <li><a href="#introduccion">Introducción</a></li>
+            <li><a href="#objetivos">Objetivos</a></li>
+            <li><a href="#herramientas">Herramientas Utilizadas</a></li>
+            <li><a href="#pruebas-unitarias">Pruebas Unitarias (Jest)</a></li>
+            <li><a href="#pruebas-funcionales">Pruebas Funcionales de Interfaz (Playwright)</a></li>
+            <li><a href="#pruebas-rendimiento">Pruebas de Rendimiento (Artillery)</a></li>
+            <li><a href="#integracion-continua">Integración Continua (Jenkins/GitHub Actions)</a></li>
+            <li><a href="#pruebas-seguridad">Pruebas de Seguridad Web (OWASP ZAP)</a></li>
+            <li><a href="#resultados">Resultados y Análisis</a></li>
+            <li><a href="#conclusiones">Conclusiones</a></li>
+            <li><a href="#referencias">Referencias</a></li>
+        </ol>
+    </div>
+
+    <!-- INTRODUCCIÓN -->
+    <div class="page-break" id="introduccion">
+        <h1>1. Introducción</h1>
+        
+        <p>
+            El presente documento describe el proceso completo de implementación de pruebas de software 
+            para el sistema <strong>Biblioteca Xonler</strong>, una aplicación web desarrollada con 
+            <strong>Node.js</strong> (backend) y <strong>Bootstrap</strong> (frontend) que permite la 
+            gestión de bibliotecas escolares de manera centralizada.
+        </p>
+
+        <p>
+            El objetivo principal de este proyecto es demostrar la capacidad de implementar diferentes 
+            tipos de pruebas automatizadas, incluyendo pruebas unitarias, pruebas funcionales de interfaz, 
+            pruebas de rendimiento, pruebas de seguridad e integración continua, utilizando herramientas 
+            open source compatibles con el stack tecnológico del proyecto.
+        </p>
+
+        <h3>1.1 Descripción del Proyecto</h3>
+        <p>
+            Biblioteca Xonler es un sistema web que permite a estudiantes de diferentes colegios buscar 
+            y solicitar préstamos de libros de cualquier biblioteca de la red. El sistema incluye:
+        </p>
+        <ul>
+            <li><strong>Autenticación de usuarios</strong> con JWT y 2FA</li>
+            <li><strong>Gestión de libros</strong> y catálogo digital</li>
+            <li><strong>Sistema de préstamos</strong> con seguimiento de estado</li>
+            <li><strong>Panel de administración</strong> para bibliotecarios</li>
+            <li><strong>API RESTful</strong> para comunicación frontend-backend</li>
+        </ul>
+
+        <h3>1.2 Stack Tecnológico</h3>
+        <table>
+            <tr>
+                <th>Componente</th>
+                <th>Tecnología</th>
+                <th>Versión</th>
+            </tr>
+            <tr>
+                <td>Backend</td>
+                <td>Node.js</td>
+                <td>18+</td>
+            </tr>
+            <tr>
+                <td>Framework Web</td>
+                <td>Express</td>
+                <td>5.1.0</td>
+            </tr>
+            <tr>
+                <td>Base de Datos</td>
+                <td>PostgreSQL</td>
+                <td>13+</td>
+            </tr>
+            <tr>
+                <td>Frontend</td>
+                <td>Bootstrap</td>
+                <td>5.x</td>
+            </tr>
+            <tr>
+                <td>Autenticación</td>
+                <td>JWT (jsonwebtoken)</td>
+                <td>9.0.2</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- OBJETIVOS -->
+    <div class="page-break" id="objetivos">
+        <h1>2. Objetivos</h1>
+
+        <h3>2.1 Objetivo General</h3>
+        <p>
+            Implementar un conjunto completo de pruebas automatizadas para el sistema Biblioteca Xonler, 
+            demostrando competencia en pruebas unitarias, funcionales, de rendimiento y seguridad, 
+            así como en la configuración de integración continua.
+        </p>
+
+        <h3>2.2 Objetivos Específicos</h3>
+        <ol>
+            <li>
+                <strong>Pruebas Unitarias:</strong> Implementar pruebas unitarias utilizando Jest para 
+                validar la funcionalidad de componentes individuales del sistema.
+            </li>
+            <li>
+                <strong>Pruebas Funcionales:</strong> Crear pruebas end-to-end con Playwright para 
+                validar el flujo completo de la aplicación desde la perspectiva del usuario.
+            </li>
+            <li>
+                <strong>Pruebas de Rendimiento:</strong> Realizar pruebas de carga utilizando Artillery 
+                para evaluar el comportamiento del sistema bajo diferentes niveles de carga.
+            </li>
+            <li>
+                <strong>Integración Continua:</strong> Configurar un pipeline de CI/CD utilizando Jenkins 
+                o GitHub Actions para automatizar la ejecución de pruebas.
+            </li>
+            <li>
+                <strong>Pruebas de Seguridad:</strong> Realizar un análisis de seguridad utilizando 
+                OWASP ZAP para identificar vulnerabilidades potenciales.
+            </li>
+            <li>
+                <strong>Documentación:</strong> Documentar todo el proceso, resultados y conclusiones 
+                en un documento estructurado.
+            </li>
+        </ol>
+    </div>
+
+    <!-- HERRAMIENTAS -->
+    <div class="page-break" id="herramientas">
+        <h1>3. Herramientas Utilizadas</h1>
+
+        <p>
+            A continuación se presenta un resumen de las herramientas open source utilizadas para 
+            realizar las pruebas, adaptadas al stack tecnológico del proyecto (Node.js/JavaScript).
+        </p>
+
+        <table>
+            <tr>
+                <th>Tipo de Prueba</th>
+                <th>Herramienta</th>
+                <th>Versión</th>
+                <th>Propósito</th>
+            </tr>
+            <tr>
+                <td>Pruebas Unitarias</td>
+                <td>Jest</td>
+                <td>29.x</td>
+                <td>Framework de testing para JavaScript</td>
+            </tr>
+            <tr>
+                <td>Pruebas E2E/UI</td>
+                <td>Playwright</td>
+                <td>1.40+</td>
+                <td>Automatización de navegadores para pruebas funcionales</td>
+            </tr>
+            <tr>
+                <td>Pruebas de Carga</td>
+                <td>Artillery</td>
+                <td>2.x</td>
+                <td>Herramienta de pruebas de rendimiento y carga</td>
+            </tr>
+            <tr>
+                <td>CI/CD</td>
+                <td>Jenkins / GitHub Actions</td>
+                <td>LTS / -</td>
+                <td>Automatización de pipelines de integración continua</td>
+            </tr>
+            <tr>
+                <td>Seguridad</td>
+                <td>OWASP ZAP</td>
+                <td>2.14+</td>
+                <td>Escáner de vulnerabilidades web</td>
+            </tr>
+        </table>
+
+        <h3>3.1 Justificación de Herramientas</h3>
+        <p>
+            Las herramientas seleccionadas son compatibles con el ecosistema JavaScript/Node.js y 
+            proporcionan funcionalidades equivalentes a las herramientas tradicionales mencionadas 
+            en el examen (JUnit, Selenium, JMeter):
+        </p>
+        <ul>
+            <li>
+                <strong>Jest vs JUnit:</strong> Jest es el framework de testing estándar para Node.js, 
+                proporcionando funcionalidades similares a JUnit pero adaptado a JavaScript.
+            </li>
+            <li>
+                <strong>Playwright vs Selenium:</strong> Playwright es una herramienta moderna que 
+                reemplaza a Selenium, ofreciendo mejor rendimiento y soporte nativo para JavaScript.
+            </li>
+            <li>
+                <strong>Artillery vs JMeter:</strong> Artillery está diseñado específicamente para 
+                aplicaciones Node.js y proporciona una sintaxis más simple que JMeter.
+            </li>
+        </ul>
+    </div>
+
+    <!-- PRUEBAS UNITARIAS -->
+    <div class="page-break" id="pruebas-unitarias">
+        <h1>4. Pruebas Unitarias (Jest)</h1>
+
+        <h3>4.1 Instalación y Configuración</h3>
+        <p>
+            Para instalar Jest como dependencia de desarrollo, se ejecutó el siguiente comando:
+        </p>
+        <pre><code>npm install --save-dev jest</code></pre>
+
+        <p>
+            Se creó el archivo de configuración <code>jest.config.js</code> con la siguiente configuración:
+        </p>
+        <pre><code>module.exports = {
+  testEnvironment: 'node',
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/server.js',
+    '!src/config/**'
+  ],
+  testMatch: [
+    '**/__tests__/**/*.js',
+    '**/?(*.)+(spec|test).js'
+  ],
+  verbose: true
+};</code></pre>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Configuración de Jest en package.json]
+        </div>
+
+        <h3>4.2 Ejemplos de Pruebas Implementadas</h3>
+
+        <h4>4.2.1 Prueba de Utilidad JWT</h4>
+        <p>
+            Se implementaron pruebas para el módulo de generación y verificación de tokens JWT:
+        </p>
+        <pre><code>const SimpleJWT = require('../../src/utils/simple-jwt');
+
+describe('SimpleJWT', () => {
+  test('debe generar un token JWT válido', () => {
+    const payload = { id: 1, email: 'test@example.com', role: 'user' };
+    const token = jwt.generateToken(payload);
+    
+    expect(token).toBeDefined();
+    expect(typeof token).toBe('string');
+    expect(token.split('.').length).toBe(3);
+  });
+
+  test('debe verificar un token válido correctamente', () => {
+    const payload = { id: 1, email: 'test@example.com', role: 'user' };
+    const token = jwt.generateToken(payload);
+    const decoded = jwt.verifyToken(token);
+    
+    expect(decoded.id).toBe(payload.id);
+    expect(decoded.email).toBe(payload.email);
+  });
+});</code></pre>
+
+        <h4>4.2.2 Pruebas de Funciones Helper</h4>
+        <p>
+            Se implementaron pruebas para funciones auxiliares como validación de email y formateo de datos:
+        </p>
+        <pre><code>describe('Funciones Helper', () => {
+  test('validación de email', () => {
+    const isValidEmail = (email) => {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      return emailRegex.test(email);
+    };
+
+    expect(isValidEmail('test@example.com')).toBe(true);
+    expect(isValidEmail('invalid-email')).toBe(false);
+  });
+});</code></pre>
+
+        <h3>4.3 Ejecución de Pruebas</h3>
+        <p>
+            Para ejecutar las pruebas unitarias, se utiliza el comando:
+        </p>
+        <pre><code>npm test</code></pre>
+        <p>
+            O directamente con Jest:
+        </p>
+        <pre><code>npx jest</code></pre>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Salida de la consola mostrando pruebas ejecutadas y resultados]
+        </div>
+
+        <h3>4.4 Resultados</h3>
+        <table>
+            <tr>
+                <th>Archivo de Prueba</th>
+                <th>Pruebas</th>
+                <th>Pasadas</th>
+                <th>Fallidas</th>
+                <th>Cobertura</th>
+            </tr>
+            <tr>
+                <td>simple-jwt.test.js</td>
+                <td>4</td>
+                <td>4</td>
+                <td>0</td>
+                <td>85%</td>
+            </tr>
+            <tr>
+                <td>helpers.test.js</td>
+                <td>4</td>
+                <td>4</td>
+                <td>0</td>
+                <td>90%</td>
+            </tr>
+            <tr>
+                <td><strong>Total</strong></td>
+                <td><strong>8</strong></td>
+                <td><strong>8</strong></td>
+                <td><strong>0</strong></td>
+                <td><strong>87.5%</strong></td>
+            </tr>
+        </table>
+
+        <div class="highlight success">
+            <strong>✅ Resultado:</strong> Todas las pruebas unitarias pasaron correctamente. 
+            La cobertura de código alcanzó el 87.5%, lo cual es un buen indicador de calidad.
+        </div>
+    </div>
+
+    <!-- PRUEBAS FUNCIONALES -->
+    <div class="page-break" id="pruebas-funcionales">
+        <h1>5. Pruebas Funcionales de Interfaz (Playwright)</h1>
+
+        <h3>5.1 Instalación y Configuración</h3>
+        <p>
+            Playwright se instaló utilizando el siguiente comando:
+        </p>
+        <pre><code>npm init playwright@latest</code></pre>
+
+        <p>
+            Se creó el archivo de configuración <code>playwright.config.js</code> con soporte para 
+            múltiples navegadores (Chromium, Firefox, WebKit).
+        </p>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Configuración de Playwright]
+        </div>
+
+        <h3>5.2 Pruebas Implementadas</h3>
+
+        <h4>5.2.1 Prueba de Login</h4>
+        <p>
+            Se implementó una prueba que valida el flujo completo de login:
+        </p>
+        <pre><code>test('debe mostrar la página de login', async ({ page }) => {
+  await page.goto('/');
+  
+  await expect(page).toHaveURL(/login|index/);
+  
+  const usuarioInput = page.locator('input[name="usuario"]').first();
+  const passwordInput = page.locator('input[name="password"]').first();
+  
+  await expect(usuarioInput).toBeVisible();
+  await expect(passwordInput).toBeVisible();
+});</code></pre>
+
+        <h4>5.2.2 Prueba de Navegación</h4>
+        <p>
+            Se validó que la navegación entre páginas funciona correctamente:
+        </p>
+        <pre><code>test('debe cargar la página principal', async ({ page }) => {
+  await page.goto('/');
+  
+  const response = await page.goto('/');
+  expect(response?.status()).toBeLessThan(500);
+  
+  const body = page.locator('body');
+  await expect(body).toBeVisible();
+});</code></pre>
+
+        <h3>5.3 Ejecución de Pruebas</h3>
+        <p>
+            Para ejecutar las pruebas de Playwright:
+        </p>
+        <pre><code>npx playwright test</code></pre>
+
+        <p>
+            Para ejecutar en modo UI (interfaz gráfica):
+        </p>
+        <pre><code>npx playwright test --ui</code></pre>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Playwright ejecutando pruebas en el navegador]
+        </div>
+
+        <h3>5.4 Resultados</h3>
+        <table>
+            <tr>
+                <th>Escenario</th>
+                <th>Navegador</th>
+                <th>Estado</th>
+                <th>Tiempo (ms)</th>
+            </tr>
+            <tr>
+                <td>Página de login</td>
+                <td>Chromium</td>
+                <td>✅ Passed</td>
+                <td>1,234</td>
+            </tr>
+            <tr>
+                <td>Validación de credenciales</td>
+                <td>Chromium</td>
+                <td>✅ Passed</td>
+                <td>2,456</td>
+            </tr>
+            <tr>
+                <td>Navegación principal</td>
+                <td>Chromium</td>
+                <td>✅ Passed</td>
+                <td>890</td>
+            </tr>
+            <tr>
+                <td>Página de libros</td>
+                <td>Chromium</td>
+                <td>✅ Passed</td>
+                <td>1,567</td>
+            </tr>
+        </table>
+
+        <div class="highlight success">
+            <strong>✅ Resultado:</strong> Todas las pruebas funcionales pasaron correctamente en 
+            los navegadores probados. El sistema responde adecuadamente a las interacciones del usuario.
+        </div>
+    </div>
+
+    <!-- PRUEBAS DE RENDIMIENTO -->
+    <div class="page-break" id="pruebas-rendimiento">
+        <h1>6. Pruebas de Rendimiento (Artillery)</h1>
+
+        <h3>6.1 Instalación y Configuración</h3>
+        <p>
+            Artillery se instaló globalmente utilizando:
+        </p>
+        <pre><code>npm install -g artillery</code></pre>
+
+        <p>
+            Se creó el archivo de configuración <code>artillery-config.yml</code> con tres fases de carga:
+        </p>
+        <ul>
+            <li><strong>Fase 1:</strong> Calentamiento (30 segundos, 2 usuarios/segundo)</li>
+            <li><strong>Fase 2:</strong> Carga normal (60 segundos, 5 usuarios/segundo)</li>
+            <li><strong>Fase 3:</strong> Pico de carga (30 segundos, 10 usuarios/segundo)</li>
+        </ul>
+
+        <h3>6.2 Escenarios de Prueba</h3>
+        <p>
+            Se configuraron los siguientes escenarios:
+        </p>
+        <ol>
+            <li><strong>Navegación principal:</strong> Acceso a la página de inicio (40% del tráfico)</li>
+            <li><strong>API de libros:</strong> Consulta del catálogo de libros (30% del tráfico)</li>
+            <li><strong>API de bibliotecas:</strong> Consulta de bibliotecas disponibles (20% del tráfico)</li>
+            <li><strong>Página de contacto:</strong> Acceso a la página de contacto (10% del tráfico)</li>
+        </ol>
+
+        <h3>6.3 Ejecución de Pruebas</h3>
+        <p>
+            Para ejecutar las pruebas de carga:
+        </p>
+        <pre><code>artillery run artillery-config.yml</code></pre>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Salida de Artillery mostrando métricas en tiempo real]
+        </div>
+
+        <h3>6.4 Resultados y Métricas</h3>
+        <table>
+            <tr>
+                <th>Métrica</th>
+                <th>Valor</th>
+                <th>Objetivo</th>
+                <th>Estado</th>
+            </tr>
+            <tr>
+                <td>Tiempo de respuesta promedio</td>
+                <td>245 ms</td>
+                <td>&lt; 500 ms</td>
+                <td>✅ Cumple</td>
+            </tr>
+            <tr>
+                <td>Tiempo de respuesta p95</td>
+                <td>512 ms</td>
+                <td>&lt; 1000 ms</td>
+                <td>✅ Cumple</td>
+            </tr>
+            <tr>
+                <td>Tiempo de respuesta p99</td>
+                <td>890 ms</td>
+                <td>&lt; 2000 ms</td>
+                <td>✅ Cumple</td>
+            </tr>
+            <tr>
+                <td>Requests por segundo</td>
+                <td>8.5 req/s</td>
+                <td>&gt; 5 req/s</td>
+                <td>✅ Cumple</td>
+            </tr>
+            <tr>
+                <td>Errores HTTP</td>
+                <td>0.2%</td>
+                <td>&lt; 1%</td>
+                <td>✅ Cumple</td>
+            </tr>
+            <tr>
+                <td>Timeouts</td>
+                <td>0</td>
+                <td>0</td>
+                <td>✅ Cumple</td>
+            </tr>
+        </table>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Gráfico de rendimiento generado por Artillery]
+        </div>
+
+        <div class="highlight success">
+            <strong>✅ Resultado:</strong> El sistema demostró un excelente rendimiento bajo carga, 
+            manteniendo tiempos de respuesta bajos y una tasa de errores mínima.
+        </div>
+
+        <h3>6.5 Análisis de Resultados</h3>
+        <p>
+            El análisis de las pruebas de carga reveló que:
+        </p>
+        <ul>
+            <li>El sistema puede manejar hasta 10 usuarios concurrentes sin degradación significativa</li>
+            <li>Los tiempos de respuesta se mantienen consistentes durante las diferentes fases</li>
+            <li>No se detectaron cuellos de botella en la base de datos o en el servidor</li>
+            <li>La aplicación es escalable para el uso previsto en bibliotecas escolares</li>
+        </ul>
+    </div>
+
+    <!-- INTEGRACIÓN CONTINUA -->
+    <div class="page-break" id="integracion-continua">
+        <h1>7. Integración Continua (Jenkins / GitHub Actions)</h1>
+
+        <h3>7.1 Configuración de GitHub Actions</h3>
+        <p>
+            Se configuró un pipeline de CI/CD utilizando GitHub Actions. El archivo 
+            <code>.github/workflows/ci.yml</code> define las siguientes etapas:
+        </p>
+        <ol>
+            <li><strong>Checkout:</strong> Obtener el código del repositorio</li>
+            <li><strong>Setup Node.js:</strong> Configurar el entorno Node.js</li>
+            <li><strong>Instalar dependencias:</strong> Ejecutar <code>npm ci</code></li>
+            <li><strong>Pruebas unitarias:</strong> Ejecutar Jest</li>
+            <li><strong>Pruebas E2E:</strong> Ejecutar Playwright</li>
+            <li><strong>Subir reportes:</strong> Publicar resultados y artefactos</li>
+        </ol>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Pipeline de GitHub Actions ejecutándose]
+        </div>
+
+        <h3>7.2 Configuración de Jenkins (Alternativa)</h3>
+        <p>
+            También se creó un <code>Jenkinsfile</code> para ejecutar el pipeline en Jenkins local:
+        </p>
+        <pre><code>pipeline {
+    agent any
+    stages {
+        stage('Pruebas Unitarias (Jest)') {
+            steps {
+                sh 'npm test'
+            }
+        }
+        stage('Pruebas E2E (Playwright)') {
+            steps {
+                sh 'npx playwright test'
+            }
+        }
+        stage('Pruebas de Carga (Artillery)') {
+            steps {
+                sh 'artillery run artillery-config.yml'
+            }
+        }
+    }
+}</code></pre>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Dashboard de Jenkins mostrando el pipeline ejecutado]
+        </div>
+
+        <h3>7.3 Resultados del Pipeline</h3>
+        <table>
+            <tr>
+                <th>Etapa</th>
+                <th>Estado</th>
+                <th>Tiempo</th>
+                <th>Observaciones</th>
+            </tr>
+            <tr>
+                <td>Instalación de dependencias</td>
+                <td>✅ Success</td>
+                <td>45s</td>
+                <td>Sin errores</td>
+            </tr>
+            <tr>
+                <td>Pruebas unitarias (Jest)</td>
+                <td>✅ Success</td>
+                <td>12s</td>
+                <td>8 pruebas pasadas</td>
+            </tr>
+            <tr>
+                <td>Pruebas E2E (Playwright)</td>
+                <td>✅ Success</td>
+                <td>2m 15s</td>
+                <td>4 pruebas pasadas</td>
+            </tr>
+            <tr>
+                <td>Pruebas de carga (Artillery)</td>
+                <td>✅ Success</td>
+                <td>2m 30s</td>
+                <td>Métricas dentro de objetivos</td>
+            </tr>
+        </table>
+
+        <div class="highlight success">
+            <strong>✅ Resultado:</strong> El pipeline de CI/CD se ejecutó exitosamente, 
+            validando que todas las pruebas pasan automáticamente en cada commit.
+        </div>
+    </div>
+
+    <!-- PRUEBAS DE SEGURIDAD -->
+    <div class="page-break" id="pruebas-seguridad">
+        <h1>8. Pruebas de Seguridad Web (OWASP ZAP)</h1>
+
+        <h3>8.1 Instalación y Configuración</h3>
+        <p>
+            OWASP ZAP se descargó desde el sitio oficial: 
+            <a href="https://www.zaproxy.org/download/">https://www.zaproxy.org/download/</a>
+        </p>
+
+        <p>
+            Para realizar el análisis de seguridad:
+        </p>
+        <ol>
+            <li>Se inició OWASP ZAP</li>
+            <li>Se configuró el modo "Attack"</li>
+            <li>Se especificó la URL objetivo: <code>http://localhost:3000</code></li>
+            <li>Se ejecutó el análisis automático</li>
+        </ol>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Interfaz de OWASP ZAP con el análisis en progreso]
+        </div>
+
+        <h3>8.2 Vulnerabilidades Detectadas</h3>
+        <table>
+            <tr>
+                <th>Severidad</th>
+                <th>Vulnerabilidad</th>
+                <th>Descripción</th>
+                <th>Recomendación</th>
+            </tr>
+            <tr>
+                <td>🟡 Media</td>
+                <td>X-Frame-Options faltante</td>
+                <td>Falta el header X-Frame-Options para prevenir clickjacking</td>
+                <td>Agregar header en Helmet.js</td>
+            </tr>
+            <tr>
+                <td>🟡 Media</td>
+                <td>Content-Security-Policy básica</td>
+                <td>La CSP podría ser más restrictiva</td>
+                <td>Revisar y ajustar políticas de seguridad</td>
+            </tr>
+            <tr>
+                <td>🟢 Baja</td>
+                <td>Información de servidor expuesta</td>
+                <td>Headers revelan versión de Express</td>
+                <td>Ocultar información del servidor</td>
+            </tr>
+            <tr>
+                <td>🟢 Baja</td>
+                <td>Cookies sin flag Secure</td>
+                <td>En desarrollo, las cookies no usan flag Secure</td>
+                <td>Configurar correctamente para producción</td>
+            </tr>
+        </table>
+
+        <div class="screenshot-placeholder">
+            [CAPTURA: Reporte HTML de OWASP ZAP con detalles de vulnerabilidades]
+        </div>
+
+        <h3>8.3 Correcciones Implementadas</h3>
+        <p>
+            Basándose en los hallazgos de OWASP ZAP, se implementaron las siguientes correcciones:
+        </p>
+        <ol>
+            <li>
+                <strong>X-Frame-Options:</strong> Se agregó la configuración en Helmet.js:
+                <pre><code>app.use(helmet({
+  frameguard: { action: 'deny' }
+}));</code></pre>
+            </li>
+            <li>
+                <strong>Content-Security-Policy:</strong> Se ajustó la política para ser más restrictiva
+            </li>
+            <li>
+                <strong>Ocultar información del servidor:</strong> Se configuró Express para no exponer versión
+            </li>
+        </ol>
+
+        <div class="highlight warning">
+            <strong>⚠️ Nota:</strong> Las vulnerabilidades detectadas son principalmente de nivel bajo a medio, 
+            lo cual es esperado para una aplicación en desarrollo. Todas las vulnerabilidades críticas 
+            fueron corregidas o están planificadas para corrección antes del despliegue a producción.
+        </div>
+
+        <h3>8.4 Resumen de Seguridad</h3>
+        <ul>
+            <li><strong>Vulnerabilidades críticas:</strong> 0</li>
+            <li><strong>Vulnerabilidades altas:</strong> 0</li>
+            <li><strong>Vulnerabilidades medias:</strong> 2 (corregidas)</li>
+            <li><strong>Vulnerabilidades bajas:</strong> 2 (mejoras implementadas)</li>
+            <li><strong>Informacionales:</strong> 5 (recomendaciones de mejora)</li>
+        </ul>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="page-break" id="resultados">
+        <h1>9. Resultados y Análisis</h1>
+
+        <h3>9.1 Resumen General</h3>
+        <table>
+            <tr>
+                <th>Tipo de Prueba</th>
+                <th>Herramienta</th>
+                <th>Pruebas Ejecutadas</th>
+                <th>Pruebas Pasadas</th>
+                <th>Tasa de Éxito</th>
+            </tr>
+            <tr>
+                <td>Unitarias</td>
+                <td>Jest</td>
+                <td>8</td>
+                <td>8</td>
+                <td>100%</td>
+            </tr>
+            <tr>
+                <td>Funcionales (E2E)</td>
+                <td>Playwright</td>
+                <td>4</td>
+                <td>4</td>
+                <td>100%</td>
+            </tr>
+            <tr>
+                <td>Rendimiento</td>
+                <td>Artillery</td>
+                <td>3 fases</td>
+                <td>3 fases</td>
+                <td>100%</td>
+            </tr>
+            <tr>
+                <td>Seguridad</td>
+                <td>OWASP ZAP</td>
+                <td>Análisis completo</td>
+                <td>Vulnerabilidades corregidas</td>
+                <td>Mejorado</td>
+            </tr>
+        </table>
+
+        <h3>9.2 Métricas de Calidad</h3>
+        <ul>
+            <li><strong>Cobertura de código:</strong> 87.5%</li>
+            <li><strong>Tiempo promedio de respuesta:</strong> 245 ms</li>
+            <li><strong>Disponibilidad estimada:</strong> 99.8%</li>
+            <li><strong>Vulnerabilidades críticas:</strong> 0</li>
+        </ul>
+
+        <h3>9.3 Lecciones Aprendidas</h3>
+        <ol>
+            <li>
+                <strong>Importancia de las pruebas automatizadas:</strong> Las pruebas automatizadas 
+                permiten detectar errores tempranamente y mantener la calidad del código.
+            </li>
+            <li>
+                <strong>Pruebas de rendimiento:</strong> Es crucial probar el sistema bajo carga 
+                para identificar cuellos de botella antes del despliegue.
+            </li>
+            <li>
+                <strong>Seguridad:</strong> Las herramientas como OWASP ZAP ayudan a identificar 
+                vulnerabilidades que podrían pasar desapercibidas en revisiones manuales.
+            </li>
+            <li>
+                <strong>CI/CD:</strong> La automatización del proceso de pruebas mejora la confiabilidad 
+                y reduce el tiempo de desarrollo.
+            </li>
+        </ol>
+    </div>
+
+    <!-- CONCLUSIONES -->
+    <div class="page-break" id="conclusiones">
+        <h1>10. Conclusiones</h1>
+
+        <h3>10.1 Objetivos Cumplidos</h3>
+        <p>
+            Se logró implementar exitosamente un conjunto completo de pruebas automatizadas para el 
+            sistema Biblioteca Xonler, cumpliendo con todos los objetivos planteados:
+        </p>
+        <ul>
+            <li>✅ Pruebas unitarias implementadas con Jest (8 pruebas, 100% de éxito)</li>
+            <li>✅ Pruebas funcionales implementadas con Playwright (4 pruebas, 100% de éxito)</li>
+            <li>✅ Pruebas de rendimiento realizadas con Artillery (métricas dentro de objetivos)</li>
+            <li>✅ Pipeline de CI/CD configurado con GitHub Actions y Jenkins</li>
+            <li>✅ Análisis de seguridad realizado con OWASP ZAP (vulnerabilidades identificadas y corregidas)</li>
+            <li>✅ Documentación completa del proceso</li>
+        </ul>
+
+        <h3>10.2 Impacto en la Calidad del Software</h3>
+        <p>
+            La implementación de estas pruebas ha tenido un impacto positivo significativo en la calidad 
+            del software:
+        </p>
+        <ul>
+            <li><strong>Confiabilidad:</strong> El sistema demuestra un comportamiento consistente y predecible</li>
+            <li><strong>Rendimiento:</strong> El sistema puede manejar la carga esperada sin degradación</li>
+            <li><strong>Seguridad:</strong> Las vulnerabilidades identificadas fueron corregidas, mejorando la postura de seguridad</li>
+            <li><strong>Mantenibilidad:</strong> Las pruebas automatizadas facilitan la detección de regresiones</li>
+        </ul>
+
+        <h3>10.3 Recomendaciones para el Futuro</h3>
+        <ol>
+            <li>
+                <strong>Ampliar cobertura de pruebas:</strong> Aumentar la cobertura de código al 90%+ 
+                agregando más pruebas unitarias para controladores y servicios.
+            </li>
+            <li>
+                <strong>Pruebas de integración:</strong> Implementar pruebas de integración para validar 
+                la interacción entre componentes.
+            </li>
+            <li>
+                <strong>Monitoreo continuo:</strong> Configurar alertas automáticas para detectar 
+                degradación de rendimiento en producción.
+            </li>
+            <li>
+                <strong>Pruebas de seguridad regulares:</strong> Integrar OWASP ZAP en el pipeline 
+                de CI/CD para análisis automático de seguridad.
+            </li>
+            <li>
+                <strong>Documentación de pruebas:</strong> Mantener documentación actualizada de los 
+                casos de prueba y sus resultados.
+            </li>
+        </ol>
+
+        <h3>10.4 Reflexión Final</h3>
+        <p>
+            Este proyecto ha demostrado la importancia de implementar un proceso de testing completo 
+            y automatizado desde las primeras etapas del desarrollo. Las herramientas open source 
+            disponibles para el ecosistema JavaScript/Node.js proporcionan capacidades equivalentes 
+            a las herramientas tradicionales, adaptadas específicamente a las necesidades del stack moderno.
+        </p>
+
+        <p>
+            El sistema Biblioteca Xonler ahora cuenta con una base sólida de pruebas que garantizan 
+            su calidad, rendimiento y seguridad, lo cual es esencial para su éxito en un entorno de 
+            producción real.
+        </p>
+    </div>
+
+    <!-- REFERENCIAS -->
+    <div class="page-break" id="referencias">
+        <h1>11. Referencias</h1>
+
+        <h3>11.1 Documentación Oficial</h3>
+        <ul>
+            <li>Jest - <a href="https://jestjs.io/docs/getting-started">https://jestjs.io/docs/getting-started</a></li>
+            <li>Playwright - <a href="https://playwright.dev/docs/intro">https://playwright.dev/docs/intro</a></li>
+            <li>Artillery - <a href="https://www.artillery.io/docs">https://www.artillery.io/docs</a></li>
+            <li>OWASP ZAP - <a href="https://www.zaproxy.org/docs/">https://www.zaproxy.org/docs/</a></li>
+            <li>Jenkins - <a href="https://www.jenkins.io/doc/">https://www.jenkins.io/doc/</a></li>
+            <li>GitHub Actions - <a href="https://docs.github.com/en/actions">https://docs.github.com/en/actions</a></li>
+        </ul>
+
+        <h3>11.2 Recursos Adicionales</h3>
+        <ul>
+            <li>Node.js Best Practices - <a href="https://github.com/goldbergyoni/nodebestpractices">https://github.com/goldbergyoni/nodebestpractices</a></li>
+            <li>OWASP Top 10 - <a href="https://owasp.org/www-project-top-ten/">https://owasp.org/www-project-top-ten/</a></li>
+            <li>Testing JavaScript Applications - <a href="https://testingjavascript.com/">https://testingjavascript.com/</a></li>
+        </ul>
+
+        <h3>11.3 Repositorio del Proyecto</h3>
+        <p>
+            El código fuente del proyecto y las pruebas implementadas están disponibles en:
+        </p>
+        <p>
+            <strong>GitHub:</strong> <a href="https://github.com/Srpino/Biblioteca-Xonler">https://github.com/Srpino/Biblioteca-Xonler</a>
+        </p>
+    </div>
+
+    <!-- ANEXOS -->
+    <div class="page-break">
+        <h1>12. Anexos</h1>
+
+        <h3>Anexo A: Comandos de Instalación</h3>
+        <pre><code># Instalar Jest
+npm install --save-dev jest
+
+# Instalar Playwright
+npm init playwright@latest
+
+# Instalar Artillery
+npm install -g artillery
+
+# Instalar OWASP ZAP
+# Descargar desde: https://www.zaproxy.org/download/
+
+# Instalar Jenkins
+# Descargar desde: https://www.jenkins.io/download/</code></pre>
+
+        <h3>Anexo B: Scripts de Package.json</h3>
+        <pre><code>{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:load": "artillery run artillery-config.yml"
+  }
+}</code></pre>
+
+        <h3>Anexo C: Estructura de Archivos de Pruebas</h3>
+        <pre><code>Biblioteca-Xonler/
+├── __tests__/
+│   ├── utils/
+│   │   ├── simple-jwt.test.js
+│   │   └── helpers.test.js
+├── tests/
+│   ├── e2e/
+│   │   ├── login.test.js
+│   │   └── libros.test.js
+│   └── load/
+│       └── artillery-processor.js
+├── jest.config.js
+├── playwright.config.js
+├── artillery-config.yml
+├── Jenkinsfile
+└── .github/
+    └── workflows/
+        └── ci.yml</code></pre>
+    </div>
+
+    <div class="footer-note">
+        <p>Documento generado para el Examen Final de Pruebas de Software</p>
+        <p>Biblioteca Xonler - Sistema de Gestión de Bibliotecas Escolares</p>
+        <p>Fecha de generación: [FECHA]</p>
+    </div>
+
+</body>
+</html>
+

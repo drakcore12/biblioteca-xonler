@@ -1,0 +1,4 @@
+--enable-source-maps
+# Opciones de Node.js para habilitar source maps
+# Esto mejora los stack traces y debugging
+
