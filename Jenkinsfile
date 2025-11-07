@@ -273,7 +273,8 @@ pipeline {
                         powershell '''
                             if (Test-Path "cloudflare.log") {
                                 $content = Get-Content "cloudflare.log" -Raw
-                                $urlMatch = [regex]::Match($content, "https://[a-z0-9-]+\.trycloudflare\.com")
+                                $pattern = "https://[a-z0-9-]+" + [regex]::Escape(".trycloudflare.com")
+                                $urlMatch = [regex]::Match($content, $pattern)
                                 if ($urlMatch.Success) {
                                     $url = $urlMatch.Value
                                     Write-Host "🌐 URL pública generada: $url"
