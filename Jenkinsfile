@@ -1,11 +1,15 @@
 pipeline {
-  agent {
-    // Imagen oficial con Node + navegadores + deps de Playwright
-    docker {
-      image 'mcr.microsoft.com/playwright:v1.47.0-jammy'
-      args '-u root'   // permisos para instalar si hace falta
-    }
-  }
+  // Si Jenkins está en Docker, usa 'agent any' y ejecuta en el contenedor de Jenkins
+  // Si quieres usar Docker-in-Docker, descomenta la sección de abajo
+  agent any
+  
+  // OPCIONAL: Si configuraste Docker-in-Docker, descomenta esto:
+  // agent {
+  //   docker {
+  //     image 'mcr.microsoft.com/playwright:v1.47.0-jammy'
+  //     args '-u root'
+  //   }
+  // }
 
   environment {
     NODE_ENV     = 'test'
@@ -20,11 +24,23 @@ pipeline {
       steps { checkout scm }
     }
 
-    stage('Node & npm') {
+    stage('Verificar Node.js') {
       steps {
         sh '''
-          set -e
-          echo "✅ Versions:"
+          if ! command -v node &> /dev/null; then
+            echo "⚠️  Node.js no encontrado, instalando..."
+            # Instalar Node.js en el contenedor Jenkins
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash - || true
+            apt-get update && apt-get install -y nodejs || {
+              echo "❌ No se pudo instalar Node.js automáticamente"
+              echo "Instala Node.js manualmente en el contenedor Jenkins:"
+              echo "docker exec -u root -it jenkins bash"
+              echo "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
+              echo "apt-get update && apt-get install -y nodejs"
+              exit 1
+            }
+          fi
+          echo "✅ Node.js:"
           node -v
           npm -v
         '''
@@ -34,11 +50,10 @@ pipeline {
     stage('Instalar dependencias') {
       steps {
         sh '''
-          # Si tienes package-lock: usa ci, si no, fallback a i
           npm ci || npm i
-          # En esta imagen ya hay navegadores y deps del sistema
-          # (no necesitas --with-deps)
-          npx playwright --version
+          # Instalar Playwright (si no está en la imagen)
+          npx playwright install --with-deps || npx playwright install || true
+          npx playwright --version || echo "⚠️  Playwright no disponible"
         '''
       }
     }
@@ -46,15 +61,12 @@ pipeline {
     stage('Pruebas Unitarias (Jest)') {
       steps {
         sh '''
-          # Asegúrate de tener script "test:unit" o "test" en package.json
           npm run test:unit || npm test
         '''
       }
       post {
         always {
-          // Usa "junit" del core; evita "publishTestResults" (no existe por defecto)
           junit allowEmptyResults: true, testResults: 'test-results/**/*.xml'
-          // HTML Publisher (requiere plugin "HTML Publisher")
           publishHTML(target: [
             reportDir: 'coverage',
             reportFiles: 'index.html',
@@ -76,7 +88,6 @@ pipeline {
       }
       post {
         always {
-          // Publica reporte si existe
           publishHTML(target: [
             reportDir: 'playwright-report',
             reportFiles: 'index.html',
@@ -94,7 +105,6 @@ pipeline {
       steps {
         sh '''
           # No instales global (-g). Usa npx y guarda el reporte
-          # Asegúrate de tener artillery-config.yml en la raíz
           npx -y artillery@latest run artillery-config.yml --output test-results/load-report.json || true
         '''
       }
