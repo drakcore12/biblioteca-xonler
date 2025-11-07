@@ -17,7 +17,7 @@ pipeline {
     JWT_SECRET   = 'test-secret-key'
   }
 
-  options { timestamps(); ansiColor('xterm') }
+  options { timestamps() }
 
   stages {
     stage('Checkout') {
