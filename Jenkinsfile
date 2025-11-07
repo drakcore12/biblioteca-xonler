@@ -104,22 +104,23 @@ pipeline {
           echo "⚠️  Base de datos 'xonler' ya existe o no se pudo crear"
           
           # Ejecutar script SQL
-          echo "📝 Ejecutando script db.sql..."
+          echo "Ejecutando script db.sql..."
           if [ -f db.sql ]; then
-            # Crear una versión limpia del script sin comandos \restrict y \unrestrict
+            # Crear una versión limpia del script sin comandos restrict y unrestrict
             # que son específicos de pg_dump y no funcionan en psql normal
-            sed -e '/^\\restrict/d' -e '/^\\unrestrict/d' -e '/^--/d' db.sql > db_clean.sql || cp db.sql db_clean.sql
+            # Usar awk para evitar problemas con backslashes en Groovy
+            awk '!/^\\\\restrict/ && !/^\\\\unrestrict/ && !/^--/ {print}' db.sql > db_clean.sql || cp db.sql db_clean.sql
             
             # Ejecutar el script limpio
             psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler -f db_clean.sql > /dev/null 2>&1 || {
               # Si falla, intentar ejecutar solo las partes CREATE
-              echo "⚠️  Error al ejecutar db.sql completo, intentando solo CREATE statements..."
-              grep -i "CREATE\|INSERT\|ALTER\|SELECT pg_catalog" db.sql | psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler 2>&1 | grep -v "already exists" || true
+              echo "Error al ejecutar db.sql completo, intentando solo CREATE statements..."
+              grep -iE "(CREATE|INSERT|ALTER|SELECT pg_catalog)" db.sql | psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler 2>&1 | grep -v "already exists" || true
             }
             rm -f db_clean.sql || true
-            echo "✅ Script db.sql procesado"
+            echo "Script db.sql procesado"
           else
-            echo "⚠️  Archivo db.sql no encontrado"
+            echo "Archivo db.sql no encontrado"
           fi
           
           # Verificar que la base de datos tiene tablas
