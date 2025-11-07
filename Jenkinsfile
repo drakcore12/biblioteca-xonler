@@ -14,6 +14,50 @@ pipeline {
             }
         }
 
+        stage('Verificar/Instalar Node.js') {
+            steps {
+                script {
+                    if (isUnix()) {
+                        sh '''
+                            # Verificar si Node.js está instalado
+                            if ! command -v node &> /dev/null; then
+                                echo "⚠️  Node.js no encontrado, intentando instalar..."
+                                # Intentar instalar Node.js usando nvm o descarga directa
+                                if command -v curl &> /dev/null; then
+                                    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - || true
+                                    apt-get update && apt-get install -y nodejs || {
+                                        echo "❌ No se pudo instalar Node.js automáticamente"
+                                        echo "Por favor, instala Node.js manualmente en el servidor Jenkins"
+                                        exit 1
+                                    }
+                                else
+                                    echo "❌ curl no disponible. Instala Node.js manualmente."
+                                    exit 1
+                                fi
+                            fi
+                            echo "✅ Node.js encontrado:"
+                            node --version
+                            npm --version
+                        '''
+                    } else {
+                        bat '''
+                            @echo off
+                            where node >nul 2>&1
+                            if %errorlevel% neq 0 (
+                                echo ⚠️  Node.js no encontrado en el PATH
+                                echo Por favor, instala Node.js desde https://nodejs.org/
+                                echo O configura el plugin de Node.js en Jenkins
+                                exit 1
+                            )
+                            echo ✅ Node.js encontrado:
+                            node --version
+                            npm --version
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Instalar dependencias') {
             steps {
                 script {
