@@ -341,8 +341,14 @@ pipeline {
             echo '❌ Pipeline falló: Revisa los logs para más detalles'
         }
         cleanup {
-            // Opcional: limpiar archivos temporales si lo deseas
-            // sh 'rm -f server.pid cloudflare.pid || true'
+            // Limpiar archivos temporales opcionales
+            script {
+                if (isUnix()) {
+                    sh 'rm -f server.pid cloudflare.pid temp_url.txt || true'
+                } else {
+                    bat 'del /Q server.pid cloudflare.pid temp_url.txt 2>nul || exit 0'
+                }
+            }
         }
     }
 }
