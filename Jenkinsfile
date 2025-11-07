@@ -79,8 +79,11 @@ pipeline {
     stage('Pruebas E2E (Playwright)') {
       steps {
         sh '''
-          # Si todavía no tienes tests E2E, que no rompa el pipeline
-          npx playwright test || true
+          # Si todavía no tienes tests E2E o faltan deps del sistema, que no rompa el pipeline
+          # Nota: Para que Playwright funcione, instala las deps del sistema en el contenedor Jenkins:
+          # docker exec -u root -it jenkins bash
+          # apt-get update && apt-get install -y libglib2.0-0 libnspr4 libnss3 libdbus-1-3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcb1 libxkbcommon0 libatspi2.0-0 libx11-6 libxcomposite1 libxdamage1 libxext6 libxfixes3 libxrandr2 libgbm1 libcairo2 libpango-1.0-0 libasound2
+          npx playwright test || echo "⚠️  Tests E2E fallaron (probablemente faltan deps del sistema o servidor no está corriendo)"
         '''
       }
       post {
@@ -102,7 +105,10 @@ pipeline {
       steps {
         sh '''
           # No instales global (-g). Usa npx y guarda el reporte
-          npx -y artillery@latest run artillery-config.yml --output test-results/load-report.json || true
+          # Nota: Artillery necesita que el servidor esté corriendo en localhost:3000
+          # Si el servidor no está disponible, los tests fallarán pero el pipeline continuará
+          mkdir -p test-results
+          npx -y artillery@latest run artillery-config.yml --output test-results/load-report.json || echo "⚠️  Tests de carga fallaron (servidor no disponible o errores de conexión)"
         '''
       }
       post {
