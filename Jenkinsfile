@@ -470,6 +470,84 @@ pipeline {
         }
       }
     }
+
+    stage('Cloudflare Tunnel (opcional)') {
+      when { branch 'main' }
+      steps {
+        script {
+          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
+          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
+          def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
+          
+          // Verificar que el servidor esté disponible
+          def serverCheck = sh(
+            script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
+            returnStdout: true
+          ).trim()
+          
+          if (serverCheck != 'RUNNING') {
+            echo "⚠️  Servidor no disponible, omitiendo Cloudflare Tunnel"
+            echo "📝 Inicia el servidor primero en Windows:"
+            echo "   cd ${projectPath}"
+            echo "   npm start"
+            return
+          }
+          
+          def tunnelStarted = false
+          
+          // Intentar iniciar Cloudflare Tunnel vía SSH
+          try {
+            echo "🌐 Iniciando Cloudflare Tunnel en Windows vía SSH..."
+            
+            def sshConfig = [
+              name: 'windows-host',
+              user: windowsUser,
+              host: windowsHost,
+              port: 22,
+              allowAnyHosts: true,
+              timeout: 10000
+            ]
+            
+            // Detener tunnel anterior si existe
+            sshCommand(
+              remote: sshConfig,
+              command: "powershell -Command \"Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
+            )
+            
+            sleep(2)
+            
+            // Iniciar Cloudflare Tunnel en background
+            // Usar el comando que funciona según el usuario: & "$env:USERPROFILE\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000
+            sshCommand(
+              remote: sshConfig,
+              command: "powershell -Command \"Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden\""
+            )
+            
+            echo "⏳ Esperando que Cloudflare Tunnel inicie..."
+            sleep(5)
+            
+            echo "✅ Cloudflare Tunnel iniciado vía SSH"
+            echo "📝 NOTA: La URL pública se mostrará en la consola de PowerShell en Windows"
+            tunnelStarted = true
+            
+          } catch (Exception e) {
+            echo "⚠️  No se pudo iniciar Cloudflare Tunnel vía SSH: ${e.message}"
+            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
+            echo "   & \"\\$env:USERPROFILE\\cloudflared.exe\" tunnel --config NUL --url http://127.0.0.1:3000"
+            echo ""
+            echo "   O si cloudflared está en PATH:"
+            echo "   cloudflared tunnel --url http://localhost:3000"
+            echo ""
+            echo "   El tunnel expondrá tu servidor local a internet con una URL pública"
+          }
+          
+          if (!tunnelStarted) {
+            echo "⚠️  Cloudflare Tunnel no iniciado automáticamente"
+            echo "   Ejecuta el comando manualmente en Windows para obtener la URL pública"
+          }
+        }
+      }
+    }
   }
 
   post {
