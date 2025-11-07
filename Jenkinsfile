@@ -313,16 +313,39 @@ pipeline {
       when { branch 'main' }
       steps {
         sh '''
-          # Solo si cloudflared existe; si no, saltar sin fallar
+          # Verificar si el servidor está disponible antes de crear el tunnel
+          SERVER_URL=""
+          if curl -fsS --max-time 2 http://host.docker.internal:3000 >/dev/null 2>&1; then
+            SERVER_URL="http://host.docker.internal:3000"
+            echo "✅ Servidor encontrado en host.docker.internal:3000"
+          elif curl -fsS --max-time 2 http://localhost:3000 >/dev/null 2>&1; then
+            SERVER_URL="http://localhost:3000"
+            echo "✅ Servidor encontrado en localhost:3000"
+          else
+            echo "⚠️  Servidor no disponible, no se puede crear el tunnel"
+            echo "   Inicia el servidor en tu máquina local con: npm start"
+            exit 0
+          fi
+          
+          # Cloudflare Tunnel debe correr en la máquina Windows, no en Jenkins
+          # Si cloudflared está en el contenedor Jenkins, intentar usarlo
+          # Pero es mejor ejecutarlo en Windows directamente
           if ! command -v cloudflared >/dev/null 2>&1; then
-            echo "⚠️  cloudflared no instalado; omitiendo Tunnel"
+            echo "⚠️  cloudflared no instalado en Jenkins"
+            echo "   Para crear el tunnel, ejecuta en tu máquina Windows:"
+            echo "   cloudflared tunnel --url http://localhost:3000"
+            echo "   O instala cloudflared en Jenkins: docker exec -u root -it jenkins bash"
+            echo "   wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O /usr/local/bin/cloudflared"
+            echo "   chmod +x /usr/local/bin/cloudflared"
             exit 0
           fi
 
           pkill -f cloudflared || true
           sleep 2
 
-          nohup cloudflared tunnel --url http://localhost:3000 > cloudflare.log 2>&1 & echo $! > cloudflare.pid
+          # Usar la URL del servidor detectada
+          echo "🌐 Creando tunnel hacia: $SERVER_URL"
+          nohup cloudflared tunnel --url "$SERVER_URL" > cloudflare.log 2>&1 & echo $! > cloudflare.pid
           sleep 5
 
           URL=$(grep -o "https://[a-z0-9-]*\\.trycloudflare\\.com" cloudflare.log | head -1 || true)
@@ -331,6 +354,7 @@ pipeline {
             printf "URL_PUBLICA=%s\n" "$URL" > cloudflare-url.env
           else
             echo "⚠️  No se pudo extraer la URL (revisa cloudflare.log)"
+            echo "   El tunnel puede tardar unos segundos más en generar la URL"
           fi
         '''
       }
