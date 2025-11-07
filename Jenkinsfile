@@ -13,7 +13,12 @@ pipeline {
 
   environment {
     NODE_ENV     = 'test'
-    DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/biblioteca_test'
+    DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/xonler'
+    DB_HOST      = 'localhost'
+    DB_PORT      = '5432'
+    DB_NAME      = 'xonler'
+    DB_USER      = 'postgres'
+    DB_PASSWORD  = 'postgres'
     JWT_SECRET   = 'test-secret-key'
   }
 
@@ -50,6 +55,82 @@ pipeline {
           # Instalar Playwright (si no está en la imagen)
           npx playwright install --with-deps || npx playwright install || true
           npx playwright --version || echo "⚠️  Playwright no disponible"
+        '''
+      }
+    }
+
+    stage('Configurar PostgreSQL') {
+      steps {
+        sh '''
+          echo "🗄️  Configurando PostgreSQL..."
+          
+          # Verificar si PostgreSQL está instalado y corriendo
+          if ! command -v psql >/dev/null 2>&1; then
+            echo "⚠️  PostgreSQL no está instalado en el contenedor Jenkins"
+            echo "   Instala PostgreSQL manualmente o usa Docker para ejecutarlo"
+            echo "   Ejemplo: docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15"
+            echo "   O instala en el contenedor: apt-get update && apt-get install -y postgresql-client"
+            exit 1
+          fi
+          
+          # Intentar conectar a PostgreSQL (puede estar en el host, no en el contenedor)
+          # Si Jenkins está en Docker, PostgreSQL probablemente está en el host
+          export PGHOST=${DB_HOST:-localhost}
+          export PGPORT=${DB_PORT:-5432}
+          export PGUSER=${DB_USER:-postgres}
+          export PGPASSWORD=${DB_PASSWORD:-postgres}
+          
+          # Esperar a que PostgreSQL esté disponible (máximo 30 segundos)
+          echo "⏳ Esperando que PostgreSQL esté disponible..."
+          for i in $(seq 1 15); do
+            if psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+              echo "✅ PostgreSQL está disponible"
+              break
+            fi
+            if [ $i -eq 15 ]; then
+              echo "❌ PostgreSQL no está disponible después de 30 segundos"
+              echo "   Asegúrate de que PostgreSQL esté corriendo en: $PGHOST:$PGPORT"
+              echo "   Si Jenkins está en Docker, PostgreSQL debe estar en el host o accesible desde el contenedor"
+              exit 1
+            fi
+            echo "   Intentando conectar... ($i/15)"
+            sleep 2
+          done
+          
+          # Crear base de datos si no existe
+          echo "📦 Creando base de datos 'xonler' si no existe..."
+          psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "SELECT 1 FROM pg_database WHERE datname='xonler'" | grep -q 1 || \
+          psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "CREATE DATABASE xonler;" || \
+          echo "⚠️  Base de datos 'xonler' ya existe o no se pudo crear"
+          
+          # Ejecutar script SQL
+          echo "📝 Ejecutando script db.sql..."
+          if [ -f db.sql ]; then
+            # Crear una versión limpia del script sin comandos \restrict y \unrestrict
+            # que son específicos de pg_dump y no funcionan en psql normal
+            sed -e '/^\\restrict/d' -e '/^\\unrestrict/d' -e '/^--/d' db.sql > db_clean.sql || cp db.sql db_clean.sql
+            
+            # Ejecutar el script limpio
+            psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler -f db_clean.sql > /dev/null 2>&1 || {
+              # Si falla, intentar ejecutar solo las partes CREATE
+              echo "⚠️  Error al ejecutar db.sql completo, intentando solo CREATE statements..."
+              grep -i "CREATE\|INSERT\|ALTER\|SELECT pg_catalog" db.sql | psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler 2>&1 | grep -v "already exists" || true
+            }
+            rm -f db_clean.sql || true
+            echo "✅ Script db.sql procesado"
+          else
+            echo "⚠️  Archivo db.sql no encontrado"
+          fi
+          
+          # Verificar que la base de datos tiene tablas
+          echo "🔍 Verificando tablas en la base de datos..."
+          TABLE_COUNT=$(psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d xonler -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';" 2>/dev/null | tr -d ' ')
+          if [ -n "$TABLE_COUNT" ] && [ "$TABLE_COUNT" -gt 0 ]; then
+            echo "✅ Base de datos configurada correctamente ($TABLE_COUNT tablas encontradas)"
+          else
+            echo "⚠️  No se encontraron tablas en la base de datos"
+            echo "   Ejecuta db.sql manualmente si es necesario"
+          fi
         '''
       }
     }
