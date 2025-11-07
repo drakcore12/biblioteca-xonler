@@ -8,6 +8,7 @@
         "dev": "nodemon --exec \"node --enable-source-maps\" src/server.js",
         "setup": "node --enable-source-maps scripts/setup.js",
         "test": "node --enable-source-maps ./node_modules/.bin/jest",
+        "test:unit": "node --enable-source-maps ./node_modules/.bin/jest",
         "test:watch": "node --enable-source-maps ./node_modules/.bin/jest --watch",
         "test:coverage": "node --enable-source-maps ./node_modules/.bin/jest --coverage",
         "test:e2e": "playwright test",
