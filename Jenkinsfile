@@ -10,6 +10,10 @@ pipeline {
     DB_USER      = 'postgres'
     DB_PASSWORD  = 'postgres'
     JWT_SECRET   = 'test-secret-key'
+    // Configuración para ejecutar comandos en Windows
+    WINDOWS_HOST = 'host.docker.internal'
+    WINDOWS_USER = 'MIGUEL'  // Cambia esto por tu usuario de Windows
+    PROJECT_PATH = 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
   }
 
   options { timestamps() }
@@ -68,29 +72,80 @@ pipeline {
       }
     }
 
-    stage('Instrucciones para Windows') {
+    stage('Ejecutar Comandos en Windows') {
       steps {
-        sh '''
-          echo "📝 INSTRUCCIONES: Ejecuta estos comandos en tu máquina Windows"
-          echo ""
-          echo "1️⃣  Instalar dependencias (si no lo has hecho):"
-          echo "    cd C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\Biblioteca-Xonler-main"
-          echo "    npm install"
-          echo ""
-          echo "2️⃣  Iniciar PostgreSQL (si no está corriendo):"
-          echo "    .\\scripts\\start-postgres-windows.ps1"
-          echo ""
-          echo "3️⃣  Iniciar servidor Node.js:"
-          echo "    npm start"
-          echo "    O usar: .\\scripts\\start-server-windows.ps1"
-          echo ""
-          echo "4️⃣  Ejecutar tests en Windows:"
-          echo "    npm run test:unit          # Tests unitarios"
-          echo "    npm run test:e2e           # Tests E2E (requiere servidor corriendo)"
-          echo "    npm run test:load          # Tests de carga (requiere servidor corriendo)"
-          echo ""
-          echo "✅ Una vez que los servicios estén corriendo, Jenkins los detectará automáticamente"
-        '''
+        script {
+          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
+          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
+          def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
+          
+          // Intentar ejecutar comandos usando SSH
+          try {
+            sh """
+              echo "🚀 Intentando ejecutar comandos en Windows usando SSH..."
+              echo ""
+              
+              # Verificar si SSH está disponible
+              if command -v ssh >/dev/null 2>&1; then
+                echo "✅ SSH disponible"
+                echo ""
+                
+                # 1. Instalar dependencias
+                echo "📦 1. Instalando dependencias en Windows..."
+                ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${windowsUser}@${windowsHost} "cd ${projectPath} && npm install" || {
+                  echo "⚠️  No se pudo ejecutar npm install vía SSH"
+                  echo "   Posibles causas:"
+                  echo "   - SSH no está configurado en Windows"
+                  echo "   - Credenciales incorrectas"
+                  echo "   - Firewall bloqueando conexión"
+                }
+                
+                # 2. Iniciar PostgreSQL
+                echo ""
+                echo "🐘 2. Iniciando PostgreSQL en Windows..."
+                ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${windowsUser}@${windowsHost} "cd ${projectPath} && powershell -ExecutionPolicy Bypass -File .\\scripts\\start-postgres-windows.ps1" || {
+                  echo "⚠️  No se pudo iniciar PostgreSQL vía SSH"
+                }
+                
+                # 3. Iniciar servidor Node.js
+                echo ""
+                echo "🚀 3. Iniciando servidor Node.js en Windows..."
+                ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${windowsUser}@${windowsHost} "cd ${projectPath} && powershell -ExecutionPolicy Bypass -File .\\scripts\\start-server-windows.ps1" || {
+                  echo "⚠️  No se pudo iniciar servidor vía SSH"
+                  echo "   Intentando con npm start directamente..."
+                  ssh -o StrictHostKeyChecking=no -o ConnectTimeout=5 ${windowsUser}@${windowsHost} "cd ${projectPath} && Start-Process -NoNewWindow npm -ArgumentList 'start'" || {
+                    echo "⚠️  Falló iniciar servidor"
+                  }
+                }
+                
+                echo ""
+                echo "✅ Comandos ejecutados (si SSH está configurado)"
+              else
+                echo "⚠️  SSH no está disponible en Jenkins"
+                echo "   Instala SSH en el contenedor: apt-get install -y openssh-client"
+                throw new Exception("SSH no disponible")
+              fi
+            """
+          } catch (Exception e) {
+            echo "⚠️  No se pudo ejecutar comandos vía SSH: ${e.message}"
+            echo ""
+            echo "📝 INSTRUCCIONES: Ejecuta estos comandos manualmente en Windows"
+            echo ""
+            echo "1️⃣  Instalar dependencias:"
+            echo "    cd ${projectPath}"
+            echo "    npm install"
+            echo ""
+            echo "2️⃣  Iniciar PostgreSQL:"
+            echo "    .\\scripts\\start-postgres-windows.ps1"
+            echo ""
+            echo "3️⃣  Iniciar servidor Node.js:"
+            echo "    npm start"
+            echo "    O usar: .\\scripts\\start-server-windows.ps1"
+            echo ""
+            echo "💡 Para automatización completa, configura SSH en Windows:"
+            echo "   Ver: GUIA-EJECUTAR-COMANDOS-WINDOWS.md"
+          }
+        }
       }
     }
 
