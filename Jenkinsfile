@@ -27,22 +27,18 @@ pipeline {
     stage('Verificar Node.js') {
       steps {
         sh '''
-          if ! command -v node &> /dev/null; then
-            echo "⚠️  Node.js no encontrado, instalando..."
-            # Instalar Node.js en el contenedor Jenkins
-            curl -fsSL https://deb.nodesource.com/setup_20.x | bash - || true
-            apt-get update && apt-get install -y nodejs || {
-              echo "❌ No se pudo instalar Node.js automáticamente"
-              echo "Instala Node.js manualmente en el contenedor Jenkins:"
-              echo "docker exec -u root -it jenkins bash"
-              echo "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-              echo "apt-get update && apt-get install -y nodejs"
-              exit 1
-            }
+          if command -v node &> /dev/null; then
+            echo "✅ Node.js encontrado:"
+            node -v
+            npm -v
+          else
+            echo "⚠️  Node.js no encontrado"
+            echo "Instala Node.js manualmente en el contenedor Jenkins:"
+            echo "docker exec -u root -it jenkins bash"
+            echo "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
+            echo "apt-get update && apt-get install -y nodejs"
+            exit 1
           fi
-          echo "✅ Node.js:"
-          node -v
-          npm -v
         '''
       }
     }
