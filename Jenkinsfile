@@ -42,7 +42,10 @@ pipeline {
                     publishHTML([
                         reportDir: 'coverage',
                         reportFiles: 'index.html',
-                        reportName: 'Coverage Report'
+                        reportName: 'Coverage Report',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: false
                     ])
                 }
             }
@@ -65,7 +68,10 @@ pipeline {
                     publishHTML([
                         reportDir: 'playwright-report',
                         reportFiles: 'index.html',
-                        reportName: 'Playwright Report'
+                        reportName: 'Playwright Report',
+                        keepAll: true,
+                        alwaysLinkToLastBuild: true,
+                        allowMissing: false
                     ])
                 }
             }
