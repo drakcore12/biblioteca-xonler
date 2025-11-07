@@ -471,8 +471,7 @@ pipeline {
       }
     }
 
-    stage('Cloudflare Tunnel (opcional)') {
-      when { branch 'main' }
+    stage('Cloudflare Tunnel') {
       steps {
         script {
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
@@ -486,11 +485,11 @@ pipeline {
           ).trim()
           
           if (serverCheck != 'RUNNING') {
-            echo "⚠️  Servidor no disponible, omitiendo Cloudflare Tunnel"
+            echo "❌ Servidor no disponible, Cloudflare Tunnel requiere que el servidor esté corriendo"
             echo "📝 Inicia el servidor primero en Windows:"
             echo "   cd ${projectPath}"
             echo "   npm start"
-            return
+            error("Servidor Node.js no está corriendo. Cloudflare Tunnel requiere el servidor activo.")
           }
           
           def tunnelStarted = false
@@ -532,18 +531,23 @@ pipeline {
             
           } catch (Exception e) {
             echo "⚠️  No se pudo iniciar Cloudflare Tunnel vía SSH: ${e.message}"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
+            echo "📝 EJECUTA MANUALMENTE EN WINDOWS (OBLIGATORIO):"
             echo "   & \"\\$env:USERPROFILE\\cloudflared.exe\" tunnel --config NUL --url http://127.0.0.1:3000"
             echo ""
             echo "   O si cloudflared está en PATH:"
             echo "   cloudflared tunnel --url http://localhost:3000"
             echo ""
+            echo "   ⚠️  Cloudflare Tunnel es OBLIGATORIO para completar el pipeline"
             echo "   El tunnel expondrá tu servidor local a internet con una URL pública"
+            echo ""
+            echo "   Verifica que cloudflared.exe esté instalado en:"
+            echo "   %USERPROFILE%\\cloudflared.exe"
           }
           
           if (!tunnelStarted) {
             echo "⚠️  Cloudflare Tunnel no iniciado automáticamente"
-            echo "   Ejecuta el comando manualmente en Windows para obtener la URL pública"
+            echo "   ⚠️  IMPORTANTE: Debes ejecutar el comando manualmente en Windows"
+            echo "   El pipeline continuará, pero Cloudflare Tunnel es obligatorio"
           }
         }
       }
