@@ -261,7 +261,7 @@ pipeline {
       }
       post {
         always {
-          archiveArtifacts artifacts: 'test-results/load-report.json', fingerprint: true, onlyIfSuccessful: false, allowEmpty: true
+          archiveArtifacts artifacts: 'test-results/load-report.json', fingerprint: true, onlyIfSuccessful: false, allowEmptyArchive: true
         }
       }
     }
