@@ -62,15 +62,16 @@ pipeline {
     stage('Configurar PostgreSQL') {
       steps {
         sh '''
-          echo "🗄️  Configurando PostgreSQL..."
+          echo "Configurando PostgreSQL..."
           
-          # Verificar si PostgreSQL está instalado y corriendo
+          # Instalar postgresql-client si no está disponible
           if ! command -v psql >/dev/null 2>&1; then
-            echo "⚠️  PostgreSQL no está instalado en el contenedor Jenkins"
-            echo "   Instala PostgreSQL manualmente o usa Docker para ejecutarlo"
-            echo "   Ejemplo: docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15"
-            echo "   O instala en el contenedor: apt-get update && apt-get install -y postgresql-client"
-            exit 1
+            echo "Instalando postgresql-client..."
+            apt-get update -qq && apt-get install -y -qq postgresql-client >/dev/null 2>&1 || {
+              echo "No se pudo instalar postgresql-client automáticamente"
+              echo "Instala manualmente: docker exec -u root -it jenkins apt-get update && apt-get install -y postgresql-client"
+              echo "O usa PostgreSQL en Docker: docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 postgres:15"
+            }
           fi
           
           # Intentar conectar a PostgreSQL (puede estar en el host, no en el contenedor)
@@ -80,22 +81,30 @@ pipeline {
           export PGUSER=${DB_USER:-postgres}
           export PGPASSWORD=${DB_PASSWORD:-postgres}
           
-          # Esperar a que PostgreSQL esté disponible (máximo 30 segundos)
-          echo "⏳ Esperando que PostgreSQL esté disponible..."
-          for i in $(seq 1 15); do
-            if psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
-              echo "✅ PostgreSQL está disponible"
-              break
-            fi
-            if [ $i -eq 15 ]; then
-              echo "❌ PostgreSQL no está disponible después de 30 segundos"
-              echo "   Asegúrate de que PostgreSQL esté corriendo en: $PGHOST:$PGPORT"
-              echo "   Si Jenkins está en Docker, PostgreSQL debe estar en el host o accesible desde el contenedor"
-              exit 1
-            fi
-            echo "   Intentando conectar... ($i/15)"
-            sleep 2
+          # Intentar primero localhost, luego host.docker.internal (si Jenkins está en Docker)
+          POSTGRES_AVAILABLE=false
+          for HOST in "$PGHOST" "host.docker.internal"; do
+            echo "Intentando conectar a PostgreSQL en $HOST:$PGPORT..."
+            for i in $(seq 1 10); do
+              if psql -h "$HOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "SELECT 1;" >/dev/null 2>&1; then
+                echo "PostgreSQL está disponible en $HOST:$PGPORT"
+                export PGHOST="$HOST"
+                POSTGRES_AVAILABLE=true
+                break 2
+              fi
+              if [ $i -lt 10 ]; then
+                echo "   Esperando... ($i/10)"
+                sleep 2
+              fi
+            done
           done
+          
+          if [ "$POSTGRES_AVAILABLE" = "false" ]; then
+            echo "PostgreSQL no está disponible"
+            echo "Asegúrate de que PostgreSQL esté corriendo en localhost:5432 o host.docker.internal:5432"
+            echo "El pipeline continuará, pero los tests que requieren DB pueden fallar"
+            exit 0
+          fi
           
           # Crear base de datos si no existe
           echo "📦 Creando base de datos 'xonler' si no existe..."
