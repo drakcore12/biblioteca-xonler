@@ -83,10 +83,11 @@ pipeline {
           try {
             echo "🚀 Ejecutando comandos en Windows usando SSH Pipeline Steps..."
             
-            // Configurar conexión SSH
+            // Configurar conexión SSH (el campo 'name' es requerido por el plugin)
             def sshConfig = [
+              name: 'windows-host',
               user: windowsUser,
-              host: windowsHost,
+              hostname: windowsHost,
               port: 22,
               allowAnyHosts: true,
               timeout: 10000
