@@ -87,7 +87,7 @@ pipeline {
             def sshConfig = [
               name: 'windows-host',
               user: windowsUser,
-              hostname: windowsHost,
+              host: windowsHost,
               port: 22,
               allowAnyHosts: true,
               timeout: 10000
