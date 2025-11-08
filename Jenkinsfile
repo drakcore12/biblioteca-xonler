@@ -11,6 +11,7 @@ pipeline {
     DB_PASSWORD  = 'postgres'
     JWT_SECRET   = 'test-secret-key'
     // Configuración para ejecutar comandos en Windows
+    WINDOWS_NODE = 'windows host'  // Nombre del nodo Jenkins configurado
     WINDOWS_HOST = 'host.docker.internal'
     WINDOWS_USER = 'MIGUEL'  // Cambia esto por tu usuario de Windows
     PROJECT_PATH = 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
@@ -27,6 +28,7 @@ pipeline {
     stage('Instalar/Verificar Node.js en Host') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
@@ -34,36 +36,55 @@ pipeline {
           def nodeVerified = false
           def nodeVersionText = 'unknown'
           
-          // Intentar verificar vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "🔍 Verificando Node.js en Windows vía SSH..."
+            echo "🔍 Verificando Node.js en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 10000
-            ]
-            
-            // Verificar si Node.js está instalado
-            sshCommand(
-              remote: sshConfig,
-              command: "node --version 2>&1 || echo 'NOT_INSTALLED'"
-            )
-            
-            // Si llegamos aquí, el comando se ejecutó (aunque no podemos capturar el output directamente)
-            echo "✅ Comando SSH ejecutado (Node.js verificado vía SSH)"
-            nodeVersionText = 'verified-via-ssh'
-            nodeVerified = true
+            node(windowsNode) {
+              def nodeVersion = bat(
+                script: '@echo off && node --version 2>&1 || echo NOT_INSTALLED',
+                returnStdout: true
+              ).trim()
+              
+              if (!nodeVersion.contains('NOT_INSTALLED') && !nodeVersion.trim().isEmpty()) {
+                echo "✅ Node.js encontrado en nodo Windows: ${nodeVersion}"
+                nodeVersionText = nodeVersion
+                nodeVerified = true
+              } else {
+                echo "⚠️  Node.js no encontrado en el nodo Windows"
+              }
+            }
             
           } catch (Exception e) {
-            echo "⚠️  SSH no disponible: ${e.message}"
-            echo "   Continuando con verificación alternativa..."
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
+            
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 10000
+              ]
+              
+              sshCommand(
+                remote: sshConfig,
+                command: "node --version 2>&1 || echo 'NOT_INSTALLED'"
+              )
+              
+              echo "✅ Comando SSH ejecutado (Node.js verificado vía SSH)"
+              nodeVersionText = 'verified-via-ssh'
+              nodeVerified = true
+              
+            } catch (Exception sshError) {
+              echo "⚠️  SSH no disponible: ${sshError.message}"
+            }
           }
           
-          // Si SSH falló, verificar indirectamente (si el servidor responde, Node.js está corriendo)
+          // Si ambos fallaron, verificar indirectamente
           if (!nodeVerified) {
             echo "🔍 Verificando Node.js indirectamente (verificando si el servidor responde)..."
             
@@ -83,14 +104,6 @@ pipeline {
               echo "      node --version"
               echo "   2. Si no está instalado:"
               echo "      winget install OpenJS.NodeJS.LTS"
-              echo "   3. Instala dependencias:"
-              echo "      cd ${projectPath}"
-              echo "      npm install"
-              echo "   4. Inicia el servidor:"
-              echo "      npm start"
-              echo ""
-              echo "   El pipeline continuará asumiendo que Node.js está instalado"
-              echo "   Si los siguientes pasos fallan, instala Node.js manualmente"
             }
           }
           
@@ -105,40 +118,55 @@ pipeline {
     stage('Instalar Dependencias en Host') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
           def depsInstalled = false
           
-          // Intentar instalar vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "📦 Instalando dependencias en Windows vía SSH..."
+            echo "📦 Instalando dependencias en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 60000  // 60 segundos para npm install
-            ]
+            node(windowsNode) {
+              dir(projectPath) {
+                bat 'npm install'
+              }
+            }
             
-            sshCommand(
-              remote: sshConfig,
-              command: "cd '${projectPath}' && npm install"
-            )
-            
-            echo "✅ Dependencias instaladas vía SSH"
+            echo "✅ Dependencias instaladas en nodo Windows"
             depsInstalled = true
             
           } catch (Exception e) {
-            echo "⚠️  No se pudieron instalar dependencias vía SSH: ${e.message}"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-            echo "   cd ${projectPath}"
-            echo "   npm install"
-            echo ""
-            echo "   El pipeline continuará asumiendo que las dependencias están instaladas"
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
+            
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 60000
+              ]
+              
+              sshCommand(
+                remote: sshConfig,
+                command: "cd '${projectPath}' && npm install"
+              )
+              
+              echo "✅ Dependencias instaladas vía SSH"
+              depsInstalled = true
+              
+            } catch (Exception sshError) {
+              echo "⚠️  No se pudieron instalar dependencias vía SSH: ${sshError.message}"
+              echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
+              echo "   cd ${projectPath}"
+              echo "   npm install"
+            }
           }
           
           if (!depsInstalled) {
@@ -237,6 +265,7 @@ pipeline {
     stage('Iniciar Servidor Node.js en Host') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
@@ -254,32 +283,21 @@ pipeline {
             writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
             serverStarted = true
           } else {
-            // Intentar iniciar vía SSH
+            // Intentar usar el nodo Jenkins de Windows
             try {
-              echo "🚀 Iniciando servidor Node.js en Windows vía SSH..."
+              echo "🚀 Iniciando servidor Node.js en Windows usando nodo Jenkins..."
               
-              def sshConfig = [
-                name: 'windows-host',
-                user: windowsUser,
-                host: windowsHost,
-                port: 22,
-                allowAnyHosts: true,
-                timeout: 10000
-              ]
-              
-              // Detener servidor anterior si existe
-              sshCommand(
-                remote: sshConfig,
-                command: "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { \$_.Path -like '*${projectPath.replace('\\', '\\\\')}*' } | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
-              )
-              
-              sleep(2)
-              
-              // Iniciar servidor en background
-              sshCommand(
-                remote: sshConfig,
-                command: "cd '${projectPath}' && Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden"
-              )
+              node(windowsNode) {
+                dir(projectPath) {
+                  // Detener servidor anterior si existe
+                  bat '@echo off && for /f "tokens=2" %%a in (\'tasklist ^| findstr /i "node.exe"\') do taskkill /F /PID %%a 2>nul || echo No process'
+                  
+                  sleep(2)
+                  
+                  // Iniciar servidor en background
+                  bat 'start /B npm start'
+                }
+              }
               
               echo "⏳ Esperando que el servidor inicie..."
               sleep(10)
@@ -297,7 +315,48 @@ pipeline {
               }
               
             } catch (Exception e) {
-              echo "⚠️  No se pudo iniciar servidor vía SSH: ${e.message}"
+              echo "⚠️  Nodo Windows no disponible: ${e.message}"
+              echo "   Intentando vía SSH..."
+              
+              // Fallback a SSH
+              try {
+                def sshConfig = [
+                  name: 'windows-host',
+                  user: windowsUser,
+                  host: windowsHost,
+                  port: 22,
+                  allowAnyHosts: true,
+                  timeout: 10000
+                ]
+                
+                sshCommand(
+                  remote: sshConfig,
+                  command: "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { \\$_.Path -like '*${projectPath.replace('\\', '\\\\')}*' } | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
+                )
+                
+                sleep(2)
+                
+                sshCommand(
+                  remote: sshConfig,
+                  command: "cd '${projectPath}' && Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden"
+                )
+                
+                sleep(10)
+                
+                serverCheck = sh(
+                  script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
+                  returnStdout: true
+                ).trim()
+                
+                if (serverCheck == 'RUNNING') {
+                  echo "✅ Servidor Node.js iniciado vía SSH"
+                  writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
+                  serverStarted = true
+                }
+                
+              } catch (Exception sshError) {
+                echo "⚠️  No se pudo iniciar servidor: ${sshError.message}"
+              }
             }
           }
           
@@ -323,8 +382,6 @@ pipeline {
             echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
             echo "   cd ${projectPath}"
             echo "   npm start"
-            echo ""
-            echo "   El pipeline continuará, pero los tests E2E y de carga pueden fallar"
           }
         }
       }
@@ -396,6 +453,7 @@ pipeline {
     stage('Pruebas de Carga (Artillery)') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
@@ -412,50 +470,69 @@ pipeline {
             echo "📝 Inicia el servidor en Windows:"
             echo "   cd ${projectPath}"
             echo "   npm start"
-            echo "   Luego ejecuta: npm run test:load"
             return
           }
           
           def loadTestsExecuted = false
           
-          // Intentar ejecutar pruebas de carga vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "🚀 Ejecutando pruebas de carga con Artillery en Windows vía SSH..."
+            echo "🚀 Ejecutando pruebas de carga con Artillery en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 180000  // 3 minutos para pruebas de carga
-            ]
-            
-            // Actualizar artillery-config.yml con la URL correcta
-            sshCommand(
-              remote: sshConfig,
-              command: "cd '${projectPath}' && powershell -Command \"(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'\""
-            )
-            
-            // Ejecutar Artillery
-            def artilleryOutput = sshCommand(
-              remote: sshConfig,
-              command: "cd '${projectPath}' && npm run test:load 2>&1"
-            )
-            
-            echo "📊 Resultados de pruebas de carga:"
-            echo artilleryOutput
+            node(windowsNode) {
+              dir(projectPath) {
+                // Actualizar artillery-config.yml con la URL correcta
+                powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'"
+                
+                // Ejecutar Artillery
+                def artilleryOutput = bat(
+                  script: 'npm run test:load',
+                  returnStdout: true
+                )
+                
+                echo "📊 Resultados de pruebas de carga:"
+                echo artilleryOutput
+              }
+            }
             
             loadTestsExecuted = true
-            echo "✅ Pruebas de carga completadas"
+            echo "✅ Pruebas de carga completadas en nodo Windows"
             
           } catch (Exception e) {
-            echo "⚠️  No se pudieron ejecutar pruebas de carga vía SSH: ${e.message}"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-            echo "   cd ${projectPath}"
-            echo "   npm run test:load"
-            echo ""
-            echo "   El pipeline continuará sin resultados de pruebas de carga"
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
+            
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 180000
+              ]
+              
+              sshCommand(
+                remote: sshConfig,
+                command: "cd '${projectPath}' && powershell -Command \"(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'\""
+              )
+              
+              def artilleryOutput = sshCommand(
+                remote: sshConfig,
+                command: "cd '${projectPath}' && npm run test:load 2>&1"
+              )
+              
+              echo "📊 Resultados de pruebas de carga:"
+              echo artilleryOutput
+              loadTestsExecuted = true
+              
+            } catch (Exception sshError) {
+              echo "⚠️  No se pudieron ejecutar pruebas de carga vía SSH: ${sshError.message}"
+              echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
+              echo "   cd ${projectPath}"
+              echo "   npm run test:load"
+            }
           }
           
           if (!loadTestsExecuted) {
