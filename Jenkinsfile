@@ -17,20 +17,11 @@ pipeline {
           
           sleep(time: 2, unit: 'SECONDS')
 
-          // Arrancar la app en background de forma completamente independiente (no se cierra al terminar el pipeline)
-          powershell '''
-            # Crear un proceso completamente desacoplado usando Start-Process
-            $psi = New-Object System.Diagnostics.ProcessStartInfo
-            $psi.FileName = "cmd.exe"
-            $psi.Arguments = "/c npm start > server.log 2>&1"
-            $psi.WorkingDirectory = "${env:PROJECT_PATH}"
-            $psi.UseShellExecute = $true
-            $psi.CreateNoWindow = $true
-            $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-            
-            $process = [System.Diagnostics.Process]::Start($psi)
-            # No esperar ni mantener referencia al proceso
-            $process = $null
+          // Arrancar la app en background de forma completamente independiente usando wmic (no se cierra al terminar el pipeline)
+          bat '''
+            @echo off
+            cd /d "${env:PROJECT_PATH}"
+            wmic process call create "cmd.exe /c npm start > server.log 2>&1" >nul 2>&1
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
