@@ -230,7 +230,12 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             
             if (fileExists(tunnelFile)) {
               try {
-                url = readFile(tunnelFile).trim()
+                def rawUrl = readFile(tunnelFile).trim()
+                // Limpiar BOM (Byte Order Mark) y otros caracteres invisibles
+                url = rawUrl.replaceAll(/^\uFEFF/, '').replaceAll(/[^\x20-\x7E]/, '').trim()
+                if (!url || url.isEmpty()) {
+                  url = "http://127.0.0.1:3000"
+                }
                 echo "📖 Leído desde ${tunnelFile}: ${url}"
               } catch (Exception e) {
                 echo "⚠️  Error al leer ${tunnelFile}: ${e.message}, usando fallback"
@@ -241,7 +246,12 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
               // Intentar leer desde el directorio actual también (por si acaso)
               if (fileExists('tunnel-url.txt')) {
                 try {
-                  url = readFile('tunnel-url.txt').trim()
+                  def rawUrl = readFile('tunnel-url.txt').trim()
+                  // Limpiar BOM y caracteres invisibles
+                  url = rawUrl.replaceAll(/^\uFEFF/, '').replaceAll(/[^\x20-\x7E]/, '').trim()
+                  if (!url || url.isEmpty()) {
+                    url = "http://127.0.0.1:3000"
+                  }
                   echo "📖 Leído desde directorio actual: ${url}"
                 } catch (Exception e) {
                   echo "⚠️  Error al leer tunnel-url.txt del directorio actual: ${e.message}"
