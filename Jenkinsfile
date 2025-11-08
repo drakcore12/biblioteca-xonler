@@ -139,8 +139,8 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
               bat(returnStatus: true, script: '''
                 @echo off
                 if exist "junit.xml" (
-                  echo Encontrado junit.xml en directorio raíz
-                  copy /Y junit.xml test-results\junit.xml
+                  echo Encontrado junit.xml en directorio raiz
+                  copy /Y junit.xml test-results\\junit.xml
                 )
               ''')
               if (fileExists(junitPath)) {
