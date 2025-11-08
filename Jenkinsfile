@@ -17,10 +17,23 @@ pipeline {
           
           sleep(time: 2, unit: 'SECONDS')
 
-          // Arrancar la app en background (todo está definido en package.json y server.js)
-          bat '''
-            @echo off
-            start /B cmd /c "npm start > server.log 2>&1"
+          // Arrancar la app en background de forma independiente (no se cierra al terminar el pipeline)
+          powershell '''
+            $processInfo = New-Object System.Diagnostics.ProcessStartInfo
+            $processInfo.FileName = "cmd.exe"
+            $processInfo.Arguments = "/c npm start > server.log 2>&1"
+            $processInfo.WorkingDirectory = "${env:PROJECT_PATH}"
+            $processInfo.UseShellExecute = $false
+            $processInfo.CreateNoWindow = $true
+            $processInfo.RedirectStandardOutput = $false
+            $processInfo.RedirectStandardError = $false
+            
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $processInfo
+            $process.Start() | Out-Null
+            
+            # Desacoplar el proceso del pipeline
+            $process.Dispose()
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
