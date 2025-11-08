@@ -73,9 +73,27 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             # limpiar logs previos
             Remove-Item -Path $stdoutLog,$stderrLog,$tunnelFile -Force -ErrorAction SilentlyContinue | Out-Null
 
+            # Verificar que cloudflared.exe existe antes de intentar lanzarlo
+            if (-not (Test-Path $exe)) {
+                Write-Host "❌ ERROR: cloudflared.exe no encontrado en: $exe"
+                Write-Host "   Asegúrate de que cloudflared.exe esté en %USERPROFILE%"
+                Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                exit 0
+            }
+            
+            Write-Host "🚀 Lanzando cloudflared desde: $exe"
+            Write-Host "   Logs en: $stdoutLog y $stderrLog"
+            
             # lanzar cloudflared DETACHED con cmd start (logs dentro de WORKSPACE)
-            $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
-            Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
+            # Usar /B para ejecutar en background sin nueva ventana
+            $cmd = "start \"\" /B `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
+            $process = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+            
+            if (-not $process) {
+                Write-Host "⚠️  No se pudo iniciar el proceso cmd.exe para cloudflared"
+                Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                exit 0
+            }
 
             Start-Sleep -Seconds 2
 
@@ -96,16 +114,53 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
                     if (Test-Path $stderrLog) { try { Get-Content $stderrLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ } } catch {} }
                 }
 
-                # revisar si el proceso cloudflared sigue vivo (si no existe -> falló)
-                $proc = Get-Process -Name cloudflared -ErrorAction SilentlyContinue
-                if (-not $proc) {
-                    Write-Host "⚠️  cloudflared no se detecta como proceso en ejecución (probablemente falló)."
-                    if (Test-Path $stderrLog) {
-                        Write-Host "---- STDERR (cloudflared) ----"
-                        try { Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ } } catch {}
-                        Write-Host "---- FIN STDERR ----"
+                # revisar si el proceso cloudflared sigue vivo (esperar al menos 5s antes de verificar)
+                # Buscar tanto "cloudflared" como "cloudflared.exe"
+                if ($i -ge 5) {
+                    $proc = Get-Process -Name cloudflared -ErrorAction SilentlyContinue
+                    if (-not $proc) {
+                        $proc = Get-Process | Where-Object { $_.ProcessName -like "*cloudflared*" -or $_.MainWindowTitle -like "*cloudflared*" } -ErrorAction SilentlyContinue
                     }
-                    break
+                    
+                    if (-not $proc) {
+                        Write-Host "⚠️  cloudflared no se detecta como proceso en ejecución (probablemente falló)."
+                        Write-Host "   Verificando logs para diagnóstico..."
+                        
+                        if (Test-Path $stdoutLog) {
+                            Write-Host "---- STDOUT (cloudflared) ----"
+                            try { 
+                                $stdoutContent = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue
+                                if ($stdoutContent) {
+                                    Write-Host $stdoutContent
+                                } else {
+                                    Write-Host "(archivo vacío)"
+                                }
+                            } catch { Write-Host "Error al leer stdout: $_" }
+                            Write-Host "---- FIN STDOUT ----"
+                        }
+                        
+                        if (Test-Path $stderrLog) {
+                            Write-Host "---- STDERR (cloudflared) ----"
+                            try { 
+                                $stderrContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue
+                                if ($stderrContent) {
+                                    Write-Host $stderrContent
+                                } else {
+                                    Write-Host "(archivo vacío)"
+                                }
+                            } catch { Write-Host "Error al leer stderr: $_" }
+                            Write-Host "---- FIN STDERR ----"
+                        }
+                        
+                        # Verificar si el ejecutable existe
+                        if (-not (Test-Path $exe)) {
+                            Write-Host "❌ ERROR: cloudflared.exe no encontrado en: $exe"
+                        } else {
+                            Write-Host "✅ cloudflared.exe existe en: $exe"
+                        }
+                        
+                        break
+                    }
                 }
 
                 # leer ambos logs y buscar URL
