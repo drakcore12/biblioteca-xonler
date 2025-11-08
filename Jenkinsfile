@@ -373,9 +373,6 @@ pipeline {
             dir(projectPath) {
               echo "🚀 Ejecutando pruebas de carga con Artillery en Windows..."
               
-              // Actualizar artillery-config.yml con la URL correcta (sin comillas extra)
-              powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \"${serverUrl}\"' | Set-Content 'artillery-config.yml'"
-              
               // Crear directorio test-results si no existe
               bat 'if not exist test-results mkdir test-results'
               
