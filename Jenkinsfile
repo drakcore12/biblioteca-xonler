@@ -129,9 +129,14 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             
             # Verificar y mostrar el contenido final
             if (Test-Path ".\\tunnel-url.txt") {
-              $finalUrl = Get-Content ".\\tunnel-url.txt" -Raw
-              Write-Host "📝 URL final guardada: $finalUrl"
+              $finalUrl = Get-Content ".\\tunnel-url.txt" -Raw -ErrorAction SilentlyContinue
+              if ($finalUrl) {
+                Write-Host "📝 URL final guardada: $($finalUrl.Trim())"
+              }
             }
+            
+            # Asegurar que el script termine correctamente
+            exit 0
           '''
           
           // Leer la URL directamente desde el archivo (sin bloqueos)
