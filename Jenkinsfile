@@ -336,6 +336,9 @@ pipeline {
             dir(projectPath) {
               echo "🧪 Ejecutando tests unitarios en Windows..."
               
+              // Crear directorio test-results si no existe
+              bat 'if not exist test-results mkdir test-results'
+              
               // Ejecutar tests con coverage y JUnit usando el script corregido
               bat 'npm run test:unit'
               
