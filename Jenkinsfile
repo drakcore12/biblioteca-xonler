@@ -184,7 +184,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             
             // Reemplazar el target con la URL del tunnel
             def updatedConfig = configContent.replaceAll(
-              /target:\s*"[^"]*"/,
+              ~/target:\s*"[^"]*"/,
               "target: \"${targetUrl}\""
             )
             
