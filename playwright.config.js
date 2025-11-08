@@ -57,7 +57,8 @@ module.exports = defineConfig({
   ],
 
   /* Ejecutar servidor de desarrollo local antes de los tests */
-  webServer: {
+  /* Deshabilitar webServer en CI ya que el servidor se inicia externamente */
+  webServer: process.env.CI || process.env.BASE_URL ? undefined : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,

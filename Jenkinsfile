@@ -131,7 +131,15 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
           // Exportar TUNNEL_URL al entorno para las siguientes stages
           script {
-            def url = readFile('tunnel-url.txt').trim()
+            // Leer desde WORKSPACE donde se guardó el archivo
+            def tunnelFile = "${env.WORKSPACE}\\tunnel-url.txt"
+            def url = "http://127.0.0.1:3000" // fallback por defecto
+            if (fileExists(tunnelFile)) {
+              url = readFile(tunnelFile).trim()
+            } else {
+              echo "⚠️  tunnel-url.txt no encontrado en WORKSPACE, usando localhost"
+            }
+            // Limpiar cualquier valor previo de TUNNEL_URL
             env.TUNNEL_URL = url
             echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
           }
@@ -261,15 +269,36 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           // Verificar que Artillery esté instalado globalmente o localmente
           bat(returnStatus: true, script: 'where artillery >nul 2>&1 || npx artillery --version >nul 2>&1')
           
-          // Actualizar artillery-config.yml con la URL del tunnel
+          // Validar y actualizar artillery-config.yml con la URL del tunnel
           script {
             def targetUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
+            
+            // Verificar si la URL es un túnel de Cloudflare y validar DNS
+            if (targetUrl.contains('trycloudflare.com')) {
+              echo "🔍 Validando resolución DNS para: ${targetUrl}"
+              def dnsOk = bat(returnStatus: true, script: """
+                @echo off
+                for /f "tokens=*" %%i in ('nslookup ${targetUrl.replace('https://', '').replace('http://', '').split('/')[0]} 2^>nul ^| find /i "Name:"') do (
+                  echo %%i
+                  exit /b 0
+                )
+                exit /b 1
+              """)
+              
+              if (dnsOk != 0) {
+                echo "⚠️  No se pudo resolver DNS para ${targetUrl}, usando localhost como fallback"
+                targetUrl = "http://127.0.0.1:3000"
+              } else {
+                echo "✅ DNS resuelto correctamente para ${targetUrl}"
+              }
+            }
+            
             echo "🚀 Ejecutando pruebas de carga contra: ${targetUrl}"
             
             // Leer artillery-config.yml
             def configContent = readFile('artillery-config.yml')
             
-            // Reemplazar el target con la URL del tunnel
+            // Reemplazar el target con la URL validada
             def updatedConfig = configContent.replaceAll(
               ~/target:\s*"[^"]*"/,
               "target: \"${targetUrl}\""
