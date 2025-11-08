@@ -17,10 +17,10 @@ pipeline {
           
           sleep(time: 2, unit: 'SECONDS')
 
-          // Arrancar la app en background (HOST/PORT locales)
+          // Arrancar la app en background (todo está definido en package.json y server.js)
           bat '''
             @echo off
-            start /B cmd /c "set HOST=127.0.0.1&& set PORT=3000&& npm start > server.log 2>&1"
+            start /B cmd /c "npm start > server.log 2>&1"
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
