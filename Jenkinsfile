@@ -140,20 +140,20 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           '''
           
           // Leer la URL usando PowerShell (más rápido y confiable)
-          def tunnelUrlOutput = powershell(returnStdout: true, script: '''
-            if (Test-Path ".\\tunnel-url.txt") {
-              $url = Get-Content ".\\tunnel-url.txt" -Raw -ErrorAction SilentlyContinue
-              if ($url) {
-                $url.Trim()
+          script {
+            def tunnelUrlOutput = powershell(returnStdout: true, script: '''
+              if (Test-Path ".\\tunnel-url.txt") {
+                $url = Get-Content ".\\tunnel-url.txt" -Raw -ErrorAction SilentlyContinue
+                if ($url) {
+                  $url.Trim()
+                } else {
+                  "http://127.0.0.1:3000"
+                }
               } else {
                 "http://127.0.0.1:3000"
               }
-            } else {
-              "http://127.0.0.1:3000"
-            }
-          ''').trim()
-          
-          script {
+            ''').trim()
+            
             env.TUNNEL_URL = tunnelUrlOutput ?: "http://127.0.0.1:3000"
             echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
           }
