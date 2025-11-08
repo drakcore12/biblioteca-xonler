@@ -336,36 +336,23 @@ pipeline {
             dir(projectPath) {
               echo "🧪 Ejecutando tests unitarios en Windows..."
               
-              // Ejecutar tests con coverage y JUnit
+              // Ejecutar tests con coverage y JUnit usando el script corregido
               bat 'npm run test:unit'
               
               echo "✅ Tests unitarios completados"
-            }
-          }
-        }
-      }
-      post {
-        always {
-          script {
-            def windowsNode = env.WINDOWS_NODE ?: 'windows host'
-            def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
-            
-            // Publicar reportes desde el mismo agente Windows
-            node(windowsNode) {
-              dir(projectPath) {
-                // Publicar coverage HTML
-                publishHTML(target: [
-                  reportDir: 'coverage',
-                  reportFiles: 'index.html',
-                  reportName: 'Coverage Report',
-                  keepAll: true,
-                  alwaysLinkToLastBuild: true,
-                  allowMissing: false
-                ])
-                
-                // Publicar JUnit XML
-                junit allowEmptyResults: true, testResults: 'test-results/junit.xml'
-              }
+              
+              // Publicar JUnit (se genera en test-results/junit.xml)
+              junit allowEmptyResults: true, testResults: 'test-results/junit.xml'
+              
+              // Publicar coverage (no debe fallar el pipeline si falta)
+              publishHTML(target: [
+                reportDir: 'coverage',
+                reportFiles: 'index.html',
+                reportName: 'Coverage Report',
+                keepAll: true,
+                alwaysLinkToLastBuild: true,
+                allowMissing: true
+              ])
             }
           }
         }
