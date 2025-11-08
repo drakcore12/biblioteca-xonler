@@ -27,7 +27,7 @@ npm start > server.log 2>&1
           bat '''
             @echo off
             cd /d "${env:PROJECT_PATH}"
-            start "" "%~dp0start-server.bat"
+            start "" "${env:PROJECT_PATH}\\start-server.bat"
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
