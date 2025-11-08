@@ -373,8 +373,8 @@ pipeline {
             dir(projectPath) {
               echo "🚀 Ejecutando pruebas de carga con Artillery en Windows..."
               
-              // Actualizar artillery-config.yml con la URL correcta
-              powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'"
+              // Actualizar artillery-config.yml con la URL correcta (sin comillas extra)
+              powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \"${serverUrl}\"' | Set-Content 'artillery-config.yml'"
               
               // Crear directorio test-results si no existe
               bat 'if not exist test-results mkdir test-results'
@@ -416,23 +416,13 @@ pipeline {
             dir(projectPath) {
               echo "🌐 Iniciando Cloudflare Tunnel en Windows..."
               
-              // Descargar cloudflared si no existe
-              bat '''
-                @echo off
-                if not exist cloudflared.exe (
-                  echo Descargando cloudflared...
-                  curl -L -o cloudflared.zip https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.zip
-                  powershell -Command "Expand-Archive -Force cloudflared.zip ."
-                  del cloudflared.zip
-                )
-              '''
-              
               // Detener tunnel anterior si existe
               bat 'taskkill /IM cloudflared.exe /F >nul 2>&1 || echo No process'
               
               sleep(2)
               
-              // Iniciar Cloudflare Tunnel en background usando el comando específico
+              // Iniciar Cloudflare Tunnel usando el comando específico del usuario
+              // Asumimos que cloudflared.exe está en $env:USERPROFILE
               powershell 'Start-Process powershell -ArgumentList \'-NoExit\', \'-Command\', \'& "$env:USERPROFILE\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000\' -WindowStyle Hidden'
               
               sleep(5)

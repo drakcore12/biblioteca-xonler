@@ -24,6 +24,8 @@ module.exports = {
   restoreMocks: true,
   // Configuración de Source Maps
   collectCoverage: false, // Se puede activar con --coverage
+  // Asegurar que jest-junit genere el XML
+  testResultsProcessor: undefined,
   // Habilitar source maps para mejor debugging
   transform: {},
   // Mejorar stack traces con source maps
