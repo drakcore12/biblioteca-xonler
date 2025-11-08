@@ -78,7 +78,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             Start-Sleep -Seconds 2
 
             # Buscar la URL en los logs
-            $regex = 'https://[a-z0-9-]+\.trycloudflare\.com'
+            $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
             Start-Sleep -Seconds 1
@@ -110,7 +110,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
             Write-Host "✅ Script terminado correctamente"
           '''
-          
+
           // Exportar TUNNEL_URL al entorno para las siguientes stages
           script {
             def url = readFile('tunnel-url.txt').trim()
