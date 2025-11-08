@@ -66,60 +66,48 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             $stdoutLog = Join-Path $WS 'cloudflared.log'
             $stderrLog = Join-Path $WS 'cloudflared-error.log'
             $tunnelFile = Join-Path $WS 'tunnel-url.txt'
-            
+
             # Limpia logs anteriores
             Remove-Item -Path $stdoutLog,$stderrLog -Force -ErrorAction SilentlyContinue | Out-Null
-            
-            # Lanza cloudflared en background usando redirección de PowerShell (no bloquea el Pipeline)
-            Start-Process -FilePath $exe `
-              -ArgumentList @("tunnel","--config","NUL","--no-autoupdate","--url","http://127.0.0.1:3000") `
-              -WindowStyle Hidden `
-              -RedirectStandardOutput $stdoutLog `
-              -RedirectStandardError $stderrLog
-            
-            # Espera un momento para que cloudflared inicie
+
+            # Lanza cloudflared totalmente DETACHED usando cmd.exe start (redirecciones manejadas por cmd)
+            $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
+            Start-Process -FilePath "cmd.exe" -ArgumentList "/c",$cmd -WindowStyle Hidden | Out-Null
+
+            # Espera un momento para que cloudflared escriba algo
             Start-Sleep -Seconds 2
-            
-            # Espera y extrae la URL del quick tunnel (busca en ambos logs)
-            $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
+
+            # Buscar la URL en los logs
+            $regex = 'https://[a-z0-9-]+\.trycloudflare\.com'
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
-              Start-Sleep -Seconds 1
-              if (Test-Path $stdoutLog) {
-                $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue
-              } else {
-                $content = ''
-              }
-              if (Test-Path $stderrLog) {
-                $errorContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue
-              } else {
-                $errorContent = ''
-              }
-              $text = $content + "`n" + $errorContent
-              if ($text -match $regex) {
+            Start-Sleep -Seconds 1
+            $content = (Test-Path $stdoutLog) ? (Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) : ''
+            $errorContent = (Test-Path $stderrLog) ? (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue) : ''
+            $text = $content + "`n" + $errorContent
+            if ($text -match $regex) {
                 $url = $matches[0]
                 Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
                 Write-Host ""
-                Write-Host "✅ URL del tunnel: $url"
+                Write-Host ("✅ URL del tunnel: {0}" -f $url)
                 $found = $true
                 break
-              }
-              if ($i % 5 -eq 0) {
-                Write-Host ("   Esperando URL del tunnel... ({0}/30)" -f ($i+1))
-              }
             }
-            
+            if ($i % 5 -eq 0) { Write-Host ("   Esperando URL del tunnel... ({0}/30)" -f ($i+1)) }
+            }
+
             if (-not $found) {
-              Write-Host "⚠️  No se encontró la URL del tunnel, usando localhost"
-              Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+            Write-Host "⚠️  No se encontró la URL del tunnel, usando localhost"
+            Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
             }
-            
-            # Mostrar confirmación con salto de línea "real"
+
+            # Mostrar confirmación con salto de línea real
             $finalUrl = Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue
             Write-Host ("📝 URL final guardada: {0}" -f $finalUrl.Trim())
-            
-            # Asegurar que el script termine correctamente
+
+            # Termina la ejecución de PowerShell con éxito
             exit 0
+
             Write-Host "✅ Script terminado correctamente"
           '''
           
