@@ -317,12 +317,9 @@ pipeline {
                   sleep(2)
                   
                   // Iniciar servidor en background usando Start-Process de PowerShell
-                  // Cambiar al directorio del proyecto y ejecutar npm start
-                  powershell """
-                    \$ErrorActionPreference = 'Stop'
-                    Set-Location '${projectPath}'
-                    Start-Process powershell -ArgumentList '-NoExit', '-Command', 'npm start' -WindowStyle Hidden
-                  """
+                  // Usar comillas simples para evitar problemas de escape
+                  def psCommand = "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden"
+                  powershell(script: psCommand, returnStatus: true)
                 }
               }
               
