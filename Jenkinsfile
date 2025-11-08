@@ -120,16 +120,33 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             if (-not (Test-Path ".\\tunnel-url.txt")) {
               Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
             }
+            
+            # Verificar y mostrar el contenido final
+            if (Test-Path ".\\tunnel-url.txt") {
+              $finalUrl = Get-Content ".\\tunnel-url.txt" -Raw
+              Write-Host "📝 URL final guardada: $finalUrl"
+            }
           '''
+          
+          // Esperar un momento para que el archivo se escriba completamente
+          powershell 'Start-Sleep -Seconds 1'
           
           // Exporta la URL a una env var para usar en otros stages
           script {
+            def tunnelUrlFile = "${env.PROJECT_PATH}\\tunnel-url.txt"
             if (fileExists("tunnel-url.txt")) {
               env.TUNNEL_URL = readFile("tunnel-url.txt").trim()
               echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
             } else {
-              env.TUNNEL_URL = "http://127.0.0.1:3000"
-              echo "⚠️  No se pudo leer tunnel-url.txt, usando localhost como fallback"
+              // Intentar leer desde la ruta absoluta
+              try {
+                def content = readFile(tunnelUrlFile).trim()
+                env.TUNNEL_URL = content
+                echo "🌐 TUNNEL_URL (desde ruta absoluta) = ${env.TUNNEL_URL}"
+              } catch (Exception e) {
+                env.TUNNEL_URL = "http://127.0.0.1:3000"
+                echo "⚠️  No se pudo leer tunnel-url.txt, usando localhost como fallback"
+              }
             }
           }
 
