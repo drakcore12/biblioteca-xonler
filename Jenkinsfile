@@ -81,7 +81,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             Start-Sleep -Seconds 2
             
             # Espera y extrae la URL del quick tunnel (busca en ambos logs)
-            $regex = "https://[a-z0-9-]+\.trycloudflare\.com"
+            $regex = 'https://[a-z0-9-]+\.trycloudflare\.com'
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
               Start-Sleep -Seconds 1
