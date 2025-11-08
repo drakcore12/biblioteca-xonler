@@ -432,38 +432,11 @@ pipeline {
               // Iniciar Cloudflare Tunnel en background usando el comando específico
               powershell 'Start-Process powershell -ArgumentList \'-NoExit\', \'-Command\', \'& "$env:USERPROFILE\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000\' -WindowStyle Hidden'
               
-              // Esperar un poco y verificar el log
               sleep(5)
-              
-              // Intentar leer la URL del proceso (cloudflared la muestra en stdout)
-              bat '''
-                @echo off
-                timeout /t 3 >nul
-                powershell -Command "Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Out-Null; if($?) { Write-Host 'Cloudflare Tunnel iniciado correctamente' } else { Write-Host 'Cloudflare Tunnel puede no estar corriendo' }"
-              '''
-              
-              sleep(5)
-              
-              // Extraer URL del log
-              bat '''
-                @echo off
-                powershell -Command "$c=Get-Content cloudflare.log -Raw -ErrorAction SilentlyContinue; $m=[regex]::Match($c,'https://[a-z0-9-]+\\.trycloudflare\\.com'); if($m.Success){ Set-Content cloudflare-url.env ('URL_PUBLICA='+$m.Value); Write-Host ('URL encontrada: '+$m.Value) } else { Write-Host 'URL no encontrada en log' }"
-              '''
-              
-              // Leer y mostrar la URL
-              script {
-                if (fileExists("${projectPath}/cloudflare-url.env")) {
-                  def urlContent = readFile("${projectPath}/cloudflare-url.env").trim()
-                  def url = urlContent.split('=')[1]
-                  if (url) {
-                    echo "🌐 URL pública de Cloudflare Tunnel: ${url}"
-                  }
-                } else {
-                  echo "⚠️  No se pudo extraer la URL del log. Revisa cloudflare.log manualmente."
-                }
-              }
               
               echo "✅ Cloudflare Tunnel iniciado"
+              echo "📝 NOTA: La URL pública se mostrará en la consola de PowerShell en Windows"
+              echo "   Para ver la URL, revisa la ventana de PowerShell que se abrió"
             }
           }
         }

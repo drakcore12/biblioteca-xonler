@@ -391,8 +391,8 @@ async function actualizarPreferenciasUsuario(req, res) {
   }
 }
 
-// Obtener usuario por ID (para super admin) - Función mejorada
-async function obtenerUsuarioPorIdSuperAdmin(req, res) {
+// Obtener usuario por ID (para super admin)
+async function obtenerUsuarioPorId(req, res) {
   try {
     const { id } = req.params;
     

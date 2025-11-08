@@ -40,7 +40,12 @@ module.exports = {
     'default',
     ['jest-junit', {
       outputDirectory: 'test-results',
-      outputName: 'junit.xml'
+      outputName: 'junit.xml',
+      suiteName: 'Biblioteca Xonler Tests',
+      classNameTemplate: '{classname}',
+      titleTemplate: '{title}',
+      ancestorSeparator: ' › ',
+      usePathForSuiteName: 'true'
     }]
   ]
 };
