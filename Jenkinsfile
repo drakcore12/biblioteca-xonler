@@ -59,83 +59,26 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1 compatible)
+            // 6) Crear script batch para lanzar cloudflared con redirección correcta
+            script {
+              def batchScript = """@echo off
+set BUILD_ID=dontKillMe
+set JENKINS_NODE_COOKIE=do_not_kill
+cd /d "${env.WORKSPACE}"
+"%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > cloudflared.log 2>&1
+"""
+              writeFile file: "${env.WORKSPACE}\\start-cloudflared.bat", text: batchScript
+              echo "✅ Script batch para cloudflared creado"
+            }
+            
+            // 7) Lanzar cloudflared y extraer URL del tunnel
+            bat 'start "" /B "%WORKSPACE%\\start-cloudflared.bat"'
+            powershell 'Start-Sleep -Seconds 3'
+            
             powershell '''
-                $ErrorActionPreference = "Continue"
-                try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
-
                 $WS = "$env:WORKSPACE"
-                $exe = "$env:USERPROFILE\\cloudflared.exe"
                 $stdoutLog = Join-Path $WS "cloudflared.log"
-                $stderrLog = Join-Path $WS "cloudflared-error.log"
                 $tunnelFile = Join-Path $WS "tunnel-url.txt"
-
-                # Limpiar archivos viejos
-                Remove-Item -Path $stdoutLog,$stderrLog,$tunnelFile -Force -ErrorAction SilentlyContinue | Out-Null
-
-                # Verificar que cloudflared.exe existe
-                if (-not (Test-Path $exe)) {
-                    Write-Host "ERROR: cloudflared.exe no encontrado en $exe"
-                    Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
-                    exit 0
-                }
-
-                # Lanzar cloudflared usando Start-Process con redirección directa
-                Write-Host "Lanzando cloudflared desde: $exe"
-                Write-Host "Logs en: $stdoutLog y $stderrLog"
-                
-                $psi = New-Object System.Diagnostics.ProcessStartInfo
-                $psi.FileName = $exe
-                $psi.Arguments = "tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000"
-                $psi.UseShellExecute = $false
-                $psi.RedirectStandardOutput = $true
-                $psi.RedirectStandardError = $true
-                $psi.CreateNoWindow = $true
-                $psi.WorkingDirectory = $WS
-                
-                $process = New-Object System.Diagnostics.Process
-                $process.StartInfo = $psi
-                
-                # Crear archivos de log antes de iniciar
-                $null = New-Item -Path $stdoutLog -ItemType File -Force
-                $null = New-Item -Path $stderrLog -ItemType File -Force
-                
-                # Iniciar proceso y redirigir salida a archivos en background
-                $process.Start() | Out-Null
-                
-                # Redirigir stdout y stderr a archivos en background usando jobs
-                $stdoutJob = Start-Job -ScriptBlock {
-                    param($proc, $logFile)
-                    $stream = $proc.StandardOutput
-                    $writer = [System.IO.StreamWriter]::new($logFile)
-                    while (-not $proc.HasExited) {
-                        $line = $stream.ReadLine()
-                        if ($line) {
-                            $writer.WriteLine($line)
-                            $writer.Flush()
-                        }
-                        Start-Sleep -Milliseconds 100
-                    }
-                    $writer.Close()
-                } -ArgumentList $process, $stdoutLog
-                
-                $stderrJob = Start-Job -ScriptBlock {
-                    param($proc, $logFile)
-                    $stream = $proc.StandardError
-                    $writer = [System.IO.StreamWriter]::new($logFile)
-                    while (-not $proc.HasExited) {
-                        $line = $stream.ReadLine()
-                        if ($line) {
-                            $writer.WriteLine($line)
-                            $writer.Flush()
-                        }
-                        Start-Sleep -Milliseconds 100
-                    }
-                    $writer.Close()
-                } -ArgumentList $process, $stderrLog
-
-                # Espera inicial para que el proceso escriba algo
-                Start-Sleep -Seconds 3
 
                 # Buscar la URL en los logs
                 $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
@@ -148,25 +91,10 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
                     if (Test-Path $stdoutLog) {
                         try { 
                             $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue 
-                            if ($content) {
-                                Write-Host "DEBUG stdout (últimos 200 chars): $($content.Substring([Math]::Max(0, $content.Length - 200)))"
-                            }
                         } catch {}
                     }
 
-                    $errorContent = ""
-                    if (Test-Path $stderrLog) {
-                        try { 
-                            $errorContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue 
-                            if ($errorContent) {
-                                Write-Host "DEBUG stderr (últimos 200 chars): $($errorContent.Substring([Math]::Max(0, $errorContent.Length - 200)))"
-                            }
-                        } catch {}
-                    }
-
-                    $text = ($content + "`n" + $errorContent)
-
-                    if ($text -match $regex) {
+                    if ($content -and ($content -match $regex)) {
                         $url = $matches[0]
                         Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
                         Write-Host ("✅ URL del tunnel encontrada: {0}" -f $url)
@@ -176,16 +104,21 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
                     if ((($i + 1) % 5) -eq 0) {
                         Write-Host ("   Esperando URL del tunnel... ({0}/30)" -f ($i + 1))
+                        # Mostrar últimos caracteres del log para debug
+                        if ($content) {
+                            $lastChars = $content.Substring([Math]::Max(0, $content.Length - 150))
+                            Write-Host ("   Últimos chars del log: {0}" -f $lastChars)
+                        }
                     }
                 }
 
-                # Limpiar jobs
-                Stop-Job $stdoutJob, $stderrJob -ErrorAction SilentlyContinue | Out-Null
-                Remove-Job $stdoutJob, $stderrJob -ErrorAction SilentlyContinue | Out-Null
-
                 if (-not $found) {
                     Write-Host "⚠️  No se encontró la URL del tunnel en los logs"
-                    Write-Host "   Revisa manualmente: $stdoutLog y $stderrLog"
+                    Write-Host "   Revisa manualmente: $stdoutLog"
+                    if ($content) {
+                        Write-Host "   Contenido completo del log:"
+                        Write-Host $content
+                    }
                     Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
                 }
 
@@ -196,7 +129,6 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
                 }
                 Write-Host ("📝 URL final guardada: {0}" -f $finalUrl)
 
-                # Salir con éxito para que Jenkins continúe
                 exit 0
             '''
 
