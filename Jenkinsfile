@@ -17,23 +17,20 @@ pipeline {
           
           sleep(time: 2, unit: 'SECONDS')
 
-          // Arrancar la app en background de forma independiente (no se cierra al terminar el pipeline)
+          // Arrancar la app en background de forma completamente independiente (no se cierra al terminar el pipeline)
           powershell '''
-            $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-            $processInfo.FileName = "cmd.exe"
-            $processInfo.Arguments = "/c npm start > server.log 2>&1"
-            $processInfo.WorkingDirectory = "${env:PROJECT_PATH}"
-            $processInfo.UseShellExecute = $false
-            $processInfo.CreateNoWindow = $true
-            $processInfo.RedirectStandardOutput = $false
-            $processInfo.RedirectStandardError = $false
+            # Crear un proceso completamente desacoplado usando Start-Process
+            $psi = New-Object System.Diagnostics.ProcessStartInfo
+            $psi.FileName = "cmd.exe"
+            $psi.Arguments = "/c npm start > server.log 2>&1"
+            $psi.WorkingDirectory = "${env:PROJECT_PATH}"
+            $psi.UseShellExecute = $true
+            $psi.CreateNoWindow = $true
+            $psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
             
-            $process = New-Object System.Diagnostics.Process
-            $process.StartInfo = $processInfo
-            $process.Start() | Out-Null
-            
-            # Desacoplar el proceso del pipeline
-            $process.Dispose()
+            $process = [System.Diagnostics.Process]::Start($psi)
+            # No esperar ni mantener referencia al proceso
+            $process = $null
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
