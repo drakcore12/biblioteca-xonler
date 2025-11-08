@@ -316,8 +316,13 @@ pipeline {
                   
                   sleep(2)
                   
-                  // Iniciar servidor en background
-                  bat 'start /B npm start'
+                  // Iniciar servidor en background usando Start-Process de PowerShell
+                  // Cambiar al directorio del proyecto y ejecutar npm start
+                  powershell """
+                    \$ErrorActionPreference = 'Stop'
+                    Set-Location '${projectPath}'
+                    Start-Process powershell -ArgumentList '-NoExit', '-Command', 'npm start' -WindowStyle Hidden
+                  """
                 }
               }
               
@@ -351,9 +356,11 @@ pipeline {
                   timeout: 10000
                 ]
                 
+                // Escapar correctamente el path para PowerShell
+                def escapedPath = projectPath.replace('\\', '\\\\').replace('$', '`$')
                 sshCommand(
                   remote: sshConfig,
-                  command: "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { \\$_.Path -like '*${projectPath.replace('\\', '\\\\')}*' } | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
+                  command: "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { `$_.Path -like '*${escapedPath}*' } | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
                 )
                 
                 sleep(2)
@@ -425,8 +432,9 @@ pipeline {
             
             node(windowsNode) {
               dir(projectPath) {
+                // En Windows, usar node directamente con jest para evitar problemas con scripts bash
                 def testOutput = bat(
-                  script: 'npm run test:unit',
+                  script: 'node --enable-source-maps node_modules/jest/bin/jest.js',
                   returnStdout: true
                 )
                 
