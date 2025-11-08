@@ -67,12 +67,15 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             # Limpia log anterior
             Remove-Item -Path $log -Force -ErrorAction SilentlyContinue | Out-Null
             
-            # Lanza cloudflared en background (no bloquea el Pipeline)
+            # Lanza cloudflared en background usando redirección de PowerShell (no bloquea el Pipeline)
             Start-Process -FilePath $exe `
               -ArgumentList @("tunnel","--config","NUL","--no-autoupdate","--url","http://127.0.0.1:3000") `
               -WindowStyle Hidden `
               -RedirectStandardOutput $log `
-              -RedirectStandardError $log
+              -RedirectStandardError "$env:USERPROFILE\\cloudflared-error.log"
+            
+            # Espera un momento para que cloudflared inicie
+            Start-Sleep -Seconds 2
             
             # Espera y extrae la URL del quick tunnel
             $regex = "https://[a-z0-9-]+\\.trycloudflare\\.com"
