@@ -36,34 +36,30 @@ pipeline {
           echo "⏳ Esperando que el servidor inicie..."
           
           // Health check: esperar hasta que el servidor responda
-          bat '''
-            @echo off
-            setlocal enabledelayedexpansion
-            set maxAttempts=30
-            set attempt=0
-            set serverReady=0
+          powershell '''
+            $maxAttempts = 30
+            $attempt = 0
+            $serverReady = $false
             
-            :waitLoop
-            if !attempt! geq !maxAttempts! (
-              echo ❌ Servidor no respondio despues de !maxAttempts! intentos
-              exit /b 1
-            )
+            while ($attempt -lt $maxAttempts -and -not $serverReady) {
+              try {
+                $response = Invoke-WebRequest -Uri "http://127.0.0.1:3000" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
+                if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+                  Write-Host "✅ Servidor respondiendo en http://127.0.0.1:3000"
+                  $serverReady = $true
+                  break
+                }
+              } catch {
+                $attempt++
+                Write-Host "   Esperando servidor... ($attempt/$maxAttempts)"
+                Start-Sleep -Seconds 2
+              }
+            }
             
-            powershell -Command "try { $r=Invoke-WebRequest http://127.0.0.1:3000 -UseBasicParsing -TimeoutSec 2; if($r.StatusCode -ge 200 -and $r.StatusCode -lt 500){exit 0}else{exit 1} } catch { exit 1 }"
-            
-            if !errorlevel! equ 0 (
-              echo ✅ Servidor respondiendo en http://127.0.0.1:3000
-              set serverReady=1
-              goto :end
-            )
-            
-            set /a attempt+=1
-            echo    Esperando servidor... (!attempt!/!maxAttempts!)
-            timeout /t 2 /nobreak >nul
-            goto :waitLoop
-            
-            :end
-            if !serverReady! equ 0 exit /b 1
+            if (-not $serverReady) {
+              Write-Host "❌ Servidor no respondio despues de $maxAttempts intentos"
+              exit 1
+            }
           '''
 
           // Arrancar cloudflared en background
