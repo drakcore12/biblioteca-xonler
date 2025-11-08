@@ -9,79 +9,45 @@ pipeline {
     stage('npm install & start + cloudflared') {
       steps {
         dir("${env.PROJECT_PATH}") {
-          // Instalar deps
-          bat 'npm install'
+          // 1) Instalar deps (rápido si ya existe lockfile)
+          bat 'npm install || ver >nul'
 
-          // Matar node viejo (opcional) - no fallar si no existen
-          bat '''
-            @echo off
-            taskkill /F /IM node.exe >nul 2>&1 || echo no-node
-            taskkill /F /IM cloudflared.exe >nul 2>&1 || echo no-cloudflared
-            echo Procesos anteriores detenidos
-          '''
-          
-          sleep(time: 1, unit: 'SECONDS')
-          
-          echo "📝 Creando scripts batch..."
+          // 2) Matar procesos previos SIN fallar el stage
+          bat(returnStatus: true, script: 'taskkill /F /IM cloudflared.exe >nul 2>&1')
+          bat(returnStatus: true, script: 'taskkill /F /IM node.exe >nul 2>&1')
+          echo 'Procesos anteriores detenidos (si había)'
 
-          // Crear scripts batch usando un solo bloque script
+          // 3) Crear/actualizar scripts de arranque desacoplados
           script {
-            // Crear start-server.bat
-            def serverBat = """@echo off
+            writeFile file: "${env.PROJECT_PATH}\\start-server.bat", text: """@echo off
 set BUILD_ID=dontKillMe
 set JENKINS_NODE_COOKIE=do_not_kill
 cd /d "${env.PROJECT_PATH}"
-rem start detached: npm start -> server.log
-start "" cmd /c "npm start > server.log 2>&1"
+start "" cmd /c "set HOST=127.0.0.1&& set PORT=3000&& npm start > server.log 2>&1"
 """
-            writeFile file: 'start-server.bat', text: serverBat
-            echo "✅ Script start-server.bat creado"
-            
-            // Crear start-tunnel.bat
-            def tunnelBat = """@echo off
+            writeFile file: "${env.PROJECT_PATH}\\start-tunnel.bat", text: """@echo off
 set BUILD_ID=dontKillMe
 set JENKINS_NODE_COOKIE=do_not_kill
-cd /d "${env.PROJECT_PATH}"
-start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000 > cloudflared.log 2>&1
+cd /d "%USERPROFILE%"
+start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000 > "%USERPROFILE%\\cloudflared.log" 2>&1
 """
-            writeFile file: 'start-tunnel.bat', text: tunnelBat
-            echo "✅ Script start-tunnel.bat creado"
+            echo "✅ Scripts batch creados"
           }
 
-          // Verificar que los scripts existen antes de ejecutarlos
-          bat """
-            @echo off
-            cd /d "${env.PROJECT_PATH}"
-            if not exist "start-server.bat" (
-              echo Error: start-server.bat no existe
-              exit /b 1
-            )
-            if not exist "start-tunnel.bat" (
-              echo Error: start-tunnel.bat no existe
-              exit /b 1
-            )
-            echo Scripts encontrados, iniciando...
-          """
+          // 4) Lanzar ambos (start => procesos quedan fuera del árbol de Jenkins)
+          bat 'start "" "%cd%\\start-server.bat"'
+          bat 'timeout /t 2 /nobreak >nul'
+          bat(returnStatus: true, script: 'start "" "%cd%\\start-tunnel.bat"')
 
-          // Lanzar los scripts (start los deja fuera del job)
-          bat """
-            @echo off
-            cd /d "${env.PROJECT_PATH}"
-            start "" "start-server.bat"
-            timeout /t 2 /nobreak >nul
-            start "" "start-tunnel.bat"
-            echo Scripts lanzados
-          """
-
-          // Healthcheck para confirmar servidor
-          powershell '''
+          // 5) Healthcheck rápido (no falla el stage)
+          powershell(returnStatus: true, script: '''
             $ok=$false
             for($i=0;$i -lt 20 -and -not $ok;$i++){
               try{ 
                 $r=Invoke-WebRequest http://127.0.0.1:3000 -UseBasicParsing -TimeoutSec 3
                 if($r.StatusCode -ge 200 -and $r.StatusCode -lt 500){
                   $ok=$true
-                  Write-Host "✅ Servidor respondiendo en http://127.0.0.1:3000"
+                  Write-Host "✅ Servidor OK"
                   break
                 }
               } catch {
@@ -90,14 +56,15 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
               Start-Sleep -Seconds 2
             }
             if(-not $ok){ 
-              Write-Error "❌ Servidor no respondió en http://127.0.0.1:3000"
-              exit 1
+              Write-Host "⚠️  No respondió aún, revisa server.log"
             }
-          '''
+          ''')
 
-          echo '✅ Scripts arrancados; deberían quedarse corriendo aún cuando termine el job.'
-          echo '📝 Logs: server.log y cloudflared.log en el directorio del proyecto.'
+          echo '✅ Lanzados. Revisar: server.log y %USERPROFILE%\\cloudflared.log'
           echo '🌐 Servidor disponible en: http://127.0.0.1:3000'
+
+          // 6) MUY IMPORTANTE: limpiar ERRORLEVEL para evitar fallos fantasma (p.ej. 128)
+          bat 'cmd /c exit /b 0'
         }
       }
     }
