@@ -6,33 +6,6 @@ pipeline {
   }
 
   stages {
-    stage('Pruebas Unitarias (Jest)') {
-      steps {
-        dir("${env.PROJECT_PATH}") {
-          // Crear directorio para reportes
-          bat 'if not exist test-results mkdir test-results'
-          
-          // Ejecutar pruebas unitarias con cobertura
-          bat 'npm run test:unit || ver >nul'
-          
-          // Publicar reportes JUnit
-          junit 'test-results/junit.xml'
-          
-          // Publicar reporte de cobertura HTML
-          publishHTML([
-            reportDir: 'coverage/lcov-report',
-            reportFiles: 'index.html',
-            reportName: 'Cobertura de Código (Jest)',
-            keepAll: true,
-            alwaysLinkToLastBuild: true,
-            allowMissing: true
-          ])
-          
-          echo '✅ Pruebas unitarias completadas'
-        }
-      }
-    }
-    
     stage('npm install & start + cloudflared') {
       steps {
         dir("${env.PROJECT_PATH}") {
@@ -87,23 +60,98 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
+          // 6) Extraer URL del tunnel desde cloudflared.log
+          script {
+            def tunnelUrl = ''
+            powershell(returnStatus: true, script: '''
+              $logPath = "$env:USERPROFILE\\cloudflared.log"
+              if (Test-Path $logPath) {
+                $content = Get-Content $logPath -Raw
+                if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
+                  $tunnelUrl = $matches[0]
+                  Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl
+                  Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
+                } else {
+                  Write-Host "⚠️  No se encontró URL del tunnel en los logs"
+                }
+              } else {
+                Write-Host "⚠️  Log de cloudflared no encontrado, esperando..."
+                Start-Sleep -Seconds 5
+                # Intentar de nuevo
+                if (Test-Path $logPath) {
+                  $content = Get-Content $logPath -Raw
+                  if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
+                    $tunnelUrl = $matches[0]
+                    Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl
+                    Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
+                  }
+                }
+              }
+            ''')
+            
+            // Leer la URL del archivo
+            if (fileExists("tunnel-url.txt")) {
+              tunnelUrl = readFile("tunnel-url.txt").trim()
+              env.TUNNEL_URL = tunnelUrl
+              echo "🌐 URL del tunnel configurada: ${env.TUNNEL_URL}"
+            } else {
+              echo "⚠️  No se pudo extraer la URL del tunnel, usando localhost como fallback"
+              env.TUNNEL_URL = "http://127.0.0.1:3000"
+            }
+          }
+
           echo '✅ Lanzados. Revisar: server.log y %USERPROFILE%\\cloudflared.log'
-          echo '🌐 Servidor disponible en: http://127.0.0.1:3000'
+          echo '🌐 Servidor local: http://127.0.0.1:3000'
+          echo "🌐 Servidor público: ${env.TUNNEL_URL}"
 
           // 6) MUY IMPORTANTE: limpiar ERRORLEVEL para evitar fallos fantasma (p.ej. 128)
           bat 'cmd /c exit /b 0'
         }
       }
+      
     }
-    
+       stage('Pruebas Unitarias (Jest)') {
+      steps {
+        dir("${env.PROJECT_PATH}") {
+          // Crear directorio para reportes
+          bat 'if not exist test-results mkdir test-results'
+          
+          // Ejecutar pruebas unitarias con cobertura
+          bat 'npm run test:unit || ver >nul'
+          
+          // Publicar reportes JUnit
+          junit 'test-results/junit.xml'
+          
+          // Publicar reporte de cobertura HTML
+          publishHTML([
+            reportDir: 'coverage/lcov-report',
+            reportFiles: 'index.html',
+            reportName: 'Cobertura de Código (Jest)',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
+          
+          echo '✅ Pruebas unitarias completadas'
+        }
+      }
+    }
+
     stage('Pruebas E2E (Playwright)') {
       steps {
         dir("${env.PROJECT_PATH}") {
           // Esperar un poco más para que el servidor esté completamente listo
           powershell 'Start-Sleep -Seconds 5'
           
+          // Configurar BASE_URL para Playwright usando la URL del tunnel
+          script {
+            def baseUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
+            echo "🌐 Ejecutando pruebas E2E contra: ${baseUrl}"
+            env.BASE_URL = baseUrl
+          }
+          
           // Ejecutar pruebas E2E (no falla el stage si hay problemas)
-          bat(returnStatus: true, script: 'npm run test:e2e')
+          bat(returnStatus: true, script: "set BASE_URL=${env.BASE_URL} && npm run test:e2e")
           
           // Publicar reporte HTML de Playwright
           publishHTML([
@@ -125,6 +173,25 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
         dir("${env.PROJECT_PATH}") {
           // Verificar que Artillery esté instalado globalmente o localmente
           bat(returnStatus: true, script: 'where artillery >nul 2>&1 || npx artillery --version >nul 2>&1')
+          
+          // Actualizar artillery-config.yml con la URL del tunnel
+          script {
+            def targetUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
+            echo "🚀 Ejecutando pruebas de carga contra: ${targetUrl}"
+            
+            // Leer artillery-config.yml
+            def configContent = readFile('artillery-config.yml')
+            
+            // Reemplazar el target con la URL del tunnel
+            def updatedConfig = configContent.replaceAll(
+              /target:\s*"[^"]*"/,
+              "target: \"${targetUrl}\""
+            )
+            
+            // Escribir el archivo actualizado
+            writeFile file: 'artillery-config.yml', text: updatedConfig
+            echo "✅ artillery-config.yml actualizado con URL: ${targetUrl}"
+          }
           
           // Ejecutar pruebas de carga y generar reporte JSON
           bat(returnStatus: true, script: 'npx artillery run artillery-config.yml --output test-results/load-report.json')
