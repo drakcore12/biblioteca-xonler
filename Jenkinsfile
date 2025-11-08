@@ -133,21 +133,29 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           
           // Exporta la URL a una env var para usar en otros stages
           script {
+            def tunnelUrl = "http://127.0.0.1:3000"
             def tunnelUrlFile = "${env.PROJECT_PATH}\\tunnel-url.txt"
-            if (fileExists("tunnel-url.txt")) {
-              env.TUNNEL_URL = readFile("tunnel-url.txt").trim()
-              echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
-            } else {
+            
+            // Intentar leer desde la ruta relativa primero
+            try {
+              if (fileExists("tunnel-url.txt")) {
+                tunnelUrl = readFile("tunnel-url.txt").trim()
+                echo "🌐 TUNNEL_URL (relativa) = ${tunnelUrl}"
+              }
+            } catch (Exception e1) {
+              echo "⚠️  No se pudo leer desde ruta relativa: ${e1.message}"
               // Intentar leer desde la ruta absoluta
               try {
-                def content = readFile(tunnelUrlFile).trim()
-                env.TUNNEL_URL = content
-                echo "🌐 TUNNEL_URL (desde ruta absoluta) = ${env.TUNNEL_URL}"
-              } catch (Exception e) {
-                env.TUNNEL_URL = "http://127.0.0.1:3000"
-                echo "⚠️  No se pudo leer tunnel-url.txt, usando localhost como fallback"
+                tunnelUrl = readFile(tunnelUrlFile).trim()
+                echo "🌐 TUNNEL_URL (absoluta) = ${tunnelUrl}"
+              } catch (Exception e2) {
+                echo "⚠️  No se pudo leer desde ruta absoluta: ${e2.message}"
+                tunnelUrl = "http://127.0.0.1:3000"
               }
             }
+            
+            env.TUNNEL_URL = tunnelUrl
+            echo "🌐 TUNNEL_URL final = ${env.TUNNEL_URL}"
           }
 
           echo '✅ Lanzados. Revisar: server.log y %USERPROFILE%\\cloudflared.log'
