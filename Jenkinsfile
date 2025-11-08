@@ -59,9 +59,9 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1 + DNS check)
+            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1, robusto)
             powershell '''
-            $ErrorActionPreference = "Stop"
+            $ErrorActionPreference = "Continue"
             try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
             $WS = "$env:WORKSPACE"
@@ -70,61 +70,93 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             $stderrLog = Join-Path $WS "cloudflared-error.log"
             $tunnelFile = Join-Path $WS "tunnel-url.txt"
 
+            # limpiar logs previos
             Remove-Item -Path $stdoutLog,$stderrLog,$tunnelFile -Force -ErrorAction SilentlyContinue | Out-Null
 
-            # Lanzar cloudflared totalmente DETACHED redirigiendo a logs
+            # lanzar cloudflared DETACHED con cmd start (logs dentro de WORKSPACE)
             $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
             Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
 
-            Start-Sleep -Seconds 3
+            Start-Sleep -Seconds 2
 
             $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
             $found = $false
-            $maxTries = 60   # ~60s buscando la URL
+            $maxSeconds = 60
+            $pollInterval = 1
+            $tries = [int]([math]::Ceiling($maxSeconds / $pollInterval))
 
-            for ($i = 1; $i -le $maxTries -and -not $found; $i++) {
-              Start-Sleep -Seconds 1
-              $content = ""; if (Test-Path $stdoutLog) { try { $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue } catch {} }
-              $err     = ""; if (Test-Path $stderrLog) { try { $err     = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue } catch {} }
-              $text = $content + "`n" + $err
+            for ($i = 1; $i -le $tries -and -not $found; $i++) {
+                Start-Sleep -Seconds $pollInterval
 
-              if ($text -match $regex) {
-                $url = $matches[0]
-
-                # Extraer hostname para validación DNS
-                $hostname = $url -replace 'https?://', '' -replace '/.*', ''
-
-                # Esperar propagación DNS real (hasta 20s)
-                $dnsOk = $false
-                for ($j = 1; $j -le 20 -and -not $dnsOk; $j++) {
-                  try {
-                    $ns = (nslookup $hostname 2>&1) -join "`n"
-                    if ($ns -match 'Address:|Addresses:') { $dnsOk = $true; break }
-                  } catch {}
-                  Start-Sleep -Seconds 1
+                # Mostrar un tail pequeño para debugging cada 5 iteraciones
+                if (($i % 5) -eq 0) {
+                    Write-Host "---- tail $stdoutLog ----"
+                    if (Test-Path $stdoutLog) { try { Get-Content $stdoutLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ } } catch {} }
+                    Write-Host "---- tail $stderrLog ----"
+                    if (Test-Path $stderrLog) { try { Get-Content $stderrLog -Tail 30 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ } } catch {} }
                 }
 
-                if ($dnsOk) {
-                  Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
-                  Write-Host ("✅ URL del tunnel (DNS OK): {0}" -f $url)
-                } else {
-                  Write-Host "⚠️  DNS del tunnel no propagado; usando localhost"
-                  Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                # revisar si el proceso cloudflared sigue vivo (si no existe -> falló)
+                $proc = Get-Process -Name cloudflared -ErrorAction SilentlyContinue
+                if (-not $proc) {
+                    Write-Host "⚠️  cloudflared no se detecta como proceso en ejecución (probablemente falló)."
+                    if (Test-Path $stderrLog) {
+                        Write-Host "---- STDERR (cloudflared) ----"
+                        try { Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ } } catch {}
+                        Write-Host "---- FIN STDERR ----"
+                    }
+                    break
                 }
 
-                $found = $true
-                break
-              }
+                # leer ambos logs y buscar URL
+                $content = ""
+                if (Test-Path $stdoutLog) { try { $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue } catch {} }
+                $err = ""
+                if (Test-Path $stderrLog) { try { $err = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue } catch {} }
 
-              if (($i % 10) -eq 0) { Write-Host ("   Esperando URL del tunnel... ({0}/{1})" -f $i, $maxTries) }
+                $text = $content + "`n" + $err
+
+                if ($text -match $regex) {
+                    $url = $matches[0]
+                    
+                    # Extraer hostname para validación DNS
+                    $hostname = $url -replace 'https?://', '' -replace '/.*', ''
+                    
+                    # intentar validar DNS por unos segundos (5s)
+                    $dnsOk = $false
+                    for ($j = 1; $j -le 5; $j++) {
+                        try {
+                            $ns = (nslookup $hostname 2>&1) -join "`n"
+                            if ($ns -match 'Address:|Addresses:') { $dnsOk = $true; break }
+                        } catch {}
+                        Start-Sleep -Seconds 1
+                    }
+
+                    if ($dnsOk) {
+                        Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
+                        Write-Host ("✅ URL del tunnel encontrada y DNS OK: {0}" -f $url)
+                    } else {
+                        Write-Host "⚠️  URL encontrada pero DNS no responde aún. Usando fallback localhost."
+                        Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                    }
+
+                    $found = $true
+                    break
+                }
+
+                if (($i % 10) -eq 0) { Write-Host ("Esperando URL del tunnel... ({0}/{1})" -f $i, $tries) }
             }
 
             if (-not $found) {
-              Write-Host "⚠️  No se encontró la URL del tunnel; usando fallback localhost"
-              Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                if (-not (Test-Path $tunnelFile)) {
+                    Write-Host "⚠️  No se obtuvo URL del tunnel en tiempo; escribiendo fallback localhost."
+                    Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                }
             }
 
-            $finalUrl = ""; if (Test-Path $tunnelFile) { try { $finalUrl = (Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue).Trim() } catch {} }
+            # confirmación final
+            $finalUrl = ""
+            if (Test-Path $tunnelFile) { try { $finalUrl = (Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue).Trim() } catch {} }
             Write-Host ("📝 URL final guardada: {0}" -f $finalUrl)
 
             exit 0
