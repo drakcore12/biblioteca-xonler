@@ -276,13 +276,20 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             // Verificar si la URL es un túnel de Cloudflare y validar DNS
             if (targetUrl.contains('trycloudflare.com')) {
               echo "🔍 Validando resolución DNS para: ${targetUrl}"
-              def dnsOk = bat(returnStatus: true, script: """
-                @echo off
-                for /f "tokens=*" %%i in ('nslookup ${targetUrl.replace('https://', '').replace('http://', '').split('/')[0]} 2^>nul ^| find /i "Name:"') do (
-                  echo %%i
-                  exit /b 0
-                )
-                exit /b 1
+              def hostname = targetUrl.replace('https://', '').replace('http://', '').split('/')[0]
+              def dnsOk = powershell(returnStatus: true, script: """
+                try {
+                  \$result = [System.Net.Dns]::GetHostEntry('${hostname}')
+                  if (\$result.AddressList.Count -gt 0) {
+                    Write-Host 'DNS resuelto correctamente'
+                    exit 0
+                  } else {
+                    exit 1
+                  }
+                } catch {
+                  Write-Host 'Error al resolver DNS'
+                  exit 1
+                }
               """)
               
               if (dnsOk != 0) {
