@@ -59,57 +59,75 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-          // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente
-          powershell '''
-            $WS = "$env:WORKSPACE"
-            $exe = "$env:USERPROFILE\\cloudflared.exe"
-            $stdoutLog = Join-Path $WS 'cloudflared.log'
-            $stderrLog = Join-Path $WS 'cloudflared-error.log'
-            $tunnelFile = Join-Path $WS 'tunnel-url.txt'
+            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1 compatible)
+            powershell '''
+                $ErrorActionPreference = "Stop"
+                try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 
-            # Limpia logs anteriores
-            Remove-Item -Path $stdoutLog,$stderrLog -Force -ErrorAction SilentlyContinue | Out-Null
+                $WS = "$env:WORKSPACE"
+                $exe = "$env:USERPROFILE\\cloudflared.exe"
+                $stdoutLog = Join-Path $WS "cloudflared.log"
+                $stderrLog = Join-Path $WS "cloudflared-error.log"
+                $tunnelFile = Join-Path $WS "tunnel-url.txt"
 
-            # Lanza cloudflared totalmente DETACHED usando cmd.exe start (redirecciones manejadas por cmd)
-            $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
-            Start-Process -FilePath "cmd.exe" -ArgumentList "/c",$cmd -WindowStyle Hidden | Out-Null
+                # Limpiar archivos viejos
+                Remove-Item -Path $stdoutLog,$stderrLog,$tunnelFile -Force -ErrorAction SilentlyContinue | Out-Null
 
-            # Espera un momento para que cloudflared escriba algo
-            Start-Sleep -Seconds 2
+                # Lanzar cloudflared DETACHED (cmd start redirige la salida a los logs)
+                $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
+                Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
 
-            # Buscar la URL en los logs
-            $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
-            $found = $false
-            for ($i=0; $i -lt 30 -and -not $found; $i++) {
-            Start-Sleep -Seconds 1
-            $content = (Test-Path $stdoutLog) ? (Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) : ''
-            $errorContent = (Test-Path $stderrLog) ? (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue) : ''
-            $text = $content + "`n" + $errorContent
-            if ($text -match $regex) {
-                $url = $matches[0]
-                Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
-                Write-Host ""
-                Write-Host ("✅ URL del tunnel: {0}" -f $url)
-                $found = $true
-                break
-            }
-            if ($i % 5 -eq 0) { Write-Host ("   Esperando URL del tunnel... ({0}/30)" -f ($i+1)) }
-            }
+                # Espera inicial para que el proceso escriba algo
+                Start-Sleep -Seconds 2
 
-            if (-not $found) {
-            Write-Host "⚠️  No se encontró la URL del tunnel, usando localhost"
-            Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
-            }
+                # Buscar la URL en los logs
+                $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
+                $found = $false
 
-            # Mostrar confirmación con salto de línea real
-            $finalUrl = Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue
-            Write-Host ("📝 URL final guardada: {0}" -f $finalUrl.Trim())
+                for ($i = 0; $i -lt 30 -and -not $found; $i++) {
+                    Start-Sleep -Seconds 1
 
-            # Termina la ejecución de PowerShell con éxito
-            exit 0
+                    $content = ""
+                    if (Test-Path $stdoutLog) {
+                        try { $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue } catch {}
+                    }
 
-            Write-Host "✅ Script terminado correctamente"
-          '''
+                    $errorContent = ""
+                    if (Test-Path $stderrLog) {
+                        try { $errorContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue } catch {}
+                    }
+
+                    $text = ($content + "`n" + $errorContent)
+
+                    if ($text -match $regex) {
+                        $url = $matches[0]
+                        Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
+                        Write-Host ("URL del tunnel: {0}" -f $url)
+                        $found = $true
+                        break
+                    }
+
+                    if ((($i + 1) % 5) -eq 0) {
+                        Write-Host ("Esperando URL del tunnel... ({0}/30)" -f ($i + 1))
+                    }
+                }
+
+                if (-not $found) {
+                    Write-Host "No se encontró la URL del tunnel; usando fallback localhost"
+                    Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+                }
+
+                # Confirmación final
+                $finalUrl = ""
+                if (Test-Path $tunnelFile) {
+                    try { $finalUrl = (Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue).Trim() } catch {}
+                }
+                Write-Host ("URL final guardada: {0}" -f $finalUrl)
+
+                # Salir con éxito para que Jenkins continúe
+                exit 0
+            '''
+
 
           // Exportar TUNNEL_URL al entorno para las siguientes stages
           script {
