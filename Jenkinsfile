@@ -120,6 +120,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             
             # Asegurar que el script termine correctamente
             exit 0
+            Write-Host "✅ Script terminado correctamente"
           '''
           
           // Exportar TUNNEL_URL al entorno para las siguientes stages
