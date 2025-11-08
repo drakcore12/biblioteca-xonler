@@ -131,17 +131,37 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
           // Exportar TUNNEL_URL al entorno para las siguientes stages
           script {
+            // Limpiar cualquier valor previo de TUNNEL_URL
+            env.TUNNEL_URL = null
+            
             // Leer desde WORKSPACE donde se guardó el archivo
             def tunnelFile = "${env.WORKSPACE}\\tunnel-url.txt"
             def url = "http://127.0.0.1:3000" // fallback por defecto
+            
             if (fileExists(tunnelFile)) {
-              url = readFile(tunnelFile).trim()
+              try {
+                url = readFile(tunnelFile).trim()
+                echo "📖 Leído desde ${tunnelFile}: ${url}"
+              } catch (Exception e) {
+                echo "⚠️  Error al leer ${tunnelFile}: ${e.message}, usando fallback"
+                url = "http://127.0.0.1:3000"
+              }
             } else {
-              echo "⚠️  tunnel-url.txt no encontrado en WORKSPACE, usando localhost"
+              echo "⚠️  ${tunnelFile} no encontrado, usando fallback localhost"
+              // Intentar leer desde el directorio actual también (por si acaso)
+              if (fileExists('tunnel-url.txt')) {
+                try {
+                  url = readFile('tunnel-url.txt').trim()
+                  echo "📖 Leído desde directorio actual: ${url}"
+                } catch (Exception e) {
+                  echo "⚠️  Error al leer tunnel-url.txt del directorio actual: ${e.message}"
+                }
+              }
             }
-            // Limpiar cualquier valor previo de TUNNEL_URL
+            
+            // Establecer la variable de entorno
             env.TUNNEL_URL = url
-            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+            echo "🌐 TUNNEL_URL establecido = ${env.TUNNEL_URL}"
           }
 
           echo '✅ Lanzados. Revisar: server.log y ${WORKSPACE}\\cloudflared.log'
@@ -206,11 +226,6 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
     stage('Pruebas E2E (Playwright)') {
       steps {
         dir("${env.PROJECT_PATH}") {
-          // Establecer CI=true para deshabilitar webServer de Playwright
-          script {
-            env.CI = 'true'
-          }
-          
           // Esperar un poco más para que el servidor esté completamente listo
           powershell 'Start-Sleep -Seconds 5'
           
@@ -274,43 +289,15 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           // Verificar que Artillery esté instalado globalmente o localmente
           bat(returnStatus: true, script: 'where artillery >nul 2>&1 || npx artillery --version >nul 2>&1')
           
-          // Validar y actualizar artillery-config.yml con la URL del tunnel
+          // Actualizar artillery-config.yml con la URL del tunnel
           script {
             def targetUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
-            
-            // Verificar si la URL es un túnel de Cloudflare y validar DNS
-            if (targetUrl.contains('trycloudflare.com')) {
-              echo "🔍 Validando resolución DNS para: ${targetUrl}"
-              def hostname = targetUrl.replace('https://', '').replace('http://', '').split('/')[0]
-              def dnsOk = powershell(returnStatus: true, script: """
-                try {
-                  \$result = [System.Net.Dns]::GetHostEntry('${hostname}')
-                  if (\$result.AddressList.Count -gt 0) {
-                    Write-Host 'DNS resuelto correctamente'
-                    exit 0
-                  } else {
-                    exit 1
-                  }
-                } catch {
-                  Write-Host 'Error al resolver DNS'
-                  exit 1
-                }
-              """)
-              
-              if (dnsOk != 0) {
-                echo "⚠️  No se pudo resolver DNS para ${targetUrl}, usando localhost como fallback"
-                targetUrl = "http://127.0.0.1:3000"
-              } else {
-                echo "✅ DNS resuelto correctamente para ${targetUrl}"
-              }
-            }
-            
             echo "🚀 Ejecutando pruebas de carga contra: ${targetUrl}"
             
             // Leer artillery-config.yml
             def configContent = readFile('artillery-config.yml')
             
-            // Reemplazar el target con la URL validada
+            // Reemplazar el target con la URL del tunnel
             def updatedConfig = configContent.replaceAll(
               ~/target:\s*"[^"]*"/,
               "target: \"${targetUrl}\""
