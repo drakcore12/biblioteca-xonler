@@ -134,34 +134,16 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           '''
           
-          // Exporta la URL a una env var para usar en otros stages (leer directamente desde PowerShell)
-          powershell '''
-            $tunnelUrlFile = ".\\tunnel-url.txt"
-            if (Test-Path $tunnelUrlFile) {
-              $url = Get-Content $tunnelUrlFile -Raw -ErrorAction SilentlyContinue
-              if ($url) {
-                $url = $url.Trim()
-                Write-Host "🌐 TUNNEL_URL = $url"
-                # Guardar en variable de entorno de Jenkins usando archivo temporal
-                Set-Content -Path ".\\tunnel-url-env.txt" -Value $url
-              } else {
-                Write-Host "⚠️  Archivo vacío, usando localhost"
-                Set-Content -Path ".\\tunnel-url-env.txt" -Value "http://127.0.0.1:3000"
-              }
-            } else {
-              Write-Host "⚠️  Archivo no encontrado, usando localhost"
-              Set-Content -Path ".\\tunnel-url-env.txt" -Value "http://127.0.0.1:3000"
-            }
-          '''
-          
-          // Leer la URL desde el archivo generado por PowerShell
+          // Leer la URL directamente desde el archivo (sin bloqueos)
           script {
             def tunnelUrl = "http://127.0.0.1:3000"
+            // Leer directamente desde tunnel-url.txt que ya fue creado por PowerShell
             try {
-              if (fileExists("tunnel-url-env.txt")) {
-                tunnelUrl = readFile("tunnel-url-env.txt").trim()
-              } else if (fileExists("tunnel-url.txt")) {
+              if (fileExists("tunnel-url.txt")) {
                 tunnelUrl = readFile("tunnel-url.txt").trim()
+                echo "🌐 TUNNEL_URL leída = ${tunnelUrl}"
+              } else {
+                echo "⚠️  tunnel-url.txt no existe, usando localhost"
               }
             } catch (Exception e) {
               echo "⚠️  Error leyendo URL: ${e.message}, usando localhost"
