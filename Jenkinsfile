@@ -19,6 +19,10 @@ pipeline {
             taskkill /F /IM cloudflared.exe >nul 2>&1 || echo no-cloudflared
             echo Procesos anteriores detenidos
           '''
+          
+          sleep(time: 1, unit: 'SECONDS')
+          
+          echo "📝 Creando scripts batch..."
 
           // Crear start-server.bat (seteando BUILD_ID para evitar el ProcessTreeKiller)
           script {
