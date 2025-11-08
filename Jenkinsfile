@@ -36,7 +36,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
           // 4) Lanzar ambos (start => procesos quedan fuera del árbol de Jenkins)
           bat 'start "" "%cd%\\start-server.bat"'
-          bat 'timeout /t 2 /nobreak >nul'
+          powershell 'Start-Sleep -Seconds 2'
           bat(returnStatus: true, script: 'start "" "%cd%\\start-tunnel.bat"')
 
           // 5) Healthcheck rápido (no falla el stage)
