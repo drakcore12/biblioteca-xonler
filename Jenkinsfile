@@ -206,6 +206,11 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
     stage('Pruebas E2E (Playwright)') {
       steps {
         dir("${env.PROJECT_PATH}") {
+          // Establecer CI=true para deshabilitar webServer de Playwright
+          script {
+            env.CI = 'true'
+          }
+          
           // Esperar un poco más para que el servidor esté completamente listo
           powershell 'Start-Sleep -Seconds 5'
           
