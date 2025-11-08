@@ -115,6 +115,11 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
               Write-Host "   Usando localhost como fallback"
               Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
             }
+            
+            # Asegurar que el archivo existe antes de continuar
+            if (-not (Test-Path ".\\tunnel-url.txt")) {
+              Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
+            }
           '''
           
           // Exporta la URL a una env var para usar en otros stages
