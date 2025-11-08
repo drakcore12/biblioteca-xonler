@@ -77,17 +77,30 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             # Espera un momento para que cloudflared inicie
             Start-Sleep -Seconds 2
             
-            # Espera y extrae la URL del quick tunnel
+            # Espera y extrae la URL del quick tunnel (busca en ambos logs)
             $regex = "https://[a-z0-9-]+\\.trycloudflare\\.com"
+            $errorLog = "$env:USERPROFILE\\cloudflared-error.log"
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
               Start-Sleep -Seconds 1
+              # Buscar en stdout
               if (Test-Path $log) {
                 $content = Get-Content $log -Raw -ErrorAction SilentlyContinue
                 if ($content -and $content -match $regex) {
                   $url = $matches[0]
                   Set-Content -Path ".\\tunnel-url.txt" -Value $url
                   Write-Host "✅ URL del tunnel: $url"
+                  $found = $true
+                  break
+                }
+              }
+              # También buscar en stderr (por si acaso)
+              if (-not $found -and (Test-Path $errorLog)) {
+                $errorContent = Get-Content $errorLog -Raw -ErrorAction SilentlyContinue
+                if ($errorContent -and $errorContent -match $regex) {
+                  $url = $matches[0]
+                  Set-Content -Path ".\\tunnel-url.txt" -Value $url
+                  Write-Host "✅ URL del tunnel (desde stderr): $url"
                   $found = $true
                   break
                 }
