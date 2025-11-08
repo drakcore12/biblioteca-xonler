@@ -17,11 +17,17 @@ pipeline {
           
           sleep(time: 2, unit: 'SECONDS')
 
-          // Arrancar la app en background de forma completamente independiente usando wmic (no se cierra al terminar el pipeline)
+          // Crear script batch temporal para iniciar el servidor de forma independiente
+          writeFile file: "${env.PROJECT_PATH}/start-server.bat", text: """@echo off
+cd /d "${env.PROJECT_PATH}"
+npm start > server.log 2>&1
+"""
+          
+          // Arrancar la app en background de forma completamente independiente
           bat '''
             @echo off
             cd /d "${env:PROJECT_PATH}"
-            wmic process call create "cmd.exe /c npm start > server.log 2>&1" >nul 2>&1
+            start "" "%~dp0start-server.bat"
           '''
 
           echo "⏳ Esperando que el servidor inicie..."
