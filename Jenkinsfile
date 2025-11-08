@@ -358,18 +358,17 @@ pipeline {
                   timeout: 10000
                 ]
                 
-                // Escapar correctamente el path para PowerShell
-                def escapedPath = projectPath.replace('\\', '\\\\').replace('$', '`$')
+                // Detener procesos Node.js anteriores
                 sshCommand(
                   remote: sshConfig,
-                  command: "powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { `$_.Path -like '*${escapedPath}*' } | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
+                  command: "taskkill /F /IM node.exe 2>nul || echo NO_PROCESS"
                 )
                 
                 sleep(2)
                 
                 sshCommand(
                   remote: sshConfig,
-                  command: "cd '${projectPath}' && Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden"
+                  command: "cd /d \"${projectPath}\" && start /B cmd /c \"npm start > server.log 2>&1\""
                 )
                 
                 sleep(10)
