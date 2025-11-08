@@ -139,22 +139,23 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             exit 0
           '''
           
-          // Leer la URL directamente desde el archivo (sin bloqueos)
-          script {
-            def tunnelUrl = "http://127.0.0.1:3000"
-            // Leer directamente desde tunnel-url.txt que ya fue creado por PowerShell
-            try {
-              if (fileExists("tunnel-url.txt")) {
-                tunnelUrl = readFile("tunnel-url.txt").trim()
-                echo "🌐 TUNNEL_URL leída = ${tunnelUrl}"
+          // Leer la URL usando PowerShell (más rápido y confiable)
+          def tunnelUrlOutput = powershell(returnStdout: true, script: '''
+            if (Test-Path ".\\tunnel-url.txt") {
+              $url = Get-Content ".\\tunnel-url.txt" -Raw -ErrorAction SilentlyContinue
+              if ($url) {
+                $url.Trim()
               } else {
-                echo "⚠️  tunnel-url.txt no existe, usando localhost"
+                "http://127.0.0.1:3000"
               }
-            } catch (Exception e) {
-              echo "⚠️  Error leyendo URL: ${e.message}, usando localhost"
+            } else {
+              "http://127.0.0.1:3000"
             }
-            env.TUNNEL_URL = tunnelUrl
-            echo "🌐 TUNNEL_URL final = ${env.TUNNEL_URL}"
+          ''').trim()
+          
+          script {
+            env.TUNNEL_URL = tunnelUrlOutput ?: "http://127.0.0.1:3000"
+            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
           }
 
           echo '✅ Lanzados. Revisar: server.log y %USERPROFILE%\\cloudflared.log'
