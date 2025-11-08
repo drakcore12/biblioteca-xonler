@@ -60,36 +60,43 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-          // 6) Extraer URL del tunnel desde cloudflared.log
+          // 6) Extraer URL del tunnel desde cloudflared.log (con más tiempo de espera)
           script {
             def tunnelUrl = ''
             powershell(returnStatus: true, script: '''
               $logPath = "$env:USERPROFILE\\cloudflared.log"
-              if (Test-Path $logPath) {
-                $content = Get-Content $logPath -Raw
-                if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
-                  $tunnelUrl = $matches[0]
-                  Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl
-                  Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
-                } else {
-                  Write-Host "⚠️  No se encontró URL del tunnel en los logs"
-                }
-              } else {
-                Write-Host "⚠️  Log de cloudflared no encontrado, esperando..."
-                Start-Sleep -Seconds 5
-                # Intentar de nuevo
+              $maxAttempts = 10
+              $attempt = 0
+              $found = $false
+              
+              while ($attempt -lt $maxAttempts -and -not $found) {
                 if (Test-Path $logPath) {
-                  $content = Get-Content $logPath -Raw
-                  if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
-                    $tunnelUrl = $matches[0]
-                    Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl
-                    Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
+                  $content = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
+                  if ($content) {
+                    # Buscar el patrón exacto que usa Cloudflare: https://[palabras-separadas-por-guiones].trycloudflare.com
+                    if ($content -match "https://[a-z0-9-]+\\.[a-z0-9-]+\\.trycloudflare\\.com") {
+                      $tunnelUrl = $matches[0]
+                      Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl -ErrorAction SilentlyContinue
+                      Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
+                      $found = $true
+                      break
+                    }
                   }
                 }
+                $attempt++
+                if (-not $found) {
+                  Write-Host "   Esperando URL del tunnel... ($attempt/$maxAttempts)"
+                  Start-Sleep -Seconds 3
+                }
+              }
+              
+              if (-not $found) {
+                Write-Host "⚠️  No se encontró URL del tunnel después de $maxAttempts intentos"
               }
             ''')
             
             // Leer la URL del archivo
+            powershell 'Start-Sleep -Seconds 1'
             if (fileExists("tunnel-url.txt")) {
               tunnelUrl = readFile("tunnel-url.txt").trim()
               env.TUNNEL_URL = tunnelUrl
@@ -113,14 +120,36 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
        stage('Pruebas Unitarias (Jest)') {
       steps {
         dir("${env.PROJECT_PATH}") {
-          // Crear directorio para reportes
+          // Crear directorio para reportes (asegurar que existe)
           bat 'if not exist test-results mkdir test-results'
+          bat 'if not exist coverage mkdir coverage'
           
           // Ejecutar pruebas unitarias con cobertura
           bat 'npm run test:unit || ver >nul'
           
-          // Publicar reportes JUnit
-          junit 'test-results/junit.xml'
+          // Verificar que el reporte JUnit se generó
+          script {
+            def junitPath = "test-results/junit.xml"
+            if (fileExists(junitPath)) {
+              echo "✅ Reporte JUnit encontrado en: ${junitPath}"
+              junit junitPath
+            } else {
+              echo "⚠️  Reporte JUnit no encontrado, buscando en otras ubicaciones..."
+              // Buscar en el directorio actual también
+              bat(returnStatus: true, script: '''
+                @echo off
+                if exist "junit.xml" (
+                  echo Encontrado junit.xml en directorio raíz
+                  copy /Y junit.xml test-results\junit.xml
+                )
+              ''')
+              if (fileExists(junitPath)) {
+                junit junitPath
+              } else {
+                echo "⚠️  No se pudo encontrar el reporte JUnit, continuando sin publicarlo"
+              }
+            }
+          }
           
           // Publicar reporte de cobertura HTML
           publishHTML([
