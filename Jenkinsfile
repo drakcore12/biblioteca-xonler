@@ -297,6 +297,33 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           // Verificar que Artillery esté instalado globalmente o localmente
           bat(returnStatus: true, script: 'where artillery >nul 2>&1 || npx artillery --version >nul 2>&1')
           
+          // Validar DNS del túnel antes de Artillery (si no resuelve, usar localhost)
+          powershell(returnStatus: true, script: '''
+            $u = $env:TUNNEL_URL
+            if (-not $u -or $u.StartsWith("http://127.0.0.1")) { exit 0 }
+            
+            # Extraer hostname
+            $hostname = $u -replace 'https?://', '' -replace '/.*', ''
+            
+            $ok = $false
+            for($i=1;$i -le 20 -and -not $ok;$i++){
+              try {
+                $ns = (nslookup $hostname 2>&1) -join "`n"
+                if ($ns -match 'Address:|Addresses:') { 
+                  $ok = $true
+                  Write-Host "✅ DNS del túnel resuelve correctamente"
+                  break 
+                }
+              } catch {}
+              Start-Sleep -Seconds 1
+            }
+            
+            if (-not $ok) {
+              Write-Host "⚠️  DNS del túnel no resuelve aún; usando localhost para Artillery"
+              [System.Environment]::SetEnvironmentVariable("TUNNEL_URL","http://127.0.0.1:3000","Process")
+            }
+          ''')
+          
           // Actualizar artillery-config.yml con la URL del tunnel
           script {
             def targetUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
