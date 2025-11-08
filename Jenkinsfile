@@ -24,8 +24,9 @@ pipeline {
           
           echo "📝 Creando scripts batch..."
 
-          // Crear start-server.bat (seteando BUILD_ID para evitar el ProcessTreeKiller)
+          // Crear scripts batch usando un solo bloque script
           script {
+            // Crear start-server.bat
             def serverBat = """@echo off
 set BUILD_ID=dontKillMe
 set JENKINS_NODE_COOKIE=do_not_kill
@@ -35,10 +36,8 @@ start "" cmd /c "npm start > server.log 2>&1"
 """
             writeFile file: 'start-server.bat', text: serverBat
             echo "✅ Script start-server.bat creado"
-          }
-
-          // Crear start-tunnel.bat
-          script {
+            
+            // Crear start-tunnel.bat
             def tunnelBat = """@echo off
 set BUILD_ID=dontKillMe
 set JENKINS_NODE_COOKIE=do_not_kill
