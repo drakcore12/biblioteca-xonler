@@ -316,14 +316,15 @@ pipeline {
                   
                   sleep(2)
                   
-                  // Iniciar servidor en background usando Start-Process
-                  // Usar comando simple que funcione en Windows
-                  def escapedPath = projectPath.replace('\\', '\\\\')
-                  powershell """
-                    \$ErrorActionPreference = 'Continue'
-                    Set-Location '${escapedPath}'
-                    Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoExit', '-Command', 'cd ''${escapedPath}''; npm start' -WindowStyle Hidden
+                  // Iniciar servidor usando bat con start para ejecutar en background
+                  // Usar cmd /c start para iniciar el proceso en una nueva ventana oculta
+                  bat """
+                    @echo off
+                    cd /d "${projectPath}"
+                    start /B cmd /c "npm start > server.log 2>&1"
                   """
+                  
+                  echo "⏳ Servidor iniciado en background, esperando..."
                 }
               }
               
