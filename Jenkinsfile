@@ -59,7 +59,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1 compatible)
+            // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente (PS 5.1 + DNS check)
             powershell '''
             $ErrorActionPreference = "Stop"
             try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
@@ -70,61 +70,63 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             $stderrLog = Join-Path $WS "cloudflared-error.log"
             $tunnelFile = Join-Path $WS "tunnel-url.txt"
 
-            # Limpiar archivos viejos
             Remove-Item -Path $stdoutLog,$stderrLog,$tunnelFile -Force -ErrorAction SilentlyContinue | Out-Null
 
-            # Lanzar cloudflared DETACHED (cmd start redirige la salida a los logs)
+            # Lanzar cloudflared totalmente DETACHED redirigiendo a logs
             $cmd = "start \"\" `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$stdoutLog`" 2> `"$stderrLog`""
             Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
 
-            # Espera inicial para que el proceso escriba algo
-            Start-Sleep -Seconds 2
+            Start-Sleep -Seconds 3
 
-            # Buscar la URL en los logs
             $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
             $found = $false
+            $maxTries = 60   # ~60s buscando la URL
 
-            for ($i = 0; $i -lt 30 -and -not $found; $i++) {
-                Start-Sleep -Seconds 1
+            for ($i = 1; $i -le $maxTries -and -not $found; $i++) {
+              Start-Sleep -Seconds 1
+              $content = ""; if (Test-Path $stdoutLog) { try { $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue } catch {} }
+              $err     = ""; if (Test-Path $stderrLog) { try { $err     = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue } catch {} }
+              $text = $content + "`n" + $err
 
-                $content = ""
-                if (Test-Path $stdoutLog) {
-                    try { $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue } catch {}
+              if ($text -match $regex) {
+                $url = $matches[0]
+
+                # Extraer hostname para validación DNS
+                $hostname = $url -replace 'https?://', '' -replace '/.*', ''
+
+                # Esperar propagación DNS real (hasta 20s)
+                $dnsOk = $false
+                for ($j = 1; $j -le 20 -and -not $dnsOk; $j++) {
+                  try {
+                    $ns = (nslookup $hostname 2>&1) -join "`n"
+                    if ($ns -match 'Address:|Addresses:') { $dnsOk = $true; break }
+                  } catch {}
+                  Start-Sleep -Seconds 1
                 }
 
-                $errorContent = ""
-                if (Test-Path $stderrLog) {
-                    try { $errorContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue } catch {}
+                if ($dnsOk) {
+                  Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
+                  Write-Host ("✅ URL del tunnel (DNS OK): {0}" -f $url)
+                } else {
+                  Write-Host "⚠️  DNS del tunnel no propagado; usando localhost"
+                  Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
                 }
 
-                $text = ($content + "`n" + $errorContent)
+                $found = $true
+                break
+              }
 
-                if ($text -match $regex) {
-                    $url = $matches[0]
-                    Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
-                    Write-Host ("URL del tunnel: {0}" -f $url)
-                    $found = $true
-                    break
-                }
-
-                if ((($i + 1) % 5) -eq 0) {
-                    Write-Host ("Esperando URL del tunnel... ({0}/30)" -f ($i + 1))
-                }
+              if (($i % 10) -eq 0) { Write-Host ("   Esperando URL del tunnel... ({0}/{1})" -f $i, $maxTries) }
             }
 
             if (-not $found) {
-                Write-Host "No se encontró la URL del tunnel; usando fallback localhost"
-                Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
+              Write-Host "⚠️  No se encontró la URL del tunnel; usando fallback localhost"
+              Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
             }
 
-            # Confirmación final
-            $finalUrl = ""
-            if (Test-Path $tunnelFile) {
-                try { $finalUrl = (Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue).Trim() } catch {}
-            }
-            Write-Host ("URL final guardada: {0}" -f $finalUrl)
+            $finalUrl = ""; if (Test-Path $tunnelFile) { try { $finalUrl = (Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue).Trim() } catch {} }
+            Write-Host ("📝 URL final guardada: {0}" -f $finalUrl)
 
-            # Salir con éxito para que Jenkins continúe
             exit 0
             '''
 
@@ -227,6 +229,11 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
     stage('Pruebas E2E (Playwright)') {
       steps {
         dir("${env.PROJECT_PATH}") {
+          // Establecer CI=true para evitar que Playwright levante su propio servidor
+          script {
+            env.CI = 'true'
+          }
+          
           // Esperar un poco más para que el servidor esté completamente listo
           powershell 'Start-Sleep -Seconds 5'
           
@@ -266,7 +273,7 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           
           // Ejecutar pruebas E2E (no falla el stage si hay problemas) con timeout
           timeout(time: 5, unit: 'MINUTES') {
-            bat(returnStatus: true, script: "set BASE_URL=${env.BASE_URL} && npm run test:e2e")
+            bat(returnStatus: true, script: "set BASE_URL=${env.BASE_URL} && set CI=true && npm run test:e2e")
           }
           
           // Publicar reporte HTML de Playwright

@@ -57,11 +57,16 @@ module.exports = defineConfig({
   ],
 
   /* Ejecutar servidor de desarrollo local antes de los tests */
-  /* Deshabilitar webServer en CI ya que el servidor se inicia externamente */
-  webServer: process.env.CI || process.env.BASE_URL ? undefined : {
+  /* En CI, reutilizamos el servidor que Jenkins ya arrancó */
+  webServer: process.env.CI ? {
+    command: 'node -e "console.log(\'reuse\')"', // Comando inofensivo en CI
+    url: process.env.BASE_URL || 'http://127.0.0.1:3000',
+    reuseExistingServer: true,  // Clave: no intenta arrancar si ya existe
+    timeout: 60 * 1000,
+  } : {
     command: 'npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120 * 1000,
   },
 });
