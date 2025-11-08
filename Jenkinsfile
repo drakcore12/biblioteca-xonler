@@ -61,85 +61,67 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
           // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente
           powershell '''
+            $WS = "$env:WORKSPACE"
             $exe = "$env:USERPROFILE\\cloudflared.exe"
-            $log = "$env:USERPROFILE\\cloudflared.log"
+            $stdoutLog = Join-Path $WS 'cloudflared.log'
+            $stderrLog = Join-Path $WS 'cloudflared-error.log'
+            $tunnelFile = Join-Path $WS 'tunnel-url.txt'
             
-            # Limpia log anterior
-            Remove-Item -Path $log -Force -ErrorAction SilentlyContinue | Out-Null
+            # Limpia logs anteriores
+            Remove-Item -Path $stdoutLog,$stderrLog -Force -ErrorAction SilentlyContinue | Out-Null
             
             # Lanza cloudflared en background usando redirección de PowerShell (no bloquea el Pipeline)
             Start-Process -FilePath $exe `
               -ArgumentList @("tunnel","--config","NUL","--no-autoupdate","--url","http://127.0.0.1:3000") `
               -WindowStyle Hidden `
-              -RedirectStandardOutput $log `
-              -RedirectStandardError "$env:USERPROFILE\\cloudflared-error.log"
+              -RedirectStandardOutput $stdoutLog `
+              -RedirectStandardError $stderrLog
             
             # Espera un momento para que cloudflared inicie
             Start-Sleep -Seconds 2
             
             # Espera y extrae la URL del quick tunnel (busca en ambos logs)
-            $regex = "https://[a-z0-9-]+\\.trycloudflare\\.com"
-            $errorLog = "$env:USERPROFILE\\cloudflared-error.log"
+            $regex = "https://[a-z0-9-]+\.trycloudflare\.com"
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
               Start-Sleep -Seconds 1
-              # Buscar en stdout
-              if (Test-Path $log) {
-                $content = Get-Content $log -Raw -ErrorAction SilentlyContinue
-                if ($content) {
-                  $matchResult = $content -match $regex
-                  if ($matchResult -and $matches -and $matches.Count -gt 0) {
-                    $url = $matches[0]
-                    Set-Content -Path ".\\tunnel-url.txt" -Value $url
-                    Write-Host "✅ URL del tunnel: $url"
-                    $found = $true
-                    break
-                  }
-                }
+              $content = (Test-Path $stdoutLog) ? (Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) : ''
+              $errorContent = (Test-Path $stderrLog) ? (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue) : ''
+              $text = $content + "`n" + $errorContent
+              if ($text -match $regex) {
+                $url = $matches[0]
+                Set-Content -Path $tunnelFile -Value ($url + "`r`n") -Encoding UTF8
+                Write-Host ""
+                Write-Host "✅ URL del tunnel: $url"
+                $found = $true
+                break
               }
-              # También buscar en stderr (por si acaso)
-              if (-not $found -and (Test-Path $errorLog)) {
-                $errorContent = Get-Content $errorLog -Raw -ErrorAction SilentlyContinue
-                if ($errorContent) {
-                  $matchResult = $errorContent -match $regex
-                  if ($matchResult -and $matches -and $matches.Count -gt 0) {
-                    $url = $matches[0]
-                    Set-Content -Path ".\\tunnel-url.txt" -Value $url
-                    Write-Host "✅ URL del tunnel (desde stderr): $url"
-                    $found = $true
-                    break
-                  }
-                }
-              }
-              if (-not $found -and ($i % 5 -eq 0)) {
-                Write-Host "   Esperando URL del tunnel... ($($i+1)/30)"
+              if ($i % 5 -eq 0) {
+                Write-Host ("   Esperando URL del tunnel... ({0}/30)" -f ($i+1))
               }
             }
             
             if (-not $found) {
-              Write-Host "⚠️  No se encontró la URL del tunnel en el log (revisa $log)."
-              Write-Host "   Usando localhost como fallback"
-              Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
+              Write-Host "⚠️  No se encontró la URL del tunnel, usando localhost"
+              Set-Content -Path $tunnelFile -Value ("http://127.0.0.1:3000`r`n") -Encoding UTF8
             }
             
-            # Asegurar que el archivo existe antes de continuar
-            if (-not (Test-Path ".\\tunnel-url.txt")) {
-              Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
-            }
-            
-            # Verificar y mostrar el contenido final
-            if (Test-Path ".\\tunnel-url.txt") {
-              $finalUrl = Get-Content ".\\tunnel-url.txt" -Raw -ErrorAction SilentlyContinue
-              if ($finalUrl) {
-                Write-Host "📝 URL final guardada: $($finalUrl.Trim())"
-              }
-            }
+            # Mostrar confirmación con salto de línea "real"
+            $finalUrl = Get-Content $tunnelFile -Raw -ErrorAction SilentlyContinue
+            Write-Host ("📝 URL final guardada: {0}" -f $finalUrl.Trim())
             
             # Asegurar que el script termine correctamente
             exit 0
-          '''        
+          '''
+          
+          // Exportar TUNNEL_URL al entorno para las siguientes stages
+          script {
+            def url = readFile('tunnel-url.txt').trim()
+            env.TUNNEL_URL = url
+            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+          }
 
-          echo '✅ Lanzados. Revisar: server.log y %USERPROFILE%\\cloudflared.log'
+          echo '✅ Lanzados. Revisar: server.log y ${WORKSPACE}\\cloudflared.log'
           echo '🌐 Servidor local: http://127.0.0.1:3000'
           echo "🌐 Servidor público: ${env.TUNNEL_URL}"
 
@@ -204,15 +186,44 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           // Esperar un poco más para que el servidor esté completamente listo
           powershell 'Start-Sleep -Seconds 5'
           
+          // Healthcheck del túnel público antes de E2E
+          powershell(returnStatus: true, script: '''
+            $u = $env:TUNNEL_URL
+            if (-not $u) { $u = "http://127.0.0.1:3000" }
+            $ok=$false
+            for($i=0;$i -lt 10 -and -not $ok;$i++){
+              try{
+                $r=Invoke-WebRequest $u -UseBasicParsing -TimeoutSec 3
+                if($r.StatusCode -ge 200 -and $r.StatusCode -lt 500){ 
+                  $ok=$true
+                  Write-Host "✅ Túnel OK"
+                  break
+                }
+              } catch { 
+                Write-Host "   Esperando túnel... ($($i+1)/10)"
+              }
+              Start-Sleep -Seconds 2
+            }
+            if(-not $ok){ 
+              Write-Host "⚠️  Túnel no responde aún (seguimos con localhost como fallback)"
+            }
+          ''')
+          
           // Configurar BASE_URL para Playwright usando la URL del tunnel
           script {
-            def baseUrl = env.TUNNEL_URL ?: "http://127.0.0.1:3000"
-            echo "🌐 Ejecutando pruebas E2E contra: ${baseUrl}"
+            def baseUrl = env.TUNNEL_URL?.trim()
+            if (!baseUrl || baseUrl.startsWith('http://127.0.0.1')) {
+              echo "⚠️  Usando fallback localhost para E2E"
+              baseUrl = "http://127.0.0.1:3000"
+            }
             env.BASE_URL = baseUrl
+            echo "🌐 Ejecutando E2E contra: ${env.BASE_URL}"
           }
           
-          // Ejecutar pruebas E2E (no falla el stage si hay problemas)
-          bat(returnStatus: true, script: "set BASE_URL=${env.BASE_URL} && npm run test:e2e")
+          // Ejecutar pruebas E2E (no falla el stage si hay problemas) con timeout
+          timeout(time: 5, unit: 'MINUTES') {
+            bat(returnStatus: true, script: "set BASE_URL=${env.BASE_URL} && npm run test:e2e")
+          }
           
           // Publicar reporte HTML de Playwright
           publishHTML([
@@ -254,8 +265,10 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             echo "✅ artillery-config.yml actualizado con URL: ${targetUrl}"
           }
           
-          // Ejecutar pruebas de carga y generar reporte JSON
-          bat(returnStatus: true, script: 'npx artillery run artillery-config.yml --output test-results/load-report.json')
+          // Ejecutar pruebas de carga y generar reporte JSON con timeout
+          timeout(time: 10, unit: 'MINUTES') {
+            bat(returnStatus: true, script: 'npx artillery run artillery-config.yml --output test-results/load-report.json')
+          }
           
           // Generar reporte HTML si existe el JSON
           bat(returnStatus: true, script: '''
