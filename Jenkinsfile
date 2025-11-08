@@ -134,32 +134,38 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           '''
           
-          // Esperar un momento para que el archivo se escriba completamente
-          powershell 'Start-Sleep -Seconds 1'
+          // Exporta la URL a una env var para usar en otros stages (leer directamente desde PowerShell)
+          powershell '''
+            $tunnelUrlFile = ".\\tunnel-url.txt"
+            if (Test-Path $tunnelUrlFile) {
+              $url = Get-Content $tunnelUrlFile -Raw -ErrorAction SilentlyContinue
+              if ($url) {
+                $url = $url.Trim()
+                Write-Host "🌐 TUNNEL_URL = $url"
+                # Guardar en variable de entorno de Jenkins usando archivo temporal
+                Set-Content -Path ".\\tunnel-url-env.txt" -Value $url
+              } else {
+                Write-Host "⚠️  Archivo vacío, usando localhost"
+                Set-Content -Path ".\\tunnel-url-env.txt" -Value "http://127.0.0.1:3000"
+              }
+            } else {
+              Write-Host "⚠️  Archivo no encontrado, usando localhost"
+              Set-Content -Path ".\\tunnel-url-env.txt" -Value "http://127.0.0.1:3000"
+            }
+          '''
           
-          // Exporta la URL a una env var para usar en otros stages
+          // Leer la URL desde el archivo generado por PowerShell
           script {
             def tunnelUrl = "http://127.0.0.1:3000"
-            def tunnelUrlFile = "${env.PROJECT_PATH}\\tunnel-url.txt"
-            
-            // Intentar leer desde la ruta relativa primero
             try {
-              if (fileExists("tunnel-url.txt")) {
+              if (fileExists("tunnel-url-env.txt")) {
+                tunnelUrl = readFile("tunnel-url-env.txt").trim()
+              } else if (fileExists("tunnel-url.txt")) {
                 tunnelUrl = readFile("tunnel-url.txt").trim()
-                echo "🌐 TUNNEL_URL (relativa) = ${tunnelUrl}"
               }
-            } catch (Exception e1) {
-              echo "⚠️  No se pudo leer desde ruta relativa: ${e1.message}"
-              // Intentar leer desde la ruta absoluta
-              try {
-                tunnelUrl = readFile(tunnelUrlFile).trim()
-                echo "🌐 TUNNEL_URL (absoluta) = ${tunnelUrl}"
-              } catch (Exception e2) {
-                echo "⚠️  No se pudo leer desde ruta absoluta: ${e2.message}"
-                tunnelUrl = "http://127.0.0.1:3000"
-              }
+            } catch (Exception e) {
+              echo "⚠️  Error leyendo URL: ${e.message}, usando localhost"
             }
-            
             env.TUNNEL_URL = tunnelUrl
             echo "🌐 TUNNEL_URL final = ${env.TUNNEL_URL}"
           }
