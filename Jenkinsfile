@@ -26,6 +26,7 @@ rem start detached: npm start -> server.log
 start "" cmd /c "npm start > server.log 2>&1"
 """
             writeFile file: "${env.PROJECT_PATH}\\start-server.bat", text: serverBat
+            echo "✅ Script start-server.bat creado"
           }
 
           // Crear start-tunnel.bat
@@ -37,14 +38,32 @@ cd /d "${env.PROJECT_PATH}"
 start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000 > cloudflared.log 2>&1
 """
             writeFile file: "${env.PROJECT_PATH}\\start-tunnel.bat", text: tunnelBat
+            echo "✅ Script start-tunnel.bat creado"
           }
+
+          // Verificar que los scripts existen antes de ejecutarlos
+          bat """
+            @echo off
+            cd /d "${env.PROJECT_PATH}"
+            if not exist "start-server.bat" (
+              echo Error: start-server.bat no existe
+              exit /b 1
+            )
+            if not exist "start-tunnel.bat" (
+              echo Error: start-tunnel.bat no existe
+              exit /b 1
+            )
+            echo Scripts encontrados, iniciando...
+          """
 
           // Lanzar los scripts (start los deja fuera del job)
           bat """
+            @echo off
             cd /d "${env.PROJECT_PATH}"
-            start "" "${env.PROJECT_PATH}\\start-server.bat"
+            start "" "start-server.bat"
             timeout /t 2 /nobreak >nul
-            start "" "${env.PROJECT_PATH}\\start-tunnel.bat"
+            start "" "start-tunnel.bat"
+            echo Scripts lanzados
           """
 
           // Healthcheck para confirmar servidor
