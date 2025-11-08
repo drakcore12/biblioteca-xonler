@@ -74,7 +74,8 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
                   $content = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
                   if ($content) {
                     # Buscar el patrón exacto que usa Cloudflare: https://[palabras-separadas-por-guiones].trycloudflare.com
-                    if ($content -match "https://[a-z0-9-]+\\.[a-z0-9-]+\\.trycloudflare\\.com") {
+                    # El formato es: https://palabra1-palabra2-palabra3-palabra4.trycloudflare.com
+                    if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
                       $tunnelUrl = $matches[0]
                       Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl -ErrorAction SilentlyContinue
                       Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
