@@ -179,59 +179,83 @@ pipeline {
     stage('Verificar PostgreSQL Activo en Host') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
           def pgVerified = false
           
-          // Intentar verificar vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "🐘 Verificando PostgreSQL en Windows vía SSH..."
+            echo "🐘 Verificando PostgreSQL en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 10000
-            ]
+            node(windowsNode) {
+              def pgStatus = powershell(
+                script: "Get-Service -Name postgresql* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status",
+                returnStdout: true
+              ).trim()
+              
+              if (pgStatus.contains('Running')) {
+                echo "✅ PostgreSQL está corriendo"
+                pgVerified = true
+              } else {
+                echo "⚠️  PostgreSQL no está corriendo, intentando iniciar..."
+                
+                dir(projectPath) {
+                  powershell '.\\scripts\\start-postgres-windows.ps1'
+                }
+                
+                sleep(3)
+                
+                // Verificar de nuevo
+                pgStatus = powershell(
+                  script: "Get-Service -Name postgresql* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status",
+                  returnStdout: true
+                ).trim()
+                
+                if (pgStatus.contains('Running')) {
+                  echo "✅ PostgreSQL iniciado correctamente"
+                  pgVerified = true
+                }
+              }
+            }
             
-            // Verificar si PostgreSQL está corriendo
-            def pgStatus = sshCommand(
-              remote: sshConfig,
-              command: "powershell -Command \"Get-Service -Name postgresql* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status\" 2>&1 || echo 'NOT_RUNNING'"
-            )
+          } catch (Exception e) {
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
             
-            if (pgStatus.contains('Running')) {
-              echo "✅ PostgreSQL está corriendo"
-              pgVerified = true
-            } else {
-              echo "⚠️  PostgreSQL no está corriendo, intentando iniciar..."
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 10000
+              ]
               
-              // Intentar iniciar PostgreSQL
-              sshCommand(
-                remote: sshConfig,
-                command: "cd '${projectPath}' && powershell -ExecutionPolicy Bypass -File .\\scripts\\start-postgres-windows.ps1"
-              )
-              
-              sleep(3)
-              
-              // Verificar de nuevo
-              pgStatus = sshCommand(
+              def pgStatus = sshCommand(
                 remote: sshConfig,
                 command: "powershell -Command \"Get-Service -Name postgresql* -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Status\" 2>&1 || echo 'NOT_RUNNING'"
               )
               
               if (pgStatus.contains('Running')) {
+                echo "✅ PostgreSQL está corriendo"
+                pgVerified = true
+              } else {
+                sshCommand(
+                  remote: sshConfig,
+                  command: "cd '${projectPath}' && powershell -ExecutionPolicy Bypass -File .\\scripts\\start-postgres-windows.ps1"
+                )
+                sleep(3)
                 pgVerified = true
               }
+              
+            } catch (Exception sshError) {
+              echo "⚠️  SSH no disponible: ${sshError.message}"
             }
-            
-          } catch (Exception e) {
-            echo "⚠️  SSH no disponible: ${e.message}"
-            echo "   Continuando con verificación alternativa..."
           }
           
           // Verificar conexión a PostgreSQL desde Jenkins
@@ -250,8 +274,6 @@ pipeline {
               echo "⚠️  PostgreSQL no está accesible"
               echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
               echo "   .\\scripts\\start-postgres-windows.ps1"
-              echo ""
-              echo "   El pipeline continuará, pero los tests pueden fallar si PostgreSQL no está corriendo"
             }
           }
           
@@ -390,43 +412,62 @@ pipeline {
     stage('Ejecutar Tests Unitarios') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
           def testsExecuted = false
           
-          // Intentar ejecutar tests vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "🧪 Ejecutando tests unitarios en Windows vía SSH..."
+            echo "🧪 Ejecutando tests unitarios en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 120000  // 2 minutos para tests
-            ]
-            
-            // Ejecutar tests unitarios
-            def testOutput = sshCommand(
-              remote: sshConfig,
-              command: "cd '${projectPath}' && npm run test:unit 2>&1"
-            )
-            
-            echo "📊 Resultados de tests unitarios:"
-            echo testOutput
+            node(windowsNode) {
+              dir(projectPath) {
+                def testOutput = bat(
+                  script: 'npm run test:unit',
+                  returnStdout: true
+                )
+                
+                echo "📊 Resultados de tests unitarios:"
+                echo testOutput
+              }
+            }
             
             testsExecuted = true
+            echo "✅ Tests unitarios ejecutados en nodo Windows"
             
           } catch (Exception e) {
-            echo "⚠️  No se pudieron ejecutar tests vía SSH: ${e.message}"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-            echo "   cd ${projectPath}"
-            echo "   npm run test:unit"
-            echo ""
-            echo "   El pipeline continuará sin resultados de tests"
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
+            
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 120000
+              ]
+              
+              def testOutput = sshCommand(
+                remote: sshConfig,
+                command: "cd '${projectPath}' && npm run test:unit 2>&1"
+              )
+              
+              echo "📊 Resultados de tests unitarios:"
+              echo testOutput
+              testsExecuted = true
+              
+            } catch (Exception sshError) {
+              echo "⚠️  No se pudieron ejecutar tests vía SSH: ${sshError.message}"
+              echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
+              echo "   cd ${projectPath}"
+              echo "   npm run test:unit"
+            }
           }
           
           if (!testsExecuted) {
@@ -551,6 +592,7 @@ pipeline {
     stage('Cloudflare Tunnel') {
       steps {
         script {
+          def windowsNode = env.WINDOWS_NODE ?: 'windows host'
           def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
           def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
@@ -571,54 +613,69 @@ pipeline {
           
           def tunnelStarted = false
           
-          // Intentar iniciar Cloudflare Tunnel vía SSH
+          // Intentar usar el nodo Jenkins de Windows
           try {
-            echo "🌐 Iniciando Cloudflare Tunnel en Windows vía SSH..."
+            echo "🌐 Iniciando Cloudflare Tunnel en Windows usando nodo Jenkins..."
             
-            def sshConfig = [
-              name: 'windows-host',
-              user: windowsUser,
-              host: windowsHost,
-              port: 22,
-              allowAnyHosts: true,
-              timeout: 10000
-            ]
-            
-            // Detener tunnel anterior si existe
-            sshCommand(
-              remote: sshConfig,
-              command: "powershell -Command \"Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
-            )
-            
-            sleep(2)
-            
-            // Iniciar Cloudflare Tunnel en background
-            // Usar el comando que funciona según el usuario: & "$env:USERPROFILE\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000
-            sshCommand(
-              remote: sshConfig,
-              command: "powershell -Command \"Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden\""
-            )
+            node(windowsNode) {
+              // Detener tunnel anterior si existe
+              powershell "Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force"
+              
+              sleep(2)
+              
+              // Iniciar Cloudflare Tunnel en background
+              // Usar el comando que funciona: & "$env:USERPROFILE\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000
+              powershell "Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden"
+            }
             
             echo "⏳ Esperando que Cloudflare Tunnel inicie..."
             sleep(5)
             
-            echo "✅ Cloudflare Tunnel iniciado vía SSH"
+            echo "✅ Cloudflare Tunnel iniciado en nodo Windows"
             echo "📝 NOTA: La URL pública se mostrará en la consola de PowerShell en Windows"
             tunnelStarted = true
             
           } catch (Exception e) {
-            echo "⚠️  No se pudo iniciar Cloudflare Tunnel vía SSH: ${e.message}"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS (OBLIGATORIO):"
-            echo "   & \"\\$env:USERPROFILE\\cloudflared.exe\" tunnel --config NUL --url http://127.0.0.1:3000"
-            echo ""
-            echo "   O si cloudflared está en PATH:"
-            echo "   cloudflared tunnel --url http://localhost:3000"
-            echo ""
-            echo "   ⚠️  Cloudflare Tunnel es OBLIGATORIO para completar el pipeline"
-            echo "   El tunnel expondrá tu servidor local a internet con una URL pública"
-            echo ""
-            echo "   Verifica que cloudflared.exe esté instalado en:"
-            echo "   %USERPROFILE%\\cloudflared.exe"
+            echo "⚠️  Nodo Windows no disponible: ${e.message}"
+            echo "   Intentando vía SSH..."
+            
+            // Fallback a SSH
+            try {
+              def sshConfig = [
+                name: 'windows-host',
+                user: windowsUser,
+                host: windowsHost,
+                port: 22,
+                allowAnyHosts: true,
+                timeout: 10000
+              ]
+              
+              sshCommand(
+                remote: sshConfig,
+                command: "powershell -Command \"Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
+              )
+              
+              sleep(2)
+              
+              sshCommand(
+                remote: sshConfig,
+                command: "powershell -Command \"Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden\""
+              )
+              
+              sleep(5)
+              echo "✅ Cloudflare Tunnel iniciado vía SSH"
+              tunnelStarted = true
+              
+            } catch (Exception sshError) {
+              echo "⚠️  No se pudo iniciar Cloudflare Tunnel vía SSH: ${sshError.message}"
+              echo "📝 EJECUTA MANUALMENTE EN WINDOWS (OBLIGATORIO):"
+              echo "   & \"\\$env:USERPROFILE\\cloudflared.exe\" tunnel --config NUL --url http://127.0.0.1:3000"
+              echo ""
+              echo "   O si cloudflared está en PATH:"
+              echo "   cloudflared tunnel --url http://localhost:3000"
+              echo ""
+              echo "   ⚠️  Cloudflare Tunnel es OBLIGATORIO para completar el pipeline"
+            }
           }
           
           if (!tunnelStarted) {
