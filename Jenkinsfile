@@ -316,15 +316,18 @@ pipeline {
                   
                   sleep(2)
                   
-                  // Iniciar servidor en background usando Start-Process de PowerShell
-                  // Escapar correctamente las comillas y el path
-                  def escapedPath = projectPath.replace('\\', '\\\\')
-                  powershell """
-                    \$ErrorActionPreference = 'Continue'
-                    Set-Location '${escapedPath}'
-                    \$proc = Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${escapedPath}''; npm start' -WindowStyle Hidden -PassThru
-                    Write-Host "Servidor iniciado con PID: \$(\$proc.Id)"
+                  // Iniciar servidor usando el script PowerShell o directamente con npm
+                  // Intentar usar el script primero, si no existe, usar npm directamente
+                  def scriptPath = "${projectPath}\\scripts\\start-server-windows.ps1"
+                  def startCommand = """
+                    if (Test-Path '${scriptPath}') {
+                      & '${scriptPath}'
+                    } else {
+                      Set-Location '${projectPath}'
+                      Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden
+                    }
                   """
+                  powershell(script: startCommand, returnStatus: true)
                 }
               }
               
