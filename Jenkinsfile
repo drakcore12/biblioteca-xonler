@@ -317,9 +317,14 @@ pipeline {
                   sleep(2)
                   
                   // Iniciar servidor en background usando Start-Process de PowerShell
-                  // Usar comillas simples para evitar problemas de escape
-                  def psCommand = "Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${projectPath}''; npm start' -WindowStyle Hidden"
-                  powershell(script: psCommand, returnStatus: true)
+                  // Escapar correctamente las comillas y el path
+                  def escapedPath = projectPath.replace('\\', '\\\\')
+                  powershell """
+                    \$ErrorActionPreference = 'Continue'
+                    Set-Location '${escapedPath}'
+                    \$proc = Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd ''${escapedPath}''; npm start' -WindowStyle Hidden -PassThru
+                    Write-Host "Servidor iniciado con PID: \$(\$proc.Id)"
+                  """
                 }
               }
               
