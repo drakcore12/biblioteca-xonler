@@ -85,8 +85,16 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             $found = $false
             for ($i=0; $i -lt 30 -and -not $found; $i++) {
               Start-Sleep -Seconds 1
-              $content = (Test-Path $stdoutLog) ? (Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue) : ''
-              $errorContent = (Test-Path $stderrLog) ? (Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue) : ''
+              if (Test-Path $stdoutLog) {
+                $content = Get-Content $stdoutLog -Raw -ErrorAction SilentlyContinue
+              } else {
+                $content = ''
+              }
+              if (Test-Path $stderrLog) {
+                $errorContent = Get-Content $stderrLog -Raw -ErrorAction SilentlyContinue
+              } else {
+                $errorContent = ''
+              }
               $text = $content + "`n" + $errorContent
               if ($text -match $regex) {
                 $url = $matches[0]
