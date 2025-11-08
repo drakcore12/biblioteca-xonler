@@ -86,23 +86,29 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
               # Buscar en stdout
               if (Test-Path $log) {
                 $content = Get-Content $log -Raw -ErrorAction SilentlyContinue
-                if ($content -and $content -match $regex) {
-                  $url = $matches[0]
-                  Set-Content -Path ".\\tunnel-url.txt" -Value $url
-                  Write-Host "✅ URL del tunnel: $url"
-                  $found = $true
-                  break
+                if ($content) {
+                  $matchResult = $content -match $regex
+                  if ($matchResult -and $matches -and $matches.Count -gt 0) {
+                    $url = $matches[0]
+                    Set-Content -Path ".\\tunnel-url.txt" -Value $url
+                    Write-Host "✅ URL del tunnel: $url"
+                    $found = $true
+                    break
+                  }
                 }
               }
               # También buscar en stderr (por si acaso)
               if (-not $found -and (Test-Path $errorLog)) {
                 $errorContent = Get-Content $errorLog -Raw -ErrorAction SilentlyContinue
-                if ($errorContent -and $errorContent -match $regex) {
-                  $url = $matches[0]
-                  Set-Content -Path ".\\tunnel-url.txt" -Value $url
-                  Write-Host "✅ URL del tunnel (desde stderr): $url"
-                  $found = $true
-                  break
+                if ($errorContent) {
+                  $matchResult = $errorContent -match $regex
+                  if ($matchResult -and $matches -and $matches.Count -gt 0) {
+                    $url = $matches[0]
+                    Set-Content -Path ".\\tunnel-url.txt" -Value $url
+                    Write-Host "✅ URL del tunnel (desde stderr): $url"
+                    $found = $true
+                    break
+                  }
                 }
               }
               if (-not $found -and ($i % 5 -eq 0)) {
