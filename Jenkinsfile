@@ -6,6 +6,33 @@ pipeline {
   }
 
   stages {
+    stage('Pruebas Unitarias (Jest)') {
+      steps {
+        dir("${env.PROJECT_PATH}") {
+          // Crear directorio para reportes
+          bat 'if not exist test-results mkdir test-results'
+          
+          // Ejecutar pruebas unitarias con cobertura
+          bat 'npm run test:unit || ver >nul'
+          
+          // Publicar reportes JUnit
+          junit 'test-results/junit.xml'
+          
+          // Publicar reporte de cobertura HTML
+          publishHTML([
+            reportDir: 'coverage/lcov-report',
+            reportFiles: 'index.html',
+            reportName: 'Cobertura de Código (Jest)',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
+          
+          echo '✅ Pruebas unitarias completadas'
+        }
+      }
+    }
+    
     stage('npm install & start + cloudflared') {
       steps {
         dir("${env.PROJECT_PATH}") {
@@ -65,6 +92,68 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
 
           // 6) MUY IMPORTANTE: limpiar ERRORLEVEL para evitar fallos fantasma (p.ej. 128)
           bat 'cmd /c exit /b 0'
+        }
+      }
+    }
+    
+    stage('Pruebas E2E (Playwright)') {
+      steps {
+        dir("${env.PROJECT_PATH}") {
+          // Esperar un poco más para que el servidor esté completamente listo
+          powershell 'Start-Sleep -Seconds 5'
+          
+          // Ejecutar pruebas E2E (no falla el stage si hay problemas)
+          bat(returnStatus: true, script: 'npm run test:e2e')
+          
+          // Publicar reporte HTML de Playwright
+          publishHTML([
+            reportDir: 'playwright-report',
+            reportFiles: 'index.html',
+            reportName: 'Reporte E2E (Playwright)',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
+          
+          echo '✅ Pruebas E2E completadas (revisa reportes si hay fallos)'
+        }
+      }
+    }
+    
+    stage('Pruebas de Carga (Artillery)') {
+      steps {
+        dir("${env.PROJECT_PATH}") {
+          // Verificar que Artillery esté instalado globalmente o localmente
+          bat(returnStatus: true, script: 'where artillery >nul 2>&1 || npx artillery --version >nul 2>&1')
+          
+          // Ejecutar pruebas de carga y generar reporte JSON
+          bat(returnStatus: true, script: 'npx artillery run artillery-config.yml --output test-results/load-report.json')
+          
+          // Generar reporte HTML si existe el JSON
+          bat(returnStatus: true, script: '''
+            @echo off
+            if exist "test-results\\load-report.json" (
+              npx artillery report test-results/load-report.json --output test-results/load-report.html
+              echo Reporte HTML generado
+            ) else (
+              echo No se generó reporte JSON, saltando generación de HTML
+            )
+          ''')
+          
+          // Publicar reporte HTML de Artillery
+          publishHTML([
+            reportDir: 'test-results',
+            reportFiles: 'load-report.html',
+            reportName: 'Reporte de Carga (Artillery)',
+            keepAll: true,
+            alwaysLinkToLastBuild: true,
+            allowMissing: true
+          ])
+          
+          // Archivar reportes JSON
+          archiveArtifacts artifacts: 'test-results/load-report.json', allowEmptyArchive: true
+          
+          echo '✅ Pruebas de carga completadas'
         }
       }
     }
