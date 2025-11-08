@@ -288,130 +288,39 @@ pipeline {
       steps {
         script {
           def windowsNode = env.WINDOWS_NODE ?: 'windows host'
-          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
-          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
-          def serverStarted = false
-          
-          // Verificar si el servidor ya está corriendo
-          def serverCheck = sh(
-            script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-            returnStdout: true
-          ).trim()
-          
-          if (serverCheck == 'RUNNING') {
-            echo "✅ Servidor Node.js ya está corriendo en http://host.docker.internal:3000"
-            writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
-            serverStarted = true
-          } else {
-            // Intentar usar el nodo Jenkins de Windows
-            try {
-              echo "🚀 Iniciando servidor Node.js en Windows usando nodo Jenkins..."
+          node(windowsNode) {
+            dir(projectPath) {
+              echo "🚀 Iniciando servidor Node.js en Windows..."
               
-              node(windowsNode) {
-                dir(projectPath) {
-                  // Detener servidor anterior si existe
-                  bat '@echo off && for /f "tokens=2" %%a in (\'tasklist ^| findstr /i "node.exe"\') do taskkill /F /PID %%a 2>nul || echo No process'
-                  
-                  sleep(2)
-                  
-                  // Iniciar servidor usando bat con start para ejecutar en background
-                  // Usar cmd /c start para iniciar el proceso en una nueva ventana oculta
-                  bat """
-                    @echo off
-                    cd /d "${projectPath}"
-                    start /B cmd /c "npm start > server.log 2>&1"
-                  """
-                  
-                  echo "⏳ Servidor iniciado en background, esperando..."
-                }
-              }
+              // Detener servidor anterior si existe
+              bat '''
+                @echo off
+                for /f "tokens=2" %%a in ('tasklist ^| findstr /i "node.exe"') do (
+                  wmic process where "ProcessId=%%a and CommandLine like '%%Biblioteca-Xonler-main%%'" call terminate >nul 2>&1
+                )
+              '''
+              
+              sleep(2)
+              
+              // Iniciar servidor en background
+              bat """
+                @echo off
+                cd /d "${projectPath}"
+                start /B cmd /c "npm start > server.log 2>&1"
+              """
               
               echo "⏳ Esperando que el servidor inicie..."
-              sleep(10)
               
-              // Verificar que el servidor esté corriendo
-              serverCheck = sh(
-                script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-                returnStdout: true
-              ).trim()
+              // Healthcheck local desde Windows
+              bat '''
+                @echo off
+                powershell -Command "$ok=$false; for($i=0;$i -lt 20;$i++){ try { $r=Invoke-WebRequest http://localhost:3000 -UseBasicParsing -TimeoutSec 3; if($r.StatusCode -ge 200 -and $r.StatusCode -lt 500){$ok=$true; Write-Host 'Servidor respondiendo'; break} } catch{} Start-Sleep -s 2 }; if(-not $ok){ Write-Host 'Servidor no respondio'; exit 1 }"
+              '''
               
-              if (serverCheck == 'RUNNING') {
-                echo "✅ Servidor Node.js iniciado correctamente"
-                writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
-                serverStarted = true
-              }
-              
-            } catch (Exception e) {
-              echo "⚠️  Nodo Windows no disponible: ${e.message}"
-              echo "   Intentando vía SSH..."
-              
-              // Fallback a SSH
-              try {
-                def sshConfig = [
-                  name: 'windows-host',
-                  user: windowsUser,
-                  host: windowsHost,
-                  port: 22,
-                  allowAnyHosts: true,
-                  timeout: 10000
-                ]
-                
-                // Detener procesos Node.js anteriores
-                sshCommand(
-                  remote: sshConfig,
-                  command: "taskkill /F /IM node.exe 2>nul || echo NO_PROCESS"
-                )
-                
-                sleep(2)
-                
-                sshCommand(
-                  remote: sshConfig,
-                  command: "cd /d \"${projectPath}\" && start /B cmd /c \"npm start > server.log 2>&1\""
-                )
-                
-                sleep(10)
-                
-                serverCheck = sh(
-                  script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-                  returnStdout: true
-                ).trim()
-                
-                if (serverCheck == 'RUNNING') {
-                  echo "✅ Servidor Node.js iniciado vía SSH"
-                  writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
-                  serverStarted = true
-                }
-                
-              } catch (Exception sshError) {
-                echo "⚠️  No se pudo iniciar servidor: ${sshError.message}"
-              }
+              echo "✅ Servidor Node.js iniciado y respondiendo en http://localhost:3000"
             }
-          }
-          
-          // Si aún no está corriendo, verificar de nuevo después de esperar
-          if (!serverStarted) {
-            echo "⏳ Esperando más tiempo para que el servidor inicie..."
-            sleep(10)
-            
-            serverCheck = sh(
-              script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-              returnStdout: true
-            ).trim()
-            
-            if (serverCheck == 'RUNNING') {
-              echo "✅ Servidor Node.js corriendo"
-              writeFile file: 'server-status.env', text: "SERVER_AVAILABLE=true\n"
-              serverStarted = true
-            }
-          }
-          
-          if (!serverStarted) {
-            echo "⚠️  Servidor Node.js no está respondiendo"
-            echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-            echo "   cd ${projectPath}"
-            echo "   npm start"
           }
         }
       }
@@ -421,81 +330,44 @@ pipeline {
       steps {
         script {
           def windowsNode = env.WINDOWS_NODE ?: 'windows host'
-          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
-          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
-          def testsExecuted = false
-          
-          // Intentar usar el nodo Jenkins de Windows
-          try {
-            echo "🧪 Ejecutando tests unitarios en Windows usando nodo Jenkins..."
-            
-            node(windowsNode) {
-              dir(projectPath) {
-                // En Windows, usar node directamente con jest para evitar problemas con scripts bash
-                def testOutput = bat(
-                  script: 'node --enable-source-maps node_modules/jest/bin/jest.js',
-                  returnStdout: true
-                )
-                
-                echo "📊 Resultados de tests unitarios:"
-                echo testOutput
-              }
+          node(windowsNode) {
+            dir(projectPath) {
+              echo "🧪 Ejecutando tests unitarios en Windows..."
+              
+              // Ejecutar tests con coverage y JUnit
+              bat 'npm run test:unit'
+              
+              echo "✅ Tests unitarios completados"
             }
-            
-            testsExecuted = true
-            echo "✅ Tests unitarios ejecutados en nodo Windows"
-            
-          } catch (Exception e) {
-            echo "⚠️  Nodo Windows no disponible: ${e.message}"
-            echo "   Intentando vía SSH..."
-            
-            // Fallback a SSH
-            try {
-              def sshConfig = [
-                name: 'windows-host',
-                user: windowsUser,
-                host: windowsHost,
-                port: 22,
-                allowAnyHosts: true,
-                timeout: 120000
-              ]
-              
-              def testOutput = sshCommand(
-                remote: sshConfig,
-                command: "cd '${projectPath}' && npm run test:unit 2>&1"
-              )
-              
-              echo "📊 Resultados de tests unitarios:"
-              echo testOutput
-              testsExecuted = true
-              
-            } catch (Exception sshError) {
-              echo "⚠️  No se pudieron ejecutar tests vía SSH: ${sshError.message}"
-              echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-              echo "   cd ${projectPath}"
-              echo "   npm run test:unit"
-            }
-          }
-          
-          if (!testsExecuted) {
-            echo "⚠️  Tests unitarios no ejecutados"
-            echo "   Ejecuta los tests manualmente en Windows para ver los resultados"
           }
         }
       }
       post {
         always {
-          publishHTML(target: [
-            reportDir: 'coverage',
-            reportFiles: 'index.html',
-            reportName: 'Coverage Report',
-            keepAll: true,
-            alwaysLinkToLastBuild: true,
-            allowMissing: true
-          ])
-          junit allowEmptyResults: true, testResults: 'test-results/**/*.xml'
+          script {
+            def windowsNode = env.WINDOWS_NODE ?: 'windows host'
+            def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
+            
+            // Publicar reportes desde el mismo agente Windows
+            node(windowsNode) {
+              dir(projectPath) {
+                // Publicar coverage HTML
+                publishHTML(target: [
+                  reportDir: 'coverage',
+                  reportFiles: 'index.html',
+                  reportName: 'Coverage Report',
+                  keepAll: true,
+                  alwaysLinkToLastBuild: true,
+                  allowMissing: false
+                ])
+                
+                // Publicar JUnit XML
+                junit allowEmptyResults: true, testResults: 'test-results/junit.xml'
+              }
+            }
+          }
         }
       }
     }
@@ -504,96 +376,39 @@ pipeline {
       steps {
         script {
           def windowsNode = env.WINDOWS_NODE ?: 'windows host'
-          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
-          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
-          def serverUrl = env.SERVER_URL ?: 'http://localhost:3000'
+          def serverUrl = 'http://localhost:3000'
           
-          // Verificar que el servidor esté disponible
-          def serverCheck = sh(
-            script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-            returnStdout: true
-          ).trim()
-          
-          if (serverCheck != 'RUNNING') {
-            echo "⚠️  Servidor no disponible, omitiendo pruebas de carga"
-            echo "📝 Inicia el servidor en Windows:"
-            echo "   cd ${projectPath}"
-            echo "   npm start"
-            return
-          }
-          
-          def loadTestsExecuted = false
-          
-          // Intentar usar el nodo Jenkins de Windows
-          try {
-            echo "🚀 Ejecutando pruebas de carga con Artillery en Windows usando nodo Jenkins..."
-            
-            node(windowsNode) {
-              dir(projectPath) {
-                // Actualizar artillery-config.yml con la URL correcta
-                powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'"
-                
-                // Ejecutar Artillery
-                def artilleryOutput = bat(
-                  script: 'npm run test:load',
-                  returnStdout: true
-                )
-                
-                echo "📊 Resultados de pruebas de carga:"
-                echo artilleryOutput
-              }
+          node(windowsNode) {
+            dir(projectPath) {
+              echo "🚀 Ejecutando pruebas de carga con Artillery en Windows..."
+              
+              // Actualizar artillery-config.yml con la URL correcta
+              powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'"
+              
+              // Instalar Artillery si no está instalado
+              bat 'npm install -g artillery || echo Artillery ya instalado'
+              
+              // Ejecutar Artillery
+              bat 'artillery run artillery-config.yml --output test-results\\load-report.json'
+              
+              echo "✅ Pruebas de carga completadas"
             }
-            
-            loadTestsExecuted = true
-            echo "✅ Pruebas de carga completadas en nodo Windows"
-            
-          } catch (Exception e) {
-            echo "⚠️  Nodo Windows no disponible: ${e.message}"
-            echo "   Intentando vía SSH..."
-            
-            // Fallback a SSH
-            try {
-              def sshConfig = [
-                name: 'windows-host',
-                user: windowsUser,
-                host: windowsHost,
-                port: 22,
-                allowAnyHosts: true,
-                timeout: 180000
-              ]
-              
-              sshCommand(
-                remote: sshConfig,
-                command: "cd '${projectPath}' && powershell -Command \"(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'\""
-              )
-              
-              def artilleryOutput = sshCommand(
-                remote: sshConfig,
-                command: "cd '${projectPath}' && npm run test:load 2>&1"
-              )
-              
-              echo "📊 Resultados de pruebas de carga:"
-              echo artilleryOutput
-              loadTestsExecuted = true
-              
-            } catch (Exception sshError) {
-              echo "⚠️  No se pudieron ejecutar pruebas de carga vía SSH: ${sshError.message}"
-              echo "📝 EJECUTA MANUALMENTE EN WINDOWS:"
-              echo "   cd ${projectPath}"
-              echo "   npm run test:load"
-            }
-          }
-          
-          if (!loadTestsExecuted) {
-            echo "⚠️  Pruebas de carga no ejecutadas"
-            echo "   Ejecuta las pruebas manualmente en Windows para ver los resultados"
           }
         }
       }
       post {
         always {
-          archiveArtifacts artifacts: 'test-results/load-report*.json', fingerprint: true, onlyIfSuccessful: false, allowEmptyArchive: true
+          script {
+            def windowsNode = env.WINDOWS_NODE ?: 'windows host'
+            def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
+            
+            node(windowsNode) {
+              dir(projectPath) {
+                archiveArtifacts artifacts: 'test-results/load-report.json', fingerprint: true, onlyIfSuccessful: false, allowEmptyArchive: true
+              }
+            }
+          }
         }
       }
     }
@@ -602,95 +417,54 @@ pipeline {
       steps {
         script {
           def windowsNode = env.WINDOWS_NODE ?: 'windows host'
-          def windowsHost = env.WINDOWS_HOST ?: 'host.docker.internal'
-          def windowsUser = env.WINDOWS_USER ?: 'MIGUEL'
           def projectPath = env.PROJECT_PATH ?: 'C:/Users/MIGUEL/Documents/Proyectos-Cursor/Biblioteca-Xonler-main'
           
-          // Verificar que el servidor esté disponible
-          def serverCheck = sh(
-            script: "curl -fsS --max-time 5 http://host.docker.internal:3000 >/dev/null 2>&1 && echo 'RUNNING' || echo 'NOT_RUNNING'",
-            returnStdout: true
-          ).trim()
-          
-          if (serverCheck != 'RUNNING') {
-            echo "❌ Servidor no disponible, Cloudflare Tunnel requiere que el servidor esté corriendo"
-            echo "📝 Inicia el servidor primero en Windows:"
-            echo "   cd ${projectPath}"
-            echo "   npm start"
-            error("Servidor Node.js no está corriendo. Cloudflare Tunnel requiere el servidor activo.")
-          }
-          
-          def tunnelStarted = false
-          
-          // Intentar usar el nodo Jenkins de Windows
-          try {
-            echo "🌐 Iniciando Cloudflare Tunnel en Windows usando nodo Jenkins..."
-            
-            node(windowsNode) {
+          node(windowsNode) {
+            dir(projectPath) {
+              echo "🌐 Iniciando Cloudflare Tunnel en Windows..."
+              
+              // Descargar cloudflared si no existe
+              bat '''
+                @echo off
+                if not exist cloudflared.exe (
+                  echo Descargando cloudflared...
+                  curl -L -o cloudflared.zip https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.zip
+                  powershell -Command "Expand-Archive -Force cloudflared.zip ."
+                  del cloudflared.zip
+                )
+              '''
+              
               // Detener tunnel anterior si existe
-              powershell "Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force"
+              bat 'taskkill /IM cloudflared.exe /F >nul 2>&1 || echo No process'
               
               sleep(2)
               
               // Iniciar Cloudflare Tunnel en background
-              // Usar el comando que funciona: & "$env:USERPROFILE\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000
-              powershell "Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden"
-            }
-            
-            echo "⏳ Esperando que Cloudflare Tunnel inicie..."
-            sleep(5)
-            
-            echo "✅ Cloudflare Tunnel iniciado en nodo Windows"
-            echo "📝 NOTA: La URL pública se mostrará en la consola de PowerShell en Windows"
-            tunnelStarted = true
-            
-          } catch (Exception e) {
-            echo "⚠️  Nodo Windows no disponible: ${e.message}"
-            echo "   Intentando vía SSH..."
-            
-            // Fallback a SSH
-            try {
-              def sshConfig = [
-                name: 'windows-host',
-                user: windowsUser,
-                host: windowsHost,
-                port: 22,
-                allowAnyHosts: true,
-                timeout: 10000
-              ]
-              
-              sshCommand(
-                remote: sshConfig,
-                command: "powershell -Command \"Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force\" 2>&1 || echo 'NO_PROCESS'"
-              )
-              
-              sleep(2)
-              
-              sshCommand(
-                remote: sshConfig,
-                command: "powershell -Command \"Start-Process powershell -ArgumentList '-NoExit', '-Command', '& \\\"\\$env:USERPROFILE\\cloudflared.exe\\\" tunnel --config NUL --url http://127.0.0.1:3000' -WindowStyle Hidden\""
-              )
+              bat 'start /B cloudflared.exe tunnel --url http://localhost:3000 > cloudflare.log 2>&1'
               
               sleep(5)
-              echo "✅ Cloudflare Tunnel iniciado vía SSH"
-              tunnelStarted = true
               
-            } catch (Exception sshError) {
-              echo "⚠️  No se pudo iniciar Cloudflare Tunnel vía SSH: ${sshError.message}"
-              echo "📝 EJECUTA MANUALMENTE EN WINDOWS (OBLIGATORIO):"
-              echo "   & \"\\$env:USERPROFILE\\cloudflared.exe\" tunnel --config NUL --url http://127.0.0.1:3000"
-              echo ""
-              echo "   O si cloudflared está en PATH:"
-              echo "   cloudflared tunnel --url http://localhost:3000"
-              echo ""
-              echo "   ⚠️  Cloudflare Tunnel es OBLIGATORIO para completar el pipeline"
+              // Extraer URL del log
+              bat '''
+                @echo off
+                powershell -Command "$c=Get-Content cloudflare.log -Raw -ErrorAction SilentlyContinue; $m=[regex]::Match($c,'https://[a-z0-9-]+\\.trycloudflare\\.com'); if($m.Success){ Set-Content cloudflare-url.env ('URL_PUBLICA='+$m.Value); Write-Host ('URL encontrada: '+$m.Value) } else { Write-Host 'URL no encontrada en log' }"
+              '''
+              
+              // Leer y mostrar la URL
+              script {
+                if (fileExists("${projectPath}/cloudflare-url.env")) {
+                  def urlContent = readFile("${projectPath}/cloudflare-url.env").trim()
+                  def url = urlContent.split('=')[1]
+                  if (url) {
+                    echo "🌐 URL pública de Cloudflare Tunnel: ${url}"
+                  }
+                } else {
+                  echo "⚠️  No se pudo extraer la URL del log. Revisa cloudflare.log manualmente."
+                }
+              }
+              
+              echo "✅ Cloudflare Tunnel iniciado"
             }
-          }
-          
-          if (!tunnelStarted) {
-            echo "⚠️  Cloudflare Tunnel no iniciado automáticamente"
-            echo "   ⚠️  IMPORTANTE: Debes ejecutar el comando manualmente en Windows"
-            echo "   El pipeline continuará, pero Cloudflare Tunnel es obligatorio"
           }
         }
       }

@@ -34,6 +34,14 @@ module.exports = {
   displayName: {
     name: 'Biblioteca Xonler',
     color: 'blue'
-  }
+  },
+  // Configuración de reportes
+  reporters: [
+    'default',
+    ['jest-junit', {
+      outputDirectory: 'test-results',
+      outputName: 'junit.xml'
+    }]
+  ]
 };
 

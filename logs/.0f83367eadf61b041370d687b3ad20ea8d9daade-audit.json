@@ -6,24 +6,9 @@
     "auditLog": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\.0f83367eadf61b041370d687b3ad20ea8d9daade-audit.json",
     "files": [
         {
-            "date": 1759466703953,
-            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\error-2025-10-02.log",
-            "hash": "bfefb2d86ba3f23628cbadaf9b266e784db3c68e621af1ed732842f4b20f512a"
-        },
-        {
-            "date": 1759467689953,
-            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\error-2025-10-03.log",
-            "hash": "d5fa5338725959e5dba63983866626d142453e451527348466b1af2f6e2bb476"
-        },
-        {
-            "date": 1759601112425,
-            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\error-2025-10-04.log",
-            "hash": "31d81cfedf9b4c0ea06856cb53398fc4c311d6ca9904148c1fa754f53a0c9bf5"
-        },
-        {
-            "date": 1759804726242,
-            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\error-2025-10-06.log",
-            "hash": "85b67c2a2b3dbbf5441f5746a9a636daf9c4fa5aef10cb11c9c9dde6d19520ca"
+            "date": 1762552843203,
+            "name": "C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main\\logs\\error-2025-11-07.log",
+            "hash": "a284147d41e58a90e5d93b13b21e8187a4b00d33ce7a8466711811225af070e6"
         }
     ],
     "hashType": "sha256"
