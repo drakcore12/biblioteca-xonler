@@ -12,9 +12,13 @@ pipeline {
           // Instalar deps
           bat 'npm install'
 
-          // Matar node viejo (opcional)
-          bat 'taskkill /F /IM node.exe >nul 2>&1 || echo no-node'
-          bat 'taskkill /F /IM cloudflared.exe >nul 2>&1 || echo no-cloudflared'
+          // Matar node viejo (opcional) - no fallar si no existen
+          bat '''
+            @echo off
+            taskkill /F /IM node.exe >nul 2>&1 || echo no-node
+            taskkill /F /IM cloudflared.exe >nul 2>&1 || echo no-cloudflared
+            echo Procesos anteriores detenidos
+          '''
 
           // Crear start-server.bat (seteando BUILD_ID para evitar el ProcessTreeKiller)
           script {
