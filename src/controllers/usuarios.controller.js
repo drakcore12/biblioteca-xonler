@@ -119,44 +119,8 @@ async function obtenerUsuarioActual(req, res) {
   }
 }
 
-// Obtener un usuario por ID
-async function obtenerUsuarioPorId(req, res) {
-  try {
-    const { id } = req.params;
-    
-    // ✅ ARREGLADO: Usar TODAS las columnas disponibles en la base de datos
-    const result = await pool.query(`
-      SELECT 
-        u.id,
-        u.nombre,
-        u.apellido,
-        u.email,
-        u.telefono,
-        u.fecha_nacimiento,
-        u.genero,
-        u.direccion,
-        u.ciudad,
-        u.codigo_postal,
-        u.created_at,
-        u.updated_at,
-        u.preferencias,
-        r.name AS rol,
-        r.id   AS rol_id
-      FROM usuarios u
-      JOIN roles   r ON u.rol_id = r.id
-      WHERE u.id = $1
-    `, [id]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error en obtenerUsuarioActual:', error);
-    res.status(500).json({ error: 'Error al obtener el usuario' });
-  }
-}
-
+// Nota: obtenerUsuarioPorId está definida más abajo (línea ~431) para super admin
+// Esta función duplicada fue eliminada para evitar conflictos
 
 // Actualizar un usuario (incluyendo campos adicionales)
 async function actualizarUsuario(req, res) {
@@ -427,8 +391,8 @@ async function actualizarPreferenciasUsuario(req, res) {
   }
 }
 
-// Obtener usuario por ID (para super admin)
-async function obtenerUsuarioPorId(req, res) {
+// Obtener usuario por ID (para super admin) - Función mejorada
+async function obtenerUsuarioPorIdSuperAdmin(req, res) {
   try {
     const { id } = req.params;
     

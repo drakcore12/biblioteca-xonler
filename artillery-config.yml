@@ -1,5 +1,5 @@
 config:
-  target: "http://localhost:3000"
+  target: \"http://localhost:3000\"
   phases:
     # Fase 1: Rampa de carga gradual
     - duration: 30

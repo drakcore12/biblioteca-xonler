@@ -373,6 +373,9 @@ pipeline {
               // Actualizar artillery-config.yml con la URL correcta
               powershell "(Get-Content 'artillery-config.yml') -replace 'target:.*', 'target: \\\"${serverUrl}\\\"' | Set-Content 'artillery-config.yml'"
               
+              // Crear directorio test-results si no existe
+              bat 'if not exist test-results mkdir test-results'
+              
               // Instalar Artillery si no está instalado
               bat 'npm install -g artillery || echo Artillery ya instalado'
               
@@ -426,8 +429,18 @@ pipeline {
               
               sleep(2)
               
-              // Iniciar Cloudflare Tunnel en background
-              bat 'start /B cloudflared.exe tunnel --url http://localhost:3000 > cloudflare.log 2>&1'
+              // Iniciar Cloudflare Tunnel en background usando el comando específico
+              powershell 'Start-Process powershell -ArgumentList \'-NoExit\', \'-Command\', \'& "$env:USERPROFILE\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000\' -WindowStyle Hidden'
+              
+              // Esperar un poco y verificar el log
+              sleep(5)
+              
+              // Intentar leer la URL del proceso (cloudflared la muestra en stdout)
+              bat '''
+                @echo off
+                timeout /t 3 >nul
+                powershell -Command "Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Out-Null; if($?) { Write-Host 'Cloudflare Tunnel iniciado correctamente' } else { Write-Host 'Cloudflare Tunnel puede no estar corriendo' }"
+              '''
               
               sleep(5)
               

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="8" failures="0" errors="0" time="1.939">
+  <testsuite name="Funciones Helper" errors="0" failures="0" skipped="0" timestamp="2025-11-08T00:31:16" time="1.099" tests="4">
+    <testcase classname="Funciones Helper suma de dos números" name="Funciones Helper suma de dos números" time="0.018">
+    </testcase>
+    <testcase classname="Funciones Helper validación de email" name="Funciones Helper validación de email" time="0.002">
+    </testcase>
+    <testcase classname="Funciones Helper formateo de fecha" name="Funciones Helper formateo de fecha" time="0.003">
+    </testcase>
+    <testcase classname="Funciones Helper normalización de string a objeto" name="Funciones Helper normalización de string a objeto" time="0.002">
+    </testcase>
+  </testsuite>
+  <testsuite name="SimpleJWT" errors="0" failures="0" skipped="0" timestamp="2025-11-08T00:31:16" time="1.23" tests="4">
+    <testcase classname="SimpleJWT debe generar un token JWT válido" name="SimpleJWT debe generar un token JWT válido" time="0.018">
+    </testcase>
+    <testcase classname="SimpleJWT debe verificar un token válido correctamente" name="SimpleJWT debe verificar un token válido correctamente" time="0.004">
+    </testcase>
+    <testcase classname="SimpleJWT debe lanzar error al verificar token inválido" name="SimpleJWT debe lanzar error al verificar token inválido" time="0.013">
+    </testcase>
+    <testcase classname="SimpleJWT debe generar token con expiración personalizada" name="SimpleJWT debe generar token con expiración personalizada" time="0.002">
+    </testcase>
+  </testsuite>
+</testsuites>
