@@ -140,16 +140,16 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
           '''
           
           // Leer la URL usando bat (más simple y directo en Windows)
-          def tunnelUrlOutput = bat(returnStdout: true, script: '''
-            @echo off
-            if exist tunnel-url.txt (
-              type tunnel-url.txt
-            ) else (
-              echo http://127.0.0.1:3000
-            )
-          ''').trim()
-          
           script {
+            def tunnelUrlOutput = bat(returnStdout: true, script: '''
+              @echo off
+              if exist tunnel-url.txt (
+                type tunnel-url.txt
+              ) else (
+                echo http://127.0.0.1:3000
+              )
+            ''').trim()
+            
             env.TUNNEL_URL = tunnelUrlOutput ?: "http://127.0.0.1:3000"
             echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
           }
