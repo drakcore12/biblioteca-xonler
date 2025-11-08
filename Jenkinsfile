@@ -18,23 +18,25 @@ pipeline {
           sleep(time: 2, unit: 'SECONDS')
 
           // Crear script batch temporal para iniciar el servidor de forma independiente
-          def scriptPath = "${env.PROJECT_PATH}\\start-server.bat"
-          writeFile file: scriptPath, text: """@echo off
+          script {
+            def scriptPath = "${env.PROJECT_PATH}\\start-server.bat"
+            writeFile file: scriptPath, text: """@echo off
 cd /d "${env.PROJECT_PATH}"
 npm start > server.log 2>&1
 """
-          
-          // Arrancar la app en background de forma completamente independiente
-          bat """
-            @echo off
-            cd /d "${env.PROJECT_PATH}"
-            if exist "${scriptPath}" (
-              start "" "${scriptPath}"
-            ) else (
-              echo Error: No se encontro el script ${scriptPath}
-              exit /b 1
-            )
-          """
+            
+            // Arrancar la app en background de forma completamente independiente
+            bat """
+              @echo off
+              cd /d "${env.PROJECT_PATH}"
+              if exist "${scriptPath}" (
+                start "" "${scriptPath}"
+              ) else (
+                echo Error: No se encontro el script ${scriptPath}
+                exit /b 1
+              )
+            """
+          }
 
           echo "⏳ Esperando que el servidor inicie..."
           
