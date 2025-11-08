@@ -34,10 +34,9 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             echo "✅ Scripts batch creados"
           }
 
-          // 4) Lanzar ambos (start => procesos quedan fuera del árbol de Jenkins)
+          // 4) Lanzar servidor (cloudflared se lanza después en el paso 6)
           bat 'start "" "%cd%\\start-server.bat"'
           powershell 'Start-Sleep -Seconds 2'
-          bat(returnStatus: true, script: 'start "" "%cd%\\start-tunnel.bat"')
 
           // 5) Healthcheck rápido (no falla el stage)
           powershell(returnStatus: true, script: '''
@@ -60,51 +59,56 @@ start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0
             }
           ''')
 
-          // 6) Extraer URL del tunnel desde cloudflared.log (con más tiempo de espera)
-          script {
-            def tunnelUrl = ''
-            powershell(returnStatus: true, script: '''
-              $logPath = "$env:USERPROFILE\\cloudflared.log"
-              $maxAttempts = 10
-              $attempt = 0
-              $found = $false
-              
-              while ($attempt -lt $maxAttempts -and -not $found) {
-                if (Test-Path $logPath) {
-                  $content = Get-Content $logPath -Raw -ErrorAction SilentlyContinue
-                  if ($content) {
-                    # Buscar el patrón exacto que usa Cloudflare: https://[palabras-separadas-por-guiones].trycloudflare.com
-                    # El formato es: https://palabra1-palabra2-palabra3-palabra4.trycloudflare.com
-                    if ($content -match "https://[a-z0-9-]+\\.trycloudflare\\.com") {
-                      $tunnelUrl = $matches[0]
-                      Set-Content -Path "tunnel-url.txt" -Value $tunnelUrl -ErrorAction SilentlyContinue
-                      Write-Host "✅ URL del tunnel extraída: $tunnelUrl"
-                      $found = $true
-                      break
-                    }
-                  }
-                }
-                $attempt++
-                if (-not $found) {
-                  Write-Host "   Esperando URL del tunnel... ($attempt/$maxAttempts)"
-                  Start-Sleep -Seconds 3
-                }
-              }
-              
-              if (-not $found) {
-                Write-Host "⚠️  No se encontró URL del tunnel después de $maxAttempts intentos"
-              }
-            ''')
+          // 6) Lanzar cloudflared y extraer URL del tunnel automáticamente
+          powershell '''
+            $exe = "$env:USERPROFILE\\cloudflared.exe"
+            $log = "$env:USERPROFILE\\cloudflared.log"
             
-            // Leer la URL del archivo
-            powershell 'Start-Sleep -Seconds 1'
+            # Limpia log anterior
+            Remove-Item -Path $log -Force -ErrorAction SilentlyContinue | Out-Null
+            
+            # Lanza cloudflared en background (no bloquea el Pipeline)
+            Start-Process -FilePath $exe `
+              -ArgumentList @("tunnel","--config","NUL","--no-autoupdate","--url","http://127.0.0.1:3000") `
+              -WindowStyle Hidden `
+              -RedirectStandardOutput $log `
+              -RedirectStandardError $log
+            
+            # Espera y extrae la URL del quick tunnel
+            $regex = "https://[a-z0-9-]+\\.trycloudflare\\.com"
+            $found = $false
+            for ($i=0; $i -lt 30 -and -not $found; $i++) {
+              Start-Sleep -Seconds 1
+              if (Test-Path $log) {
+                $content = Get-Content $log -Raw -ErrorAction SilentlyContinue
+                if ($content -and $content -match $regex) {
+                  $url = $matches[0]
+                  Set-Content -Path ".\\tunnel-url.txt" -Value $url
+                  Write-Host "✅ URL del tunnel: $url"
+                  $found = $true
+                  break
+                }
+              }
+              if (-not $found -and ($i % 5 -eq 0)) {
+                Write-Host "   Esperando URL del tunnel... ($($i+1)/30)"
+              }
+            }
+            
+            if (-not $found) {
+              Write-Host "⚠️  No se encontró la URL del tunnel en el log (revisa $log)."
+              Write-Host "   Usando localhost como fallback"
+              Set-Content -Path ".\\tunnel-url.txt" -Value "http://127.0.0.1:3000"
+            }
+          '''
+          
+          // Exporta la URL a una env var para usar en otros stages
+          script {
             if (fileExists("tunnel-url.txt")) {
-              tunnelUrl = readFile("tunnel-url.txt").trim()
-              env.TUNNEL_URL = tunnelUrl
-              echo "🌐 URL del tunnel configurada: ${env.TUNNEL_URL}"
+              env.TUNNEL_URL = readFile("tunnel-url.txt").trim()
+              echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
             } else {
-              echo "⚠️  No se pudo extraer la URL del tunnel, usando localhost como fallback"
               env.TUNNEL_URL = "http://127.0.0.1:3000"
+              echo "⚠️  No se pudo leer tunnel-url.txt, usando localhost como fallback"
             }
           }
 
