@@ -9,76 +9,69 @@ pipeline {
     stage('npm install & start + cloudflared') {
       steps {
         dir("${env.PROJECT_PATH}") {
-          // Instalar deps (rápido si ya existe lockfile)
+          // Instalar deps
           bat 'npm install'
 
-          // Matar cualquier node viejo (opcional)
+          // Matar node viejo (opcional)
           bat 'taskkill /F /IM node.exe >nul 2>&1 || echo no-node'
-          
-          sleep(time: 2, unit: 'SECONDS')
+          bat 'taskkill /F /IM cloudflared.exe >nul 2>&1 || echo no-cloudflared'
 
-          // Crear script batch temporal para iniciar el servidor de forma independiente
+          // Crear start-server.bat (seteando BUILD_ID para evitar el ProcessTreeKiller)
           script {
-            def scriptPath = "${env.PROJECT_PATH}\\start-server.bat"
-            writeFile file: scriptPath, text: """@echo off
+            def serverBat = """@echo off
+set BUILD_ID=dontKillMe
+set JENKINS_NODE_COOKIE=do_not_kill
 cd /d "${env.PROJECT_PATH}"
-npm start > server.log 2>&1
+rem start detached: npm start -> server.log
+start "" cmd /c "npm start > server.log 2>&1"
 """
-            
-            // Arrancar la app en background de forma completamente independiente
-            bat """
-              @echo off
-              cd /d "${env.PROJECT_PATH}"
-              if exist "${scriptPath}" (
-                start "" "${scriptPath}"
-              ) else (
-                echo Error: No se encontro el script ${scriptPath}
-                exit /b 1
-              )
-            """
+            writeFile file: "${env.PROJECT_PATH}\\start-server.bat", text: serverBat
           }
 
-          echo "⏳ Esperando que el servidor inicie..."
-          
-          // Health check: esperar hasta que el servidor responda
+          // Crear start-tunnel.bat
+          script {
+            def tunnelBat = """@echo off
+set BUILD_ID=dontKillMe
+set JENKINS_NODE_COOKIE=do_not_kill
+cd /d "${env.PROJECT_PATH}"
+start "" "%USERPROFILE%\\cloudflared.exe" tunnel --config NUL --url http://127.0.0.1:3000 > cloudflared.log 2>&1
+"""
+            writeFile file: "${env.PROJECT_PATH}\\start-tunnel.bat", text: tunnelBat
+          }
+
+          // Lanzar los scripts (start los deja fuera del job)
+          bat """
+            cd /d "${env.PROJECT_PATH}"
+            start "" "${env.PROJECT_PATH}\\start-server.bat"
+            timeout /t 2 /nobreak >nul
+            start "" "${env.PROJECT_PATH}\\start-tunnel.bat"
+          """
+
+          // Healthcheck para confirmar servidor
           powershell '''
-            $maxAttempts = 30
-            $attempt = 0
-            $serverReady = $false
-            
-            while ($attempt -lt $maxAttempts -and -not $serverReady) {
-              try {
-                $response = Invoke-WebRequest -Uri "http://127.0.0.1:3000" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-                if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+            $ok=$false
+            for($i=0;$i -lt 20 -and -not $ok;$i++){
+              try{ 
+                $r=Invoke-WebRequest http://127.0.0.1:3000 -UseBasicParsing -TimeoutSec 3
+                if($r.StatusCode -ge 200 -and $r.StatusCode -lt 500){
+                  $ok=$true
                   Write-Host "✅ Servidor respondiendo en http://127.0.0.1:3000"
-                  $serverReady = $true
                   break
                 }
               } catch {
-                $attempt++
-                Write-Host "   Esperando servidor... ($attempt/$maxAttempts)"
-                Start-Sleep -Seconds 2
+                Write-Host "   Esperando servidor... ($($i+1)/20)"
               }
+              Start-Sleep -Seconds 2
             }
-            
-            if (-not $serverReady) {
-              Write-Host "❌ Servidor no respondio despues de $maxAttempts intentos"
+            if(-not $ok){ 
+              Write-Error "❌ Servidor no respondió en http://127.0.0.1:3000"
               exit 1
             }
           '''
 
-          // Arrancar cloudflared en background
-          powershell '''
-            Start-Process -WindowStyle Hidden `
-              -FilePath "$env:USERPROFILE\\cloudflared.exe" `
-              -ArgumentList @("tunnel","--config","NUL","--url","http://127.0.0.1:3000")
-          '''
-          
-          sleep(time: 3, unit: 'SECONDS')
-          
-          echo "✅ Servidor y Cloudflare Tunnel iniciados"
-          echo "📝 Servidor disponible en: http://127.0.0.1:3000"
-          echo "🌐 Cloudflare Tunnel iniciado (revisa la consola de PowerShell para ver la URL pública)"
+          echo '✅ Scripts arrancados; deberían quedarse corriendo aún cuando termine el job.'
+          echo '📝 Logs: server.log y cloudflared.log en el directorio del proyecto.'
+          echo '🌐 Servidor disponible en: http://127.0.0.1:3000'
         }
       }
     }
