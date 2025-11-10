@@ -36,65 +36,52 @@ pipeline {
           $cmd = "start \"\" /B `"$exe`" tunnel --config NUL --url http://127.0.0.1:3000 > `"$log`" 2>&1"
           Start-Process -FilePath cmd.exe -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
           
-          # Esperar un poco para que cloudflared inicie
-          Start-Sleep -Seconds 3
+          # Esperar un poco para que cloudflared inicie y genere la URL
+          Start-Sleep -Seconds 5
           
-          # Esperar y capturar la URL (aumentado a 60 segundos)
+          # Intentar capturar la URL rápidamente (máximo 15 segundos)
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
           $url = $null
-          $lastSize = 0
           
-          for ($i=0; $i -lt 60; $i++) {
-            Start-Sleep -Seconds 1
+          for ($i=0; $i -lt 15; $i++) {
             if (Test-Path $log) {
               try {
-                # Leer solo las líneas nuevas para ser más eficiente
-                $currentSize = (Get-Item $log).Length
-                if ($currentSize -gt $lastSize) {
-                  $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
-                  if ($txt -match $regex) {
-                    $url = $matches[0]
-                    Write-Host "✅ TUNNEL_URL=$url"
-                    Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $url
-                    break
-                  }
-                  $lastSize = $currentSize
+                $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
+                if ($txt -match $regex) {
+                  $url = $matches[0]
+                  Write-Host "✅ TUNNEL_URL=$url"
+                  Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $url
+                  break
                 }
-              } catch {
-                # Si hay error, intentar leer todo el archivo de nuevo
-                try {
-                  $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
-                  if ($txt -match $regex) {
-                    $url = $matches[0]
-                    Write-Host "✅ TUNNEL_URL=$url"
-                    Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $url
-                    break
-                  }
-                } catch {}
-              }
+              } catch {}
+            }
+            if ($i -lt 14) {
+              Start-Sleep -Seconds 1
             }
           }
           
-          # Si aún no se encontró, intentar leer el archivo completo una última vez
-          if (-not $url -and (Test-Path $log)) {
-            try {
-              $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
-              if ($txt -match $regex) {
-                $url = $matches[0]
-                Write-Host "✅ TUNNEL_URL=$url"
-                Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $url
-              }
-            } catch {}
-          }
-          
           if (-not $url) {
-            Write-Host "⚠️ No se pudo obtener la URL del túnel en el tiempo esperado"
+            Write-Host "⚠️ URL no encontrada aún, pero cloudflared está corriendo. Se leerá después."
           }
         '''
         script {
+          def url = null
           if (fileExists('tunnel-url.txt')) {
-            env.TUNNEL_URL = readFile('tunnel-url.txt').trim()
+            url = readFile('tunnel-url.txt').trim()
+          } else if (fileExists('cloudflared.log')) {
+            // Fallback: leer directamente del log
+            def logContent = readFile('cloudflared.log')
+            def matcher = logContent =~ /https:\/\/[a-z0-9-]+\.trycloudflare\.com/
+            if (matcher.find()) {
+              url = matcher.group(0)
+            }
+          }
+          
+          if (url) {
+            env.TUNNEL_URL = url
             echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+          } else {
+            echo "⚠️ No se pudo obtener la URL del túnel"
           }
         }
       }
