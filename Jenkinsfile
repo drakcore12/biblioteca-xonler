@@ -58,10 +58,14 @@ pipeline {
           "" | Out-File -FilePath $logFile -Force
           "" | Out-File -FilePath $logErr -Force
           
-          # Ejecutar cloudflared completamente desacoplado usando cmd start /B
-          # Esto asegura que el proceso esté completamente separado del pipeline
-          $cloudflaredCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
-          $null = cmd /c $cloudflaredCmd
+          # Ejecutar cloudflared completamente desacoplado
+          # Usar cmd /c start /B directamente - esto debería ejecutarse de forma asíncrona
+          $startCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
+          
+          # Ejecutar directamente con & para que no espere
+          & cmd /c $startCmd
+          
+          Write-Host "Cloudflared iniciado en background..."
           
           # Esperar un momento y obtener el PID de cloudflared
           Start-Sleep -Seconds 2
