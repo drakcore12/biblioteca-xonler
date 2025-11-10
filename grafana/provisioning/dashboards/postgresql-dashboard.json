@@ -1,4 +1,5 @@
 {
+  "uid": "postgresql-db-metrics",
   "title": "PostgreSQL Database Metrics",
   "tags": [
     "postgresql",

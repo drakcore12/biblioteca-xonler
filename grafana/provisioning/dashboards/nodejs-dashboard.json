@@ -1,4 +1,5 @@
 {
+  "uid": "nodejs-app-metrics",
   "title": "Node.js Application Metrics",
   "tags": [
     "nodejs",
