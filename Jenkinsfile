@@ -18,8 +18,10 @@ pipeline {
           npm ci
           if ($LASTEXITCODE -ne 0) { npm install }
 
-          # 2) Levantar la app (queda viva en otro proceso)
-          $app = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm start" -NoNewWindow -PassThru
+          # 2) Levantar la app (queda viva en otro proceso, completamente desacoplado)
+          $appCmd = "start `"`" /B cmd /c `"set HOST=$($env:HOST)&& set PORT=$($env:PORT)&& npm start > server.log 2>&1`""
+          cmd /c $appCmd
+          Start-Sleep -Seconds 2
 
           # 3) Esperar a que el puerto esté listo (máx 60s)
           $deadline = (Get-Date).AddSeconds(60)
@@ -45,9 +47,18 @@ pipeline {
           $logFile = Join-Path $env:WORKSPACE "cloudflared.out"
           $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
           
-          # Usar Start-Process con redirección explícita
-          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--url", "http://$($env:HOST):$($env:PORT)" -NoNewWindow -RedirectStandardOutput $logFile -RedirectStandardError $logErr -PassThru
-          Write-Host "Cloudflared iniciado con PID: $($process.Id)"
+          # Usar cmd start /B para desacoplar completamente el proceso
+          $cloudflaredCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
+          cmd /c $cloudflaredCmd
+          
+          # Obtener el PID de cloudflared después de iniciarlo
+          Start-Sleep -Seconds 2
+          $cloudflaredProcess = Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($cloudflaredProcess) {
+            Write-Host "Cloudflared iniciado con PID: $($cloudflaredProcess.Id)"
+          } else {
+            Write-Host "Cloudflared iniciado (PID no disponible aún)"
+          }
           
           # Esperar un poco para que cloudflared inicie y empiece a escribir
           Start-Sleep -Seconds 3
@@ -90,6 +101,8 @@ pipeline {
           
           if ($url) {
             Write-Host "✅ URL del túnel capturada: $url"
+            Write-Host "🌐 Servidor local: http://$($env:HOST):$($env:PORT)"
+            Write-Host "🌐 Túnel público: $url"
           } else {
             Write-Host "⚠️ No se pudo capturar la URL en 45 segundos"
             if (Test-Path $logFile) {
@@ -101,7 +114,26 @@ pipeline {
               Get-Content $logErr -Tail 20 | Write-Host
             }
           }
+          
+          Write-Host "Pipeline completado. Servicios corriendo en background:"
+          Write-Host "- Servidor Node.js en http://$($env:HOST):$($env:PORT)"
+          if ($cloudflaredProcess) {
+            Write-Host "- Cloudflared (PID: $($cloudflaredProcess.Id))"
+          } else {
+            Write-Host "- Cloudflared (en ejecución)"
+          }
+          
+          # Forzar salida del script para que el pipeline termine
+          exit 0
         '''
+        script {
+          if (fileExists('tunnel_url.txt')) {
+            env.TUNNEL_URL = readFile('tunnel_url.txt').trim()
+            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+          }
+          env.LOCAL_URL = "http://127.0.0.1:3000"
+          echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
+        }
       }
     }
   }
@@ -109,11 +141,7 @@ pipeline {
   post {
     always {
       archiveArtifacts artifacts: 'cloudflared.out,cloudflared.err,tunnel_url.txt', onlyIfSuccessful: false
-      powershell '''
-        Get-Process -Name "node","npm" -ErrorAction SilentlyContinue | ForEach-Object {
-          try { Stop-Process -Id $_.Id -Force } catch {}
-        }
-      '''
+      echo "✅ Pipeline terminado. Servicios siguen corriendo en background."
     }
   }
 }
