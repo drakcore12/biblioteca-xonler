@@ -1,5 +1,5 @@
 config:
-  target: "http://localhost:3000"
+  target: "http://127.0.0.1:3000"
   phases:
     # Fase 1: Rampa de carga gradual
     - duration: 30
@@ -18,8 +18,8 @@ config:
   processor: "./tests/load/artillery-processor.js"
 
 scenarios:
-  # Escenario 1: Navegación básica
-  - name: "Navegación principal"
+  # Escenario 1: Navegaci?n b?sica
+  - name: "Navegaci?n principal"
     weight: 40
     flow:
       - get:
@@ -53,8 +53,8 @@ scenarios:
             - statusCode: [200, 401]
       - think: 1
 
-  # Escenario 4: Página de contacto
-  - name: "Página de contacto"
+  # Escenario 4: P?gina de contacto
+  - name: "P?gina de contacto"
     weight: 10
     flow:
       - get:
