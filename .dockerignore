@@ -1,0 +1,56 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Testing
+coverage
+.nyc_output
+test-results
+playwright-report
+__tests__
+tests
+
+# Development
+.env
+.env.local
+.env.*.local
+*.log
+server.log
+server-e2e.log
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# CI/CD
+.github
+Jenkinsfile
+.gitlab-ci.yml
+
+# Build artifacts
+dist
+build
+*.map
+
+# Temporary files
+tmp
+temp
+*.tmp
+
