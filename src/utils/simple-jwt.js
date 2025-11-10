@@ -9,9 +9,9 @@ class SimpleJWT {
    */
   generateToken(payload, options = {}) {
     const defaultOptions = {
-      expiresIn: '24h',
-      issuer: 'biblioteca-xonler',
-      audience: 'biblioteca-users'
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+      issuer: process.env.JWT_ISSUER || 'biblioteca-xonler',
+      audience: process.env.JWT_AUDIENCE || 'biblioteca-users'
     };
 
     const tokenOptions = { ...defaultOptions, ...options };
@@ -25,8 +25,8 @@ class SimpleJWT {
   verifyToken(token) {
     try {
       return jwt.verify(token, JWT_SECRET, {
-        issuer: 'biblioteca-xonler',
-        audience: 'biblioteca-users'
+        issuer: process.env.JWT_ISSUER || 'biblioteca-xonler',
+        audience: process.env.JWT_AUDIENCE || 'biblioteca-users'
       });
     } catch (error) {
       throw new Error('Token inválido');

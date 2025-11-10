@@ -6,17 +6,17 @@ services:
     container_name: pg-main
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-xonler}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${DB_PORT}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-      # Opcional: montar script SQL inicial
+      # Script SQL inicial
       - ./db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-xonler}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -31,48 +31,164 @@ services:
       db:
         condition: service_healthy
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      HOST: 0.0.0.0
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+      HOST: ${HOST}
       # Variables de base de datos (conecta usando el nombre del servicio 'db')
       DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB:-xonler}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      # Otras variables de la app (configura en .env o aquí)
-      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
-      # Opcional: otras variables
-      LOG_ENCRYPTION: ${LOG_ENCRYPTION:-false}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Configuración del Pool de Conexiones
+      DB_POOL_MAX: ${DB_POOL_MAX}
+      DB_POOL_IDLE_TIMEOUT: ${DB_POOL_IDLE_TIMEOUT}
+      DB_POOL_CONNECTION_TIMEOUT: ${DB_POOL_CONNECTION_TIMEOUT}
+      # Seguridad y Autenticación
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_AUDIENCE: ${JWT_AUDIENCE}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      # Configuración de logs
+      LOG_LEVEL: ${LOG_LEVEL}
+      LOG_ENCRYPTION: ${LOG_ENCRYPTION}
+      LOG_RETENTION_DAYS: ${LOG_RETENTION_DAYS}
+      LOG_COMPRESSION: ${LOG_COMPRESSION}
+      # Configuración de encriptación
+      ENCRYPTION_KEY_DIR: ${ENCRYPTION_KEY_DIR}
+      ENCRYPTION_PASSWORD: ${ENCRYPTION_PASSWORD}
+      ENCRYPTION_SALT: ${ENCRYPTION_SALT}
+      # Monitoreo y alertas
+      MONITORING_INTERVAL: ${MONITORING_INTERVAL}
+      MONITORING_THRESHOLD_CPU: ${MONITORING_THRESHOLD_CPU}
+      MONITORING_THRESHOLD_MEMORY: ${MONITORING_THRESHOLD_MEMORY}
+      MONITORING_THRESHOLD_DISK: ${MONITORING_THRESHOLD_DISK}
+      MONITORING_THRESHOLD_RESPONSE_TIME: ${MONITORING_THRESHOLD_RESPONSE_TIME}
+      MONITORING_THRESHOLD_ERROR_RATE: ${MONITORING_THRESHOLD_ERROR_RATE}
+      MONITORING_MAX_RESPONSE_TIMES: ${MONITORING_MAX_RESPONSE_TIMES}
+      ALERT_THRESHOLD_FAILED_LOGINS: ${ALERT_THRESHOLD_FAILED_LOGINS}
+      ALERT_THRESHOLD_SUSPICIOUS: ${ALERT_THRESHOLD_SUSPICIOUS}
+      ALERT_THRESHOLD_BLOCKED_IPS: ${ALERT_THRESHOLD_BLOCKED_IPS}
+      ALERT_THRESHOLD_ERROR_RATE: ${ALERT_THRESHOLD_ERROR_RATE}
+      ALERT_THRESHOLD_MEMORY: ${ALERT_THRESHOLD_MEMORY}
+      ALERT_THRESHOLD_DISK: ${ALERT_THRESHOLD_DISK}
+      ALERT_COOLDOWN_PERIOD: ${ALERT_COOLDOWN_PERIOD}
+      SERVER_NAME: ${SERVER_NAME}
+      # Otras variables
+      FRONTEND_URL: ${FRONTEND_URL}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
     ports:
-      - "${APP_PORT:-3000}:3000"
+      - "${PORT}:${PORT}"
     volumes:
       # Montar logs si quieres persistirlos
       - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:${PORT}', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      interval: 30s
+      timeout: 3s
+      start_period: 40s
+      retries: 3
     command: >
       sh -c "
         echo '✅ Base de datos lista. Iniciando aplicación...' &&
         node --enable-source-maps src/server.js
       "
 
-  # Opcional: Adminer (web UI simple para Postgres)
-  adminer:
-    image: adminer:4
-    container_name: adminer
+  # Opcional: DBeaver CloudBeaver (web UI para administración de bases de datos)
+  dbeaver:
+    image: dbeaver/cloudbeaver:latest
+    container_name: dbeaver
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "${ADMINER_PORT:-8081}:8080"
+      - "${DBEAVER_PORT}:8978"
     environment:
-      ADMINER_DEFAULT_SERVER: db
-      ADMINER_DEFAULT_DB: ${POSTGRES_DB:-xonler}
+      CB_SERVER_URL: http://0.0.0.0:8978
+    volumes:
+      - dbeaver-workspace:/opt/cloudbeaver/workspace
+
+  # Prometheus - Recolector de métricas
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+    depends_on:
+      - db
+      - app
+      - postgres-exporter
+      - cadvisor
+
+  # PostgreSQL Exporter - Métricas de PostgreSQL
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable"
+    ports:
+      - "${POSTGRES_EXPORTER_PORT:-9187}:9187"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # cAdvisor - Métricas de contenedores Docker
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    ports:
+      - "${CADVISOR_PORT:-8080}:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+
+  # Grafana - Visualización de métricas
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: "http://localhost:${GRAFANA_PORT:-3001}"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - prometheus
 
 volumes:
   db-data:
+    driver: local
+  dbeaver-workspace:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
     driver: local
 

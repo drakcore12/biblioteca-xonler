@@ -13,10 +13,10 @@ const createSecurePool = () => {
     host: process.env.DB_HOST || 'localhost',
     database: process.env.DB_NAME || 'biblioteca_xonler',
     password: process.env.DB_PASSWORD || 'password',
-    port: process.env.DB_PORT || 5432,
-    max: 20, // Máximo de conexiones en el pool
-    idleTimeoutMillis: 30000, // Tiempo de inactividad antes de cerrar conexión
-    connectionTimeoutMillis: 2000, // Tiempo de espera para nueva conexión
+    port: parseInt(process.env.DB_PORT) || 5432,
+    max: parseInt(process.env.DB_POOL_MAX) || 20, // Máximo de conexiones en el pool
+    idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT) || 30000, // Tiempo de inactividad antes de cerrar conexión
+    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT) || 2000, // Tiempo de espera para nueva conexión
   };
 
   // Configuración SSL

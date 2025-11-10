@@ -19,11 +19,11 @@ class RealtimeMonitoring {
     this.monitoringInterval = null;
     this.updateInterval = parseInt(process.env.MONITORING_INTERVAL) || 30000; // 30 segundos
     this.alertThresholds = {
-      cpu: 0.8, // 80%
-      memory: 0.85, // 85%
-      disk: 0.9, // 90%
-      responseTime: 1000, // 1 segundo
-      errorRate: 0.05 // 5%
+      cpu: parseFloat(process.env.MONITORING_THRESHOLD_CPU) || 0.8, // 80%
+      memory: parseFloat(process.env.MONITORING_THRESHOLD_MEMORY) || 0.85, // 85%
+      disk: parseFloat(process.env.MONITORING_THRESHOLD_DISK) || 0.9, // 90%
+      responseTime: parseInt(process.env.MONITORING_THRESHOLD_RESPONSE_TIME) || 1000, // 1 segundo
+      errorRate: parseFloat(process.env.MONITORING_THRESHOLD_ERROR_RATE) || 0.05 // 5%
     };
     
     this.requestMetrics = {
@@ -274,9 +274,10 @@ class RealtimeMonitoring {
       this.requestMetrics.errors++;
     }
 
-    // Mantener solo los últimos 1000 tiempos de respuesta
-    if (this.requestMetrics.responseTimes.length > 1000) {
-      this.requestMetrics.responseTimes = this.requestMetrics.responseTimes.slice(-1000);
+    // Mantener solo los últimos N tiempos de respuesta (configurable)
+    const maxResponseTimes = parseInt(process.env.MONITORING_MAX_RESPONSE_TIMES) || 1000;
+    if (this.requestMetrics.responseTimes.length > maxResponseTimes) {
+      this.requestMetrics.responseTimes = this.requestMetrics.responseTimes.slice(-maxResponseTimes);
     }
   }
 

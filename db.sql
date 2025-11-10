@@ -12,7 +12,7 @@
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
+-- SET transaction_timeout = 0; -- Not supported in PostgreSQL versions prior to 17
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -21,25 +21,15 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-DROP DATABASE IF EXISTS xonler;
---
--- TOC entry 5042 (class 1262 OID 16388)
--- Name: xonler; Type: DATABASE; Schema: -; Owner: postgres
---
-
-CREATE DATABASE xonler WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'Spanish_Colombia.1252';
-
-
-ALTER DATABASE xonler OWNER TO postgres;
-
+-- La base de datos xonler ya fue creada por POSTGRES_DB
+-- Solo necesitamos crear las tablas dentro de ella
 \unrestrict CBApZPlxtMC4EMnEHYayhJgtWsnYhHi4YrgZT76mniY1kDOqOjEmM9OjSI8hgIT
-\connect xonler
 \restrict CBApZPlxtMC4EMnEHYayhJgtWsnYhHi4YrgZT76mniY1kDOqOjEmM9OjSI8hgIT
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
+-- SET transaction_timeout = 0; -- Not supported in PostgreSQL versions prior to 17
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -53,7 +43,7 @@ SET row_security = off;
 -- Name: public; Type: SCHEMA; Schema: -; Owner: pg_database_owner
 --
 
-CREATE SCHEMA public;
+CREATE SCHEMA IF NOT EXISTS public;
 
 
 ALTER SCHEMA public OWNER TO pg_database_owner;
@@ -850,7 +840,9 @@ ALTER TABLE ONLY public.usuarios
 
 
 -- Tabla para tokens de recuperación de contraseña
-CREATE TABLE IF NOT EXISTS password_reset_tokens (
+SET search_path = public;
+
+CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     token TEXT NOT NULL UNIQUE,
@@ -860,9 +852,9 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 );
 
 -- Índices para mejorar rendimiento
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
-CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON password_reset_tokens(expires_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON public.password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON public.password_reset_tokens(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires_at ON public.password_reset_tokens(expires_at);
 
 -- Completed on 2025-09-29 21:05:05
 

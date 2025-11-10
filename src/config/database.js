@@ -4,14 +4,14 @@ require('dotenv').config();
 // Configuración de la base de datos
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
+  port: parseInt(process.env.DB_PORT) || 5432,
   database: process.env.DB_NAME || 'xonler',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
-  // Configuraciones adicionales para mejor rendimiento
-  max: 20, // máximo de conexiones en el pool
-  idleTimeoutMillis: 30000, // tiempo de inactividad antes de cerrar
-  connectionTimeoutMillis: 2000, // tiempo máximo para conectar
+  // Configuraciones adicionales para mejor rendimiento (desde variables de entorno)
+  max: parseInt(process.env.DB_POOL_MAX) || 20, // máximo de conexiones en el pool
+  idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT) || 30000, // tiempo de inactividad antes de cerrar
+  connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT) || 2000, // tiempo máximo para conectar
 });
 
 // Evento cuando se conecta una nueva conexión

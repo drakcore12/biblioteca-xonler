@@ -9,16 +9,16 @@ const path = require('path');
 class SecurityAlerts {
   constructor() {
     this.alertThresholds = {
-      failedLogins: 5, // Alertas después de 5 intentos fallidos
-      suspiciousActivity: 3, // Alertas después de 3 actividades sospechosas
-      blockedIPs: 10, // Alertas cuando hay 10+ IPs bloqueadas
-      errorRate: 0.1, // Alertas cuando la tasa de errores es > 10%
-      memoryUsage: 0.9, // Alertas cuando el uso de memoria es > 90%
-      diskUsage: 0.85 // Alertas cuando el uso de disco es > 85%
+      failedLogins: parseInt(process.env.ALERT_THRESHOLD_FAILED_LOGINS) || 5, // Alertas después de 5 intentos fallidos
+      suspiciousActivity: parseInt(process.env.ALERT_THRESHOLD_SUSPICIOUS) || 3, // Alertas después de 3 actividades sospechosas
+      blockedIPs: parseInt(process.env.ALERT_THRESHOLD_BLOCKED_IPS) || 10, // Alertas cuando hay 10+ IPs bloqueadas
+      errorRate: parseFloat(process.env.ALERT_THRESHOLD_ERROR_RATE) || 0.1, // Alertas cuando la tasa de errores es > 10%
+      memoryUsage: parseFloat(process.env.ALERT_THRESHOLD_MEMORY) || 0.9, // Alertas cuando el uso de memoria es > 90%
+      diskUsage: parseFloat(process.env.ALERT_THRESHOLD_DISK) || 0.85 // Alertas cuando el uso de disco es > 85%
     };
     
     this.alertHistory = new Map();
-    this.cooldownPeriod = 5 * 60 * 1000; // 5 minutos de cooldown
+    this.cooldownPeriod = parseInt(process.env.ALERT_COOLDOWN_PERIOD) || (5 * 60 * 1000); // 5 minutos de cooldown
     this.notificationChannels = this.initializeNotificationChannels();
   }
 

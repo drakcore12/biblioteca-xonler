@@ -3,6 +3,9 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
+# Actualizar paquetes de Alpine (incluyendo busybox) para corregir CVEs
+RUN apk update && apk upgrade && apk add --no-cache curl
+
 # Instala dependencias (separando deps de producción)
 COPY package*.json ./
 RUN npm ci
@@ -16,6 +19,9 @@ COPY . .
 FROM node:20-alpine AS runtime
 
 WORKDIR /app
+
+# Actualizar paquetes de Alpine (incluyendo busybox) para corregir CVEs
+RUN apk update && apk upgrade && apk add --no-cache curl
 
 # Variables por defecto (puedes sobreescribir en compose/.env)
 ENV NODE_ENV=production \
