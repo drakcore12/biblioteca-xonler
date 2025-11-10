@@ -18,7 +18,7 @@ pipeline {
           if ($LASTEXITCODE -ne 0) { npm install }
 
           # 2) Levantar la app (queda viva en otro proceso)
-          $app = Start-Process -FilePath "npm" -ArgumentList "start" -NoNewWindow -PassThru
+          $app = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm start" -NoNewWindow -PassThru
 
           # 3) Esperar a que el puerto esté listo (máx 60s)
           $deadline = (Get-Date).AddSeconds(60)
@@ -32,7 +32,14 @@ pipeline {
           }
           if (-not $ok) { throw "La app no abrió en http://$env:HOST:$env:PORT" }
 
-          # 4) Ejecutar cloudflared en PRIMER PLANO y capturar la URL
+          # 4) Descargar cloudflared si no existe
+          $exe = "$env:USERPROFILE\\cloudflared.exe"
+          if (-not (Test-Path $exe)) {
+            Write-Host "Descargando cloudflared..."
+            Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing
+          }
+
+          # 5) Ejecutar cloudflared en PRIMER PLANO y capturar la URL
           Write-Host "Lanzando cloudflared; se quedará en primer plano…"
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
 
