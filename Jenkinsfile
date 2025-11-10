@@ -14,7 +14,8 @@ pipeline {
           if (Test-Path "cloudflared.out") { Remove-Item "cloudflared.out" -Force }
 
           # 1) Dependencias
-          npm ci || npm install
+          npm ci
+          if ($LASTEXITCODE -ne 0) { npm install }
 
           # 2) Levantar la app (queda viva en otro proceso)
           $app = Start-Process -FilePath "npm" -ArgumentList "start" -NoNewWindow -PassThru
@@ -35,7 +36,7 @@ pipeline {
           Write-Host "Lanzando cloudflared; se quedará en primer plano…"
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
 
-          (& "$env:USERPROFILE\\cloudflared.exe" tunnel --config NUL --url "http://$($env:HOST):$($env:PORT)" 2>&1) `
+          (& $exe tunnel --config NUL --url "http://$($env:HOST):$($env:PORT)" 2>&1) `
             | Tee-Object -FilePath "cloudflared.out" `
             | ForEach-Object {
                 $_
