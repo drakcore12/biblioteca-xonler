@@ -25,7 +25,7 @@ pipeline {
           $env:HOST = "127.0.0.1"
           $env:PORT = "3000"
           
-          Write-Host "Iniciando servidor en http://$env:HOST:$env:PORT..."
+          Write-Host "Iniciando servidor en http://${env:HOST}:${env:PORT}..."
           
           $logFile = Join-Path $env:WORKSPACE "server.log"
           
@@ -46,7 +46,7 @@ pipeline {
             # Verificar que el proceso aún esté corriendo
             try {
               $proc = Get-Process -Id $process.Id -ErrorAction Stop
-              Write-Host "Intento $attempt/$maxAttempts: Proceso Node corriendo (PID: $($proc.Id))"
+              Write-Host "Intento ${attempt}/${maxAttempts}: Proceso Node corriendo (PID: $($proc.Id))"
             } catch {
               Write-Host "❌ El proceso npm se detuvo inesperadamente"
               if (Test-Path $logFile) {
