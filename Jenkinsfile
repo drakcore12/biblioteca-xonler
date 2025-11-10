@@ -13,13 +13,14 @@ pipeline {
           if (Test-Path "tunnel_url.txt") { Remove-Item "tunnel_url.txt" -Force }
           if (Test-Path "cloudflared.out") { Remove-Item "cloudflared.out" -Force }
           if (Test-Path "cloudflared.err") { Remove-Item "cloudflared.err" -Force }
+          if (Test-Path "server.log") { Remove-Item "server.log" -Force }
 
           # 1) Dependencias
           npm ci
           if ($LASTEXITCODE -ne 0) { npm install }
 
           # 2) Levantar la app (queda viva en otro proceso, completamente desacoplado)
-          $appCmd = "start `"`" /B cmd /c `"set HOST=$($env:HOST)&& set PORT=$($env:PORT)&& npm start > server.log 2>&1`""
+          $appCmd = 'start "" /B cmd /c "set HOST=' + $env:HOST + '&& set PORT=' + $env:PORT + '&& npm start > server.log 2>&1"'
           cmd /c $appCmd
           Start-Sleep -Seconds 2
 
@@ -31,16 +32,12 @@ pipeline {
           
           while ((Get-Date) -lt $deadline -and -not $serverReady) {
             $attempts++
-            # Primero verificar que el puerto esté abierto
             $portOpen = $false
             try {
               $portOpen = Test-NetConnection -ComputerName $env:HOST -Port ([int]$env:PORT) -InformationLevel Quiet -WarningAction SilentlyContinue
-            } catch { 
-              $portOpen = $false 
-            }
+            } catch { $portOpen = $false }
             
             if ($portOpen) {
-              # Si el puerto está abierto, verificar que el servidor HTTP responda correctamente
               try {
                 $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
                 if ($response.StatusCode -eq 200) {
@@ -49,7 +46,6 @@ pipeline {
                   break
                 }
               } catch {
-                # El servidor aún no responde HTTP correctamente
                 if ($attempts % 5 -eq 0) {
                   Write-Host "Puerto abierto pero servidor aún no responde HTTP (intento $attempts)..."
                 }
@@ -68,14 +64,11 @@ pipeline {
             Write-Host "Continuando de todas formas, pero el túnel puede no funcionar..."
           } else {
             Write-Host "✅ Servidor Node.js verificado y funcionando en http://$($env:HOST):$($env:PORT)"
-            # Esperar un poco más para asegurar que el servidor esté completamente estable
-            Write-Host "Esperando 5 segundos adicionales para estabilización..."
             Start-Sleep -Seconds 5
           }
 
           # 4) Verificación final del servidor antes de iniciar cloudflared
           if ($serverReady) {
-            Write-Host "Realizando verificación final del servidor antes de iniciar cloudflared..."
             try {
               $finalCheck = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
               Write-Host "✅ Servidor verificado: HTTP $($finalCheck.StatusCode) - Listo para cloudflared"
@@ -86,7 +79,7 @@ pipeline {
           }
 
           # 5) Descargar cloudflared si no existe
-          $exe = "$env:USERPROFILE\\cloudflared.exe"
+          $exe = Join-Path $env:USERPROFILE "cloudflared.exe"
           if (-not (Test-Path $exe)) {
             Write-Host "Descargando cloudflared..."
             Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing
@@ -95,30 +88,27 @@ pipeline {
           # 6) Ejecutar cloudflared en background y capturar la URL
           Write-Host "Lanzando cloudflared en background..."
           $logFile = Join-Path $env:WORKSPACE "cloudflared.out"
-          $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
+          $logErr  = Join-Path $env:WORKSPACE "cloudflared.err"
           
-          # Asegurar que los archivos de log existan (crearlos vacíos si no existen)
+          # Crear/limpiar logs
           "" | Out-File -FilePath $logFile -Force
           "" | Out-File -FilePath $logErr -Force
           
-          # Ejecutar cloudflared completamente desacoplado
-          # Crear un script batch que ejecute cloudflared y termine inmediatamente
+          # Crear batch que lance cloudflared detached (start /B)
           $batchFile = Join-Path $env:WORKSPACE "run-cloudflared.bat"
           @"
 @echo off
 start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2> "$logErr"
 "@ | Out-File -FilePath $batchFile -Encoding ASCII -Force
           
-          # Ejecutar el batch de forma asíncrona - esto debería terminar inmediatamente
+          # Ejecutar el batch (asíncrono)
           $null = Start-Process -FilePath $batchFile -WindowStyle Hidden -PassThru
-          
-          # Esperar un momento y eliminar el batch
           Start-Sleep -Milliseconds 300
           Remove-Item $batchFile -Force -ErrorAction SilentlyContinue
           
           Write-Host "Cloudflared iniciado en background..."
           
-          # Esperar un momento y obtener el PID de cloudflared
+          # Intentar obtener PID de cloudflared
           Start-Sleep -Seconds 2
           $cloudflaredProcess = Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($cloudflaredProcess) {
@@ -127,10 +117,7 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
             Write-Host "Cloudflared iniciado (PID no disponible aún)"
           }
           
-          # Esperar un poco para que cloudflared inicie y empiece a escribir
-          Start-Sleep -Seconds 3
-          
-          # Esperar y capturar la URL (máximo 45 segundos)
+          # Esperar y capturar la URL (máx 45s)
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
           $url = $null
           $deadline = (Get-Date).AddSeconds(45)
@@ -140,14 +127,10 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
             Start-Sleep -Seconds 2
             $content = ""
             if (Test-Path $logFile) {
-              try {
-                $content += Get-Content $logFile -Raw -ErrorAction SilentlyContinue
-              } catch {}
+              try { $content += Get-Content $logFile -Raw -ErrorAction SilentlyContinue } catch {}
             }
             if (Test-Path $logErr) {
-              try {
-                $content += Get-Content $logErr -Raw -ErrorAction SilentlyContinue
-              } catch {}
+              try { $content += Get-Content $logErr -Raw -ErrorAction SilentlyContinue } catch {}
             }
             
             if ($content -match $regex) {
@@ -171,7 +154,7 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
             Write-Host "🌐 Servidor local: http://$($env:HOST):$($env:PORT)"
             Write-Host "🌐 Túnel público: $url"
             
-            # Verificar que el túnel esté funcionando correctamente
+            # Verificar que el túnel esté funcionando
             Write-Host "Verificando que el túnel esté funcionando..."
             Start-Sleep -Seconds 3
             try {
@@ -187,7 +170,6 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
             }
           } else {
             Write-Host "⚠️ No se pudo capturar la URL en 45 segundos"
-            Write-Host "Revisando logs de cloudflared para diagnosticar el problema..."
             if (Test-Path $logFile) {
               Write-Host "=== Últimas 30 líneas de stdout ==="
               Get-Content $logFile -Tail 30 | Write-Host
@@ -196,8 +178,6 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
               Write-Host "=== Últimas 30 líneas de stderr ==="
               Get-Content $logErr -Tail 30 | Write-Host
             }
-            
-            # Verificar si cloudflared está corriendo
             $cfProcess = Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue
             if ($cfProcess) {
               Write-Host "Cloudflared está corriendo (PID: $($cfProcess.Id))"
@@ -219,8 +199,7 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
           Write-Host "=========================================="
           Write-Host ""
           
-          # Forzar salida del script - esto debe terminar el paso
-          Write-Host "Finalizando paso de PowerShell..."
+          # Salida exitosa del paso de PowerShell
           $global:LASTEXITCODE = 0
           exit 0
         ''')
@@ -233,7 +212,7 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
           echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
           echo "✅ Paso de PowerShell completado. Pipeline terminando..."
         }
-        // Paso adicional para asegurar que el pipeline termine
+        // Asegura que el job sale con éxito
         bat 'echo Pipeline completado exitosamente && exit /b 0'
       }
     }
@@ -241,7 +220,7 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
 
   post {
     always {
-      archiveArtifacts artifacts: 'cloudflared.out,cloudflared.err,tunnel_url.txt', onlyIfSuccessful: false
+      archiveArtifacts artifacts: 'cloudflared.out,cloudflared.err,tunnel_url.txt,server.log', onlyIfSuccessful: false
       echo "✅ Pipeline terminado. Servicios siguen corriendo en background."
     }
   }
