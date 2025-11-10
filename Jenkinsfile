@@ -69,6 +69,42 @@ pipeline {
     stage('Tests E2E') {
       steps {
         powershell '''
+          Write-Host "Iniciando servidor para tests E2E..."
+          $env:HOST = "127.0.0.1"
+          $env:PORT = "3000"
+          $env:CI = "true"
+          
+          # Iniciar servidor en background
+          $appCmd = 'start "" /B cmd /c "set HOST=' + $env:HOST + '&& set PORT=' + $env:PORT + '&& npm start > server-e2e.log 2>&1"'
+          cmd /c $appCmd | Out-Null
+          
+          # Esperar a que el servidor esté listo
+          Write-Host "Esperando a que el servidor esté listo..."
+          $maxAttempts = 30
+          $attempt = 0
+          $serverReady = $false
+          
+          while ($attempt -lt $maxAttempts -and -not $serverReady) {
+            Start-Sleep -Seconds 2
+            $attempt++
+            try {
+              $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+              if ($response.StatusCode -eq 200) {
+                $serverReady = $true
+                Write-Host "✅ Servidor listo después de $($attempt * 2) segundos"
+                break
+              }
+            } catch {
+              if ($attempt % 5 -eq 0) {
+                Write-Host "Esperando servidor... (intento $attempt/$maxAttempts)"
+              }
+            }
+          }
+          
+          if (-not $serverReady) {
+            Write-Host "⚠️ Servidor no está listo, pero continuando con tests E2E..."
+          }
+          
           Write-Host "Ejecutando tests E2E con Playwright..."
           npm run test:e2e
           if ($LASTEXITCODE -ne 0) {
@@ -80,8 +116,7 @@ pipeline {
       }
       post {
         always {
-          archiveArtifacts artifacts: 'playwright-report/**/*', allowEmptyArchive: true
-          publishTestResults testResultsPattern: 'test-results/**/*.xml'
+          archiveArtifacts artifacts: 'playwright-report/**/*,server-e2e.log', allowEmptyArchive: true
         }
       }
     }
