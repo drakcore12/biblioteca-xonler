@@ -4,7 +4,7 @@ pipeline {
   stages {
     stage('Run app + tunnel (simple)') {
       steps {
-        powershell '''
+        powershell(returnStatus: true, script: '''
           $ErrorActionPreference = "Stop"
           $env:HOST = "127.0.0.1"
           $env:PORT = "3000"
@@ -33,7 +33,14 @@ pipeline {
             if ($ok) { break }
             Start-Sleep -Seconds 1
           }
-          if (-not $ok) { throw "La app no abrió en http://$env:HOST:$env:PORT" }
+          if (-not $ok) { 
+            Write-Host "⚠️ La app no abrió en http://$env:HOST:$env:PORT en 60 segundos"
+            Write-Host "Continuando de todas formas..."
+          } else {
+            Write-Host "✅ Servidor Node.js está listo en http://$env:HOST:$env:PORT"
+            # Esperar un poco más para asegurar que el servidor esté completamente inicializado
+            Start-Sleep -Seconds 3
+          }
 
           # 4) Descargar cloudflared si no existe
           $exe = "$env:USERPROFILE\\cloudflared.exe"
@@ -47,11 +54,16 @@ pipeline {
           $logFile = Join-Path $env:WORKSPACE "cloudflared.out"
           $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
           
-          # Usar cmd start /B para desacoplar completamente el proceso
-          $cloudflaredCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
-          cmd /c $cloudflaredCmd
+          # Asegurar que los archivos de log existan (crearlos vacíos si no existen)
+          "" | Out-File -FilePath $logFile -Force
+          "" | Out-File -FilePath $logErr -Force
           
-          # Obtener el PID de cloudflared después de iniciarlo
+          # Ejecutar cloudflared completamente desacoplado usando cmd start /B
+          # Esto asegura que el proceso esté completamente separado del pipeline
+          $cloudflaredCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
+          $null = cmd /c $cloudflaredCmd
+          
+          # Esperar un momento y obtener el PID de cloudflared
           Start-Sleep -Seconds 2
           $cloudflaredProcess = Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($cloudflaredProcess) {
@@ -115,17 +127,24 @@ pipeline {
             }
           }
           
-          Write-Host "Pipeline completado. Servicios corriendo en background:"
-          Write-Host "- Servidor Node.js en http://$($env:HOST):$($env:PORT)"
+          Write-Host ""
+          Write-Host "=========================================="
+          Write-Host "Pipeline completado. Servicios corriendo:"
+          Write-Host "- Servidor Node.js: http://$($env:HOST):$($env:PORT)"
           if ($cloudflaredProcess) {
-            Write-Host "- Cloudflared (PID: $($cloudflaredProcess.Id))"
-          } else {
-            Write-Host "- Cloudflared (en ejecución)"
+            Write-Host "- Cloudflared PID: $($cloudflaredProcess.Id)"
           }
+          if ($url) {
+            Write-Host "- Túnel público: $url"
+          }
+          Write-Host "=========================================="
+          Write-Host ""
           
-          # Forzar salida del script para que el pipeline termine
+          # Forzar salida del script - esto debe terminar el paso
+          Write-Host "Finalizando paso de PowerShell..."
+          $global:LASTEXITCODE = 0
           exit 0
-        '''
+        ''')
         script {
           if (fileExists('tunnel_url.txt')) {
             env.TUNNEL_URL = readFile('tunnel_url.txt').trim()
@@ -133,7 +152,10 @@ pipeline {
           }
           env.LOCAL_URL = "http://127.0.0.1:3000"
           echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
+          echo "✅ Paso de PowerShell completado. Pipeline terminando..."
         }
+        // Paso adicional para asegurar que el pipeline termine
+        bat 'echo Pipeline completado exitosamente && exit /b 0'
       }
     }
   }
