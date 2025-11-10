@@ -23,33 +23,76 @@ pipeline {
           cmd /c $appCmd
           Start-Sleep -Seconds 2
 
-          # 3) Esperar a que el puerto esté listo (máx 60s)
-          $deadline = (Get-Date).AddSeconds(60)
-          $ok = $false
-          while ((Get-Date) -lt $deadline) {
+          # 3) Esperar a que el servidor esté completamente listo (máx 90s)
+          Write-Host "Esperando a que el servidor Node.js esté completamente listo..."
+          $deadline = (Get-Date).AddSeconds(90)
+          $serverReady = $false
+          $attempts = 0
+          
+          while ((Get-Date) -lt $deadline -and -not $serverReady) {
+            $attempts++
+            # Primero verificar que el puerto esté abierto
+            $portOpen = $false
             try {
-              $ok = Test-NetConnection -ComputerName $env:HOST -Port ([int]$env:PORT) -InformationLevel Quiet
-            } catch { $ok = $false }
-            if ($ok) { break }
-            Start-Sleep -Seconds 1
+              $portOpen = Test-NetConnection -ComputerName $env:HOST -Port ([int]$env:PORT) -InformationLevel Quiet -WarningAction SilentlyContinue
+            } catch { 
+              $portOpen = $false 
+            }
+            
+            if ($portOpen) {
+              # Si el puerto está abierto, verificar que el servidor HTTP responda correctamente
+              try {
+                $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+                if ($response.StatusCode -eq 200) {
+                  $serverReady = $true
+                  Write-Host "✅ Servidor Node.js está completamente listo y respondiendo (intento $attempts)"
+                  break
+                }
+              } catch {
+                # El servidor aún no responde HTTP correctamente
+                if ($attempts % 5 -eq 0) {
+                  Write-Host "Puerto abierto pero servidor aún no responde HTTP (intento $attempts)..."
+                }
+              }
+            } else {
+              if ($attempts % 5 -eq 0) {
+                Write-Host "Esperando a que el puerto $($env:PORT) se abra (intento $attempts)..."
+              }
+            }
+            
+            Start-Sleep -Seconds 2
           }
-          if (-not $ok) { 
-            Write-Host "⚠️ La app no abrió en http://$env:HOST:$env:PORT en 60 segundos"
-            Write-Host "Continuando de todas formas..."
+          
+          if (-not $serverReady) { 
+            Write-Host "⚠️ El servidor no está completamente listo después de 90 segundos"
+            Write-Host "Continuando de todas formas, pero el túnel puede no funcionar..."
           } else {
-            Write-Host "✅ Servidor Node.js está listo en http://$env:HOST:$env:PORT"
-            # Esperar un poco más para asegurar que el servidor esté completamente inicializado
-            Start-Sleep -Seconds 3
+            Write-Host "✅ Servidor Node.js verificado y funcionando en http://$($env:HOST):$($env:PORT)"
+            # Esperar un poco más para asegurar que el servidor esté completamente estable
+            Write-Host "Esperando 5 segundos adicionales para estabilización..."
+            Start-Sleep -Seconds 5
           }
 
-          # 4) Descargar cloudflared si no existe
+          # 4) Verificación final del servidor antes de iniciar cloudflared
+          if ($serverReady) {
+            Write-Host "Realizando verificación final del servidor antes de iniciar cloudflared..."
+            try {
+              $finalCheck = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+              Write-Host "✅ Servidor verificado: HTTP $($finalCheck.StatusCode) - Listo para cloudflared"
+            } catch {
+              Write-Host "⚠️ Advertencia: El servidor no responde en la verificación final: $($_.Exception.Message)"
+              Write-Host "Iniciando cloudflared de todas formas..."
+            }
+          }
+
+          # 5) Descargar cloudflared si no existe
           $exe = "$env:USERPROFILE\\cloudflared.exe"
           if (-not (Test-Path $exe)) {
             Write-Host "Descargando cloudflared..."
             Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing
           }
 
-          # 5) Ejecutar cloudflared en background y capturar la URL
+          # 6) Ejecutar cloudflared en background y capturar la URL
           Write-Host "Lanzando cloudflared en background..."
           $logFile = Join-Path $env:WORKSPACE "cloudflared.out"
           $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
@@ -127,15 +170,39 @@ start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2>
             Write-Host "✅ URL del túnel capturada: $url"
             Write-Host "🌐 Servidor local: http://$($env:HOST):$($env:PORT)"
             Write-Host "🌐 Túnel público: $url"
+            
+            # Verificar que el túnel esté funcionando correctamente
+            Write-Host "Verificando que el túnel esté funcionando..."
+            Start-Sleep -Seconds 3
+            try {
+              $tunnelResponse = Invoke-WebRequest -Uri $url -Method GET -TimeoutSec 10 -UseBasicParsing -ErrorAction Stop
+              if ($tunnelResponse.StatusCode -eq 200) {
+                Write-Host "✅ Túnel verificado y funcionando correctamente"
+              } else {
+                Write-Host "⚠️ Túnel responde pero con código: $($tunnelResponse.StatusCode)"
+              }
+            } catch {
+              Write-Host "⚠️ El túnel no está respondiendo correctamente: $($_.Exception.Message)"
+              Write-Host "Esto puede ser normal si el servidor local no está completamente listo"
+            }
           } else {
             Write-Host "⚠️ No se pudo capturar la URL en 45 segundos"
+            Write-Host "Revisando logs de cloudflared para diagnosticar el problema..."
             if (Test-Path $logFile) {
-              Write-Host "Contenido de stdout:"
-              Get-Content $logFile -Tail 20 | Write-Host
+              Write-Host "=== Últimas 30 líneas de stdout ==="
+              Get-Content $logFile -Tail 30 | Write-Host
             }
             if (Test-Path $logErr) {
-              Write-Host "Contenido de stderr:"
-              Get-Content $logErr -Tail 20 | Write-Host
+              Write-Host "=== Últimas 30 líneas de stderr ==="
+              Get-Content $logErr -Tail 30 | Write-Host
+            }
+            
+            # Verificar si cloudflared está corriendo
+            $cfProcess = Get-Process -Name "cloudflared" -ErrorAction SilentlyContinue
+            if ($cfProcess) {
+              Write-Host "Cloudflared está corriendo (PID: $($cfProcess.Id))"
+            } else {
+              Write-Host "⚠️ Cloudflared no está corriendo - puede haber fallado al iniciar"
             }
           }
           
