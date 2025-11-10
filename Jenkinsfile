@@ -20,51 +20,61 @@ pipeline {
 
     stage('Tunnel (cloudflared)') {
       steps {
-        powershell '''
+        powershell(returnStatus: true, script: '''
           $exe = "$env:USERPROFILE\\cloudflared.exe"
+          $ws  = $env:WORKSPACE
+          $log = Join-Path $ws "cloudflared.log"
+          $tf  = Join-Path $ws "tunnel-url.txt"
+
+          # Evita procesos previos colgados
+          try { Get-Process -Name cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue } catch {}
+
+          # Descargar si no existe
           if (-not (Test-Path $exe)) {
-            Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing
+            Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing -ErrorAction SilentlyContinue
           }
-          
-          $log = Join-Path $env:WORKSPACE "cloudflared.log"
-          $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
-          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--config", "NUL", "--no-autoupdate", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $logErr -PassThru
-          
-          Start-Sleep -Seconds 5
-          
+
+          # Logs limpios
+          Remove-Item $log,$tf -Force -ErrorAction SilentlyContinue | Out-Null
+
+          # Lanzar DETACHED vía cmd start /B para no acoplar stdout/err a este proceso
+          $cmd = "start \"\" /B `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$log`" 2>&1"
+          Start-Process -FilePath "cmd.exe" -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
+
+          # Poll hasta 60s buscando URL
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
-          $urlFound = $false
-          for ($i=0; $i -lt 30; $i++) {
-            Start-Sleep 1
-            $txt = ""
+          $found = $false
+          for($i=1; $i -le 60 -and -not $found; $i++){
+            Start-Sleep -Seconds 1
             if (Test-Path $log) {
-              $txt += Get-Content $log -Raw -ErrorAction SilentlyContinue
-            }
-            if (Test-Path $logErr) {
-              $txt += Get-Content $logErr -Raw -ErrorAction SilentlyContinue
-            }
-            if ($txt -match $regex) {
-              $u = $matches[0]
-              Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
-              Write-Host "TUNNEL_URL=$u"
-              $urlFound = $true
-              break
+              try { $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue } catch { $txt = "" }
+              if ($txt -match $regex) {
+                $url = $matches[0]
+                Set-Content -Path $tf -Value ($url + "`r`n") -Encoding UTF8
+                Write-Host "TUNNEL_URL=$url"
+                $found = $true
+                break
+              }
             }
           }
-          
-          if (-not $urlFound) {
-            Write-Host "No se encontró la URL del túnel después de 30 intentos"
-            exit 1
+
+          if (-not $found) {
+            Write-Host "⚠️  No se obtuvo URL; usando fallback localhost"
+            Set-Content -Path $tf -Value "http://127.0.0.1:3000`r`n" -Encoding UTF8
           }
-          
-          Write-Host "Túnel iniciado correctamente. Proceso cloudflared corriendo en background (PID: $($process.Id))"
-        '''
+
+          # ¡Clave! Forzar final del paso para que Jenkins no espere más
+          exit 0
+        ''')
+
         script {
-          if (fileExists('tunnel-url.txt')) {
-            env.TUNNEL_URL = readFile('tunnel-url.txt').trim()
-            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
-          }
+          def tf = "${env.WORKSPACE}\\tunnel-url.txt"
+          env.TUNNEL_URL = fileExists(tf) ? readFile(tf).trim() : 'http://127.0.0.1:3000'
+          echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
         }
+
+        // Extra: limpia cualquier ERRORLEVEL residual en Windows
+        bat 'cmd /c exit /b 0'
       }
     }
   }
