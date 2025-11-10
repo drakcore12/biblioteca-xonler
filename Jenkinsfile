@@ -6,7 +6,11 @@ pipeline {
     stage('Checkout') {
       steps {
         deleteDir()
-        checkout scm                   // Clona el repo donde está este Jenkinsfile
+        bat '''
+          git clone https://github.com/drakcore12/biblioteca-xonler.git .
+          git checkout main
+        '''
+        echo "✅ Checkout completado exitosamente"
       }
     }
 
