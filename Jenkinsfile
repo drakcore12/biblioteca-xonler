@@ -27,8 +27,7 @@ pipeline {
           }
           
           $log = Join-Path $env:WORKSPACE "cloudflared.log"
-          $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
-          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--config", "NUL", "--no-autoupdate", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $logErr -PassThru
+          cmd /c "start \"\" /B `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$log`" 2>&1"
           
           Start-Sleep -Seconds 5
           
@@ -36,19 +35,15 @@ pipeline {
           $urlFound = $false
           for ($i=0; $i -lt 30; $i++) {
             Start-Sleep 1
-            $txt = ""
             if (Test-Path $log) {
-              $txt += Get-Content $log -Raw -ErrorAction SilentlyContinue
-            }
-            if (Test-Path $logErr) {
-              $txt += Get-Content $logErr -Raw -ErrorAction SilentlyContinue
-            }
-            if ($txt -match $regex) {
-              $u = $matches[0]
-              Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
-              Write-Host "TUNNEL_URL=$u"
-              $urlFound = $true
-              break
+              $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
+              if ($txt -match $regex) {
+                $u = $matches[0]
+                Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
+                Write-Host "TUNNEL_URL=$u"
+                $urlFound = $true
+                break
+              }
             }
           }
           
@@ -57,7 +52,8 @@ pipeline {
             exit 1
           }
           
-          Write-Host "Túnel iniciado correctamente. Proceso cloudflared corriendo en background (PID: $($process.Id))"
+          Write-Host "Túnel iniciado correctamente"
+          exit 0
         '''
         script {
           if (fileExists('tunnel-url.txt')) {
