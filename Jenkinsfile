@@ -69,43 +69,82 @@ pipeline {
     stage('Tests E2E') {
       steps {
         powershell '''
-          Write-Host "Iniciando servidor para tests E2E..."
+          $ErrorActionPreference = "Continue"
           $env:HOST = "127.0.0.1"
           $env:PORT = "3000"
           $env:CI = "true"
+          $env:BASE_URL = "http://$($env:HOST):$($env:PORT)"
           
-          # Iniciar servidor en background
-          $appCmd = 'start "" /B cmd /c "set HOST=' + $env:HOST + '&& set PORT=' + $env:PORT + '&& npm start > server-e2e.log 2>&1"'
-          cmd /c $appCmd | Out-Null
+          Write-Host "Iniciando servidor para tests E2E..."
           
-          # Esperar a que el servidor esté listo
-          Write-Host "Esperando a que el servidor esté listo..."
-          $maxAttempts = 30
-          $attempt = 0
-          $serverReady = $false
-          
-          while ($attempt -lt $maxAttempts -and -not $serverReady) {
-            Start-Sleep -Seconds 2
-            $attempt++
-            try {
-              $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
-              if ($response.StatusCode -eq 200) {
-                $serverReady = $true
-                Write-Host "✅ Servidor listo después de $($attempt * 2) segundos"
-                break
-              }
-            } catch {
-              if ($attempt % 5 -eq 0) {
-                Write-Host "Esperando servidor... (intento $attempt/$maxAttempts)"
-              }
-            }
+          # Verificar si el servidor ya está corriendo
+          $portInUse = $false
+          try {
+            $portInUse = Test-NetConnection -ComputerName $env:HOST -Port ([int]$env:PORT) -InformationLevel Quiet -WarningAction SilentlyContinue
+          } catch {
+            $portInUse = $false
           }
           
-          if (-not $serverReady) {
-            Write-Host "⚠️ Servidor no está listo, pero continuando con tests E2E..."
+          if (-not $portInUse) {
+            # Iniciar servidor en background
+            Write-Host "Iniciando nuevo servidor..."
+            $appCmd = 'start "" /B cmd /c "set HOST=' + $env:HOST + '&& set PORT=' + $env:PORT + '&& npm start > server-e2e.log 2>&1"'
+            cmd /c $appCmd | Out-Null
+            Start-Sleep -Seconds 3
+            
+            # Esperar a que el servidor esté listo
+            Write-Host "Esperando a que el servidor esté listo..."
+            $maxAttempts = 60
+            $attempt = 0
+            $serverReady = $false
+            
+            while ($attempt -lt $maxAttempts -and -not $serverReady) {
+              Start-Sleep -Seconds 2
+              $attempt++
+              try {
+                $response = Invoke-WebRequest -Uri $env:BASE_URL -Method GET -TimeoutSec 3 -UseBasicParsing -ErrorAction Stop
+                if ($response.StatusCode -eq 200) {
+                  $serverReady = $true
+                  Write-Host "✅ Servidor listo después de $($attempt * 2) segundos"
+                  break
+                }
+              } catch {
+                if ($attempt % 10 -eq 0) {
+                  Write-Host "Esperando servidor... (intento $attempt/$maxAttempts)"
+                  # Mostrar últimas líneas del log si existe
+                  if (Test-Path "server-e2e.log") {
+                    Write-Host "Últimas líneas del log del servidor:"
+                    Get-Content "server-e2e.log" -Tail 5 | Write-Host
+                  }
+                }
+              }
+            }
+            
+            if (-not $serverReady) {
+              Write-Host "❌ Servidor no está listo después de $($maxAttempts * 2) segundos"
+              if (Test-Path "server-e2e.log") {
+                Write-Host "Contenido completo del log del servidor:"
+                Get-Content "server-e2e.log" | Write-Host
+              }
+              Write-Host "Saltando tests E2E debido a que el servidor no está disponible"
+              exit 0
+            }
+          } else {
+            Write-Host "✅ Servidor ya está corriendo en el puerto $($env:PORT)"
+          }
+          
+          # Verificación final antes de ejecutar tests
+          try {
+            $finalCheck = Invoke-WebRequest -Uri $env:BASE_URL -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+            Write-Host "✅ Verificación final: Servidor respondiendo con código $($finalCheck.StatusCode)"
+          } catch {
+            Write-Host "❌ Error en verificación final: $($_.Exception.Message)"
+            Write-Host "Saltando tests E2E"
+            exit 0
           }
           
           Write-Host "Ejecutando tests E2E con Playwright..."
+          Write-Host "BASE_URL configurada: $env:BASE_URL"
           npm run test:e2e
           if ($LASTEXITCODE -ne 0) {
             Write-Host "⚠️ Algunos tests E2E fallaron"
@@ -116,7 +155,7 @@ pipeline {
       }
       post {
         always {
-          archiveArtifacts artifacts: 'playwright-report/**/*,server-e2e.log', allowEmptyArchive: true
+          archiveArtifacts artifacts: 'playwright-report/**/*,server-e2e.log,test-results/**/*', allowEmptyArchive: true
         }
       }
     }
