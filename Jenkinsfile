@@ -70,18 +70,13 @@ pipeline {
           Write-Host "Pipeline completado. Servidor corriendo:"
           Write-Host "- Servidor Node.js: http://$($env:HOST):$($env:PORT)"
           Write-Host "=========================================="
-          Write-Host ""
           
-          # Salida exitosa del paso de PowerShell
-          $global:LASTEXITCODE = 0
-          exit 0
+          # Forzar terminación inmediata
+          [System.Environment]::Exit(0)
         ''')
         script {
           env.LOCAL_URL = "http://127.0.0.1:3000"
-          echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
-          echo "✅ Servidor iniciado correctamente. Pipeline terminando..."
         }
-        bat 'echo Pipeline completado exitosamente && exit /b 0'
       }
     }
   }
