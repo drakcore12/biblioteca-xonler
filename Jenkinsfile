@@ -1,6 +1,9 @@
 pipeline {
   agent { label 'windows host' }
   tools { git 'Default' }              // Asegúrate de tener esta instalación en Manage Jenkins → Tools
+  options {
+    skipDefaultCheckout(true)         // Deshabilitar checkout automático, usaremos nuestro propio stage
+  }
 
   stages {
     stage('Checkout') {
