@@ -21,7 +21,7 @@ pipeline {
     stage('Tunnel (cloudflared)') {
       steps {
         powershell '''
-          $exe = "$env:USERPROFILE\cloudflared.exe"
+          $exe = "$env:USERPROFILE\\cloudflared.exe"
           
           # Descargar si no existe
           if (-not (Test-Path $exe)) {
