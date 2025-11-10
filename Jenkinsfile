@@ -23,60 +23,31 @@ pipeline {
           cmd /c $appCmd
           Start-Sleep -Seconds 2
 
-          # 3) Esperar a que el servidor esté completamente listo (máx 90s)
-          Write-Host "Esperando a que el servidor Node.js esté completamente listo..."
-          $deadline = (Get-Date).AddSeconds(90)
+          # 3) Esperar a que el servidor esté listo (máx 30s, verificación rápida)
+          Write-Host "Verificando servidor..."
+          $deadline = (Get-Date).AddSeconds(30)
           $serverReady = $false
-          $attempts = 0
           
           while ((Get-Date) -lt $deadline -and -not $serverReady) {
-            $attempts++
-            $portOpen = $false
             try {
-              $portOpen = Test-NetConnection -ComputerName $env:HOST -Port ([int]$env:PORT) -InformationLevel Quiet -WarningAction SilentlyContinue
-            } catch { $portOpen = $false }
-            
-            if ($portOpen) {
-              try {
-                $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
-                if ($response.StatusCode -eq 200) {
-                  $serverReady = $true
-                  Write-Host "✅ Servidor Node.js está completamente listo y respondiendo (intento $attempts)"
-                  break
-                }
-              } catch {
-                if ($attempts % 5 -eq 0) {
-                  Write-Host "Puerto abierto pero servidor aún no responde HTTP (intento $attempts)..."
-                }
+              $response = Invoke-WebRequest -Uri "http://$($env:HOST):$($env:PORT)" -Method GET -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
+              if ($response.StatusCode -eq 200) {
+                $serverReady = $true
+                Write-Host "✅ Servidor listo: http://$($env:HOST):$($env:PORT)"
+                break
               }
-            } else {
-              if ($attempts % 5 -eq 0) {
-                Write-Host "Esperando a que el puerto $($env:PORT) se abra (intento $attempts)..."
-              }
+            } catch {
+              Start-Sleep -Seconds 1
             }
-            
-            Start-Sleep -Seconds 2
           }
           
-          if (-not $serverReady) { 
-            Write-Host "⚠️ El servidor no está completamente listo después de 90 segundos"
-            Write-Host "Continuando de todas formas..."
-          } else {
-            Write-Host "✅ Servidor Node.js verificado y funcionando en http://$($env:HOST):$($env:PORT)"
+          if (-not $serverReady) {
+            Write-Host "⚠️ Servidor no respondió en 30s, pero continúa en background"
           }
           
-          Write-Host ""
-          Write-Host "=========================================="
-          Write-Host "Pipeline completado. Servidor corriendo:"
-          Write-Host "- Servidor Node.js: http://$($env:HOST):$($env:PORT)"
-          Write-Host "=========================================="
-          
-          # Forzar terminación inmediata
+          # Terminar inmediatamente
           [System.Environment]::Exit(0)
         ''')
-        script {
-          env.LOCAL_URL = "http://127.0.0.1:3000"
-        }
       }
     }
   }
@@ -84,7 +55,6 @@ pipeline {
   post {
     always {
       archiveArtifacts artifacts: 'server.log', onlyIfSuccessful: false
-      echo "✅ Pipeline terminado. Servidor sigue corriendo en background."
     }
   }
 }
