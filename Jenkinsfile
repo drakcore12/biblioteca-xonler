@@ -28,11 +28,12 @@ pipeline {
           
           $log = Join-Path $env:WORKSPACE "cloudflared.log"
           $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
-          Start-Process -FilePath $exe -ArgumentList "tunnel", "--config", "NUL", "--no-autoupdate", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $logErr -PassThru | Out-Null
+          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--config", "NUL", "--no-autoupdate", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $logErr -PassThru
           
           Start-Sleep -Seconds 5
           
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
+          $urlFound = $false
           for ($i=0; $i -lt 30; $i++) {
             Start-Sleep 1
             $txt = ""
@@ -46,9 +47,17 @@ pipeline {
               $u = $matches[0]
               Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
               Write-Host "TUNNEL_URL=$u"
+              $urlFound = $true
               break
             }
           }
+          
+          if (-not $urlFound) {
+            Write-Host "No se encontró la URL del túnel después de 30 intentos"
+            exit 1
+          }
+          
+          Write-Host "Túnel iniciado correctamente. Proceso cloudflared corriendo en background (PID: $($process.Id))"
         '''
         script {
           if (fileExists('tunnel-url.txt')) {
