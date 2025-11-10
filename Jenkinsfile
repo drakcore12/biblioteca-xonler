@@ -45,30 +45,52 @@ pipeline {
           $cmd = "start \"\" /B cmd /c `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2>&1"
           cmd /c $cmd
           
-          # Esperar y capturar la URL (máximo 30 segundos)
+          # Esperar un poco para que cloudflared inicie y empiece a escribir
+          Start-Sleep -Seconds 3
+          
+          # Esperar y capturar la URL (máximo 45 segundos)
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
           $url = $null
-          $deadline = (Get-Date).AddSeconds(30)
+          $deadline = (Get-Date).AddSeconds(45)
+          $lastSize = 0
           
+          Write-Host "Esperando a que cloudflared genere la URL..."
           while ((Get-Date) -lt $deadline -and -not $url) {
-            Start-Sleep -Seconds 1
+            Start-Sleep -Seconds 2
             if (Test-Path $logFile) {
               try {
-                $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
-                if ($content -match $regex) {
-                  $url = $Matches[0]
-                  "TUNNEL_URL=$url" | Set-Content "tunnel_url.txt"
-                  Write-Host "🔗 Túnel: $url"
-                  break
+                $currentSize = (Get-Item $logFile).Length
+                if ($currentSize -gt $lastSize -or $lastSize -eq 0) {
+                  $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+                  if ($content -match $regex) {
+                    $url = $Matches[0]
+                    "TUNNEL_URL=$url" | Set-Content "tunnel_url.txt"
+                    Write-Host "🔗 Túnel encontrado: $url"
+                    break
+                  }
+                  $lastSize = $currentSize
+                  # Mostrar últimas líneas para debug
+                  $lines = Get-Content $logFile -Tail 3 -ErrorAction SilentlyContinue
+                  if ($lines) {
+                    Write-Host "Últimas líneas del log: $($lines -join ' | ')"
+                  }
                 }
-              } catch {}
+              } catch {
+                Write-Host "Error leyendo log: $_"
+              }
+            } else {
+              Write-Host "Esperando a que se cree el archivo de log..."
             }
           }
           
           if ($url) {
             Write-Host "✅ URL del túnel capturada: $url"
           } else {
-            Write-Host "⚠️ No se pudo capturar la URL en 30 segundos, pero cloudflared está corriendo"
+            Write-Host "⚠️ No se pudo capturar la URL en 45 segundos"
+            if (Test-Path $logFile) {
+              Write-Host "Contenido del log:"
+              Get-Content $logFile -Tail 20 | Write-Host
+            }
           }
         '''
       }
