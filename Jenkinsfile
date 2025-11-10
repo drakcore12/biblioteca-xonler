@@ -13,8 +13,8 @@ pipeline {
     stage('Install & Start') {
       steps {
         bat 'npm ci || npm install'
-        // Arranca el server en 127.0.0.1:3000 y deja logs en server.log
-        bat 'start "" cmd /c "set HOST=127.0.0.1&& set PORT=3000&& npm start > server.log 2>&1"'
+        // Arranca el server en 127.0.0.1:3000 de forma completamente independiente
+        bat 'start "" /B cmd /c "cd /d %WORKSPACE% && set HOST=127.0.0.1&& set PORT=3000&& npm start > server.log 2>&1"'
       }
     }
 
@@ -32,9 +32,9 @@ pipeline {
           # Limpiar log previo
           Remove-Item -Path $log -Force -ErrorAction SilentlyContinue
           
-          # Ejecutar cloudflared en background con redirección a log
-          $cmd = "start \"\" /B `"$exe`" tunnel --config NUL --url http://127.0.0.1:3000 > `"$log`" 2>&1"
-          Start-Process -FilePath cmd.exe -ArgumentList "/c", $cmd -WindowStyle Hidden | Out-Null
+          # Ejecutar cloudflared de forma completamente independiente usando start /B
+          $cmd = "start \"\" /B cmd /c `"$exe`" tunnel --config NUL --url http://127.0.0.1:3000 > `"$log`" 2>&1"
+          cmd /c $cmd
           
           # Esperar un poco para que cloudflared inicie y genere la URL
           Start-Sleep -Seconds 5
