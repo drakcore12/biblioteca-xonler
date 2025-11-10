@@ -39,20 +39,37 @@ pipeline {
             Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $exe -UseBasicParsing
           }
 
-          # 5) Ejecutar cloudflared en PRIMER PLANO y capturar la URL
-          Write-Host "Lanzando cloudflared; se quedará en primer plano…"
+          # 5) Ejecutar cloudflared en background y capturar la URL
+          Write-Host "Lanzando cloudflared en background..."
+          $logFile = "cloudflared.out"
+          $cmd = "start \"\" /B cmd /c `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2>&1"
+          cmd /c $cmd
+          
+          # Esperar y capturar la URL (máximo 30 segundos)
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
-
-          (& $exe tunnel --url "http://$($env:HOST):$($env:PORT)" 2>&1) `
-            | Tee-Object -FilePath "cloudflared.out" `
-            | ForEach-Object {
-                $_
-                if (-not (Test-Path "tunnel_url.txt") -and ($_ -match $regex)) {
+          $url = $null
+          $deadline = (Get-Date).AddSeconds(30)
+          
+          while ((Get-Date) -lt $deadline -and -not $url) {
+            Start-Sleep -Seconds 1
+            if (Test-Path $logFile) {
+              try {
+                $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+                if ($content -match $regex) {
                   $url = $Matches[0]
                   "TUNNEL_URL=$url" | Set-Content "tunnel_url.txt"
                   Write-Host "🔗 Túnel: $url"
+                  break
                 }
-              }
+              } catch {}
+            }
+          }
+          
+          if ($url) {
+            Write-Host "✅ URL del túnel capturada: $url"
+          } else {
+            Write-Host "⚠️ No se pudo capturar la URL en 30 segundos, pero cloudflared está corriendo"
+          }
         '''
       }
     }
