@@ -27,50 +27,37 @@ pipeline {
           }
           
           $log = Join-Path $env:WORKSPACE "cloudflared.log"
+          $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
+          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--config", "NUL", "--no-autoupdate", "--url", "http://127.0.0.1:3000" -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $logErr -PassThru
           
-          # Iniciar cloudflared en background usando cmd start (igual que el servidor)
-          cmd /c "start \"\" /B `"$exe`" tunnel --config NUL --no-autoupdate --url http://127.0.0.1:3000 > `"$log`" 2>&1"
-          
-          Write-Host "Cloudflared iniciado en background"
-          Write-Host "Esperando a que cloudflared se inicie..."
-          Start-Sleep -Seconds 10
+          Start-Sleep -Seconds 5
           
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
           $urlFound = $false
-          for ($i=0; $i -lt 60; $i++) {
-            Start-Sleep 2
+          for ($i=0; $i -lt 30; $i++) {
+            Start-Sleep 1
+            $txt = ""
             if (Test-Path $log) {
-              $txt = Get-Content $log -Raw -ErrorAction SilentlyContinue
-              if ($txt) {
-                Write-Host "Intento $($i+1)/60: Revisando log..."
-                if ($txt -match $regex) {
-                  $u = $matches[0]
-                  Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
-                  Write-Host "TUNNEL_URL=$u"
-                  $urlFound = $true
-                  break
-                }
-              } else {
-                Write-Host "Intento $($i+1)/60: Log existe pero está vacío..."
-              }
-            } else {
-              Write-Host "Intento $($i+1)/60: Archivo de log aún no existe..."
+              $txt += Get-Content $log -Raw -ErrorAction SilentlyContinue
+            }
+            if (Test-Path $logErr) {
+              $txt += Get-Content $logErr -Raw -ErrorAction SilentlyContinue
+            }
+            if ($txt -match $regex) {
+              $u = $matches[0]
+              Set-Content -Path (Join-Path $env:WORKSPACE 'tunnel-url.txt') -Value $u
+              Write-Host "TUNNEL_URL=$u"
+              $urlFound = $true
+              break
             }
           }
           
           if (-not $urlFound) {
-            Write-Host "❌ No se encontró la URL del túnel después de 60 intentos"
-            if (Test-Path $log) {
-              Write-Host "=== Contenido del log de cloudflared ==="
-              Get-Content $log | Write-Host
-            } else {
-              Write-Host "El archivo de log no existe"
-            }
+            Write-Host "No se encontró la URL del túnel después de 30 intentos"
             exit 1
           }
           
-          Write-Host "Túnel iniciado correctamente"
-          exit 0
+          Write-Host "Túnel iniciado correctamente. Proceso cloudflared corriendo en background (PID: $($process.Id))"
         '''
         script {
           if (fileExists('tunnel-url.txt')) {
