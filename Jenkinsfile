@@ -43,7 +43,7 @@ pipeline {
           Write-Host "Lanzando cloudflared; se quedará en primer plano…"
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
 
-          (& $exe tunnel --config NUL --url "http://$($env:HOST):$($env:PORT)" 2>&1) `
+          (& $exe tunnel --url "http://$($env:HOST):$($env:PORT)" 2>&1) `
             | Tee-Object -FilePath "cloudflared.out" `
             | ForEach-Object {
                 $_
