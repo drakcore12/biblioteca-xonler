@@ -59,11 +59,19 @@ pipeline {
           "" | Out-File -FilePath $logErr -Force
           
           # Ejecutar cloudflared completamente desacoplado
-          # Usar cmd /c start /B directamente - esto debería ejecutarse de forma asíncrona
-          $startCmd = "start `"`" /B `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2> `"$logErr`""
+          # Crear un script batch que ejecute cloudflared y termine inmediatamente
+          $batchFile = Join-Path $env:WORKSPACE "run-cloudflared.bat"
+          @"
+@echo off
+start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2> "$logErr"
+"@ | Out-File -FilePath $batchFile -Encoding ASCII -Force
           
-          # Ejecutar directamente con & para que no espere
-          & cmd /c $startCmd
+          # Ejecutar el batch de forma asíncrona - esto debería terminar inmediatamente
+          $null = Start-Process -FilePath $batchFile -WindowStyle Hidden -PassThru
+          
+          # Esperar un momento y eliminar el batch
+          Start-Sleep -Milliseconds 300
+          Remove-Item $batchFile -Force -ErrorAction SilentlyContinue
           
           Write-Host "Cloudflared iniciado en background..."
           
