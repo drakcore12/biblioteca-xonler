@@ -94,17 +94,19 @@ pipeline {
           "" | Out-File -FilePath $logFile -Force
           "" | Out-File -FilePath $logErr -Force
           
-          # Crear batch que lance cloudflared detached (start /B)
-          $batchFile = Join-Path $env:WORKSPACE "run-cloudflared.bat"
-          @"
-@echo off
-start "" /B "$exe" tunnel --url http://$($env:HOST):$($env:PORT) > "$logFile" 2> "$logErr"
-"@ | Out-File -FilePath $batchFile -Encoding ASCII -Force
+          # Ejecutar cloudflared directamente con el comando especificado
+          $cloudflaredCmd = "& `"$exe`" tunnel --config NUL --url http://$($env:HOST):$($env:PORT)"
           
-          # Ejecutar el batch (asíncrono)
-          $null = Start-Process -FilePath $batchFile -WindowStyle Hidden -PassThru
+          # Crear script PowerShell que ejecute cloudflared en background
+          $psScript = Join-Path $env:WORKSPACE "run-cloudflared.ps1"
+          @"
+Start-Process -FilePath "$exe" -ArgumentList "tunnel", "--config", "NUL", "--url", "http://$($env:HOST):$($env:PORT)" -WindowStyle Hidden -RedirectStandardOutput "$logFile" -RedirectStandardError "$logErr" -PassThru | Out-Null
+"@ | Out-File -FilePath $psScript -Encoding UTF8 -Force
+          
+          # Ejecutar el script PowerShell de forma asíncrona
+          $null = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $psScript -WindowStyle Hidden -PassThru
           Start-Sleep -Milliseconds 300
-          Remove-Item $batchFile -Force -ErrorAction SilentlyContinue
+          Remove-Item $psScript -Force -ErrorAction SilentlyContinue
           
           Write-Host "Cloudflared iniciado en background..."
           
