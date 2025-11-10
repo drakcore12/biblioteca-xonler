@@ -201,24 +201,18 @@ Start-Process -FilePath "$exe" -ArgumentList "tunnel", "--config", "NUL", "--url
           Write-Host "=========================================="
           Write-Host ""
           
+          # Escribir variables de entorno para Jenkins
+          if ($url) {
+            Write-Host "##vso[task.setvariable variable=TUNNEL_URL]$url"
+            Write-Host "TUNNEL_URL=$url" | Out-File -FilePath (Join-Path $env:WORKSPACE "tunnel_url.txt") -Force
+          }
+          Write-Host "LOCAL_URL=http://$($env:HOST):$($env:PORT)" | Out-File -FilePath (Join-Path $env:WORKSPACE "local_url.txt") -Force
+          
           # Forzar terminación inmediata del script
           Write-Host "Terminando pipeline - servicios siguen corriendo en background"
-          [System.Environment]::Exit(0)
+          exit 0
         ''')
-        // Leer URL y terminar inmediatamente
-        script {
-          try {
-            if (fileExists('tunnel_url.txt')) {
-              env.TUNNEL_URL = readFile('tunnel_url.txt').trim()
-              echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
-            }
-            env.LOCAL_URL = "http://127.0.0.1:3000"
-            echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
-          } catch (Exception e) {
-            echo "⚠️ Error al leer URL: ${e.message}"
-          }
-        }
-        // Paso final que asegura terminación
+        // Paso final que asegura terminación inmediata
         bat 'echo ✅ Pipeline completado - servicios corriendo en background && exit /b 0'
       }
     }
