@@ -201,21 +201,25 @@ Start-Process -FilePath "$exe" -ArgumentList "tunnel", "--config", "NUL", "--url
           Write-Host "=========================================="
           Write-Host ""
           
-          # Salida exitosa del paso de PowerShell
-          $global:LASTEXITCODE = 0
-          exit 0
+          # Forzar terminación inmediata del script
+          Write-Host "Terminando pipeline - servicios siguen corriendo en background"
+          [System.Environment]::Exit(0)
         ''')
+        // Leer URL y terminar inmediatamente
         script {
-          if (fileExists('tunnel_url.txt')) {
-            env.TUNNEL_URL = readFile('tunnel_url.txt').trim()
-            echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+          try {
+            if (fileExists('tunnel_url.txt')) {
+              env.TUNNEL_URL = readFile('tunnel_url.txt').trim()
+              echo "🌐 TUNNEL_URL = ${env.TUNNEL_URL}"
+            }
+            env.LOCAL_URL = "http://127.0.0.1:3000"
+            echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
+          } catch (Exception e) {
+            echo "⚠️ Error al leer URL: ${e.message}"
           }
-          env.LOCAL_URL = "http://127.0.0.1:3000"
-          echo "🌐 LOCAL_URL = ${env.LOCAL_URL}"
-          echo "✅ Paso de PowerShell completado. Pipeline terminando..."
         }
-        // Asegura que el job sale con éxito
-        bat 'echo Pipeline completado exitosamente && exit /b 0'
+        // Paso final que asegura terminación
+        bat 'echo ✅ Pipeline completado - servicios corriendo en background && exit /b 0'
       }
     }
   }
