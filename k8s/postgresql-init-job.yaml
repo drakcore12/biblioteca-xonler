@@ -1,0 +1,74 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgresql-init-job
+  namespace: biblioteca-xonler
+  labels:
+    app: postgresql-init
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 300  # Eliminar el Job después de 5 minutos de completarse
+  template:
+    metadata:
+      labels:
+        app: postgresql-init
+    spec:
+      restartPolicy: Never
+      initContainers:
+      - name: wait-for-postgres
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          echo "Esperando a que PostgreSQL esté listo..."
+          until pg_isready -h postgresql-service -p 5432 -U $POSTGRES_USER; do
+            echo "PostgreSQL no está listo aún, esperando..."
+            sleep 2
+          done
+          echo "PostgreSQL está listo!"
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_USER
+      containers:
+      - name: init-db
+        image: postgres:15-alpine
+        command:
+        - sh
+        - -c
+        - |
+          echo "Ejecutando script de inicialización de base de datos..."
+          psql -h postgresql-service -p 5432 -U $POSTGRES_USER -d $POSTGRES_DB -f /scripts/init.sql
+          if [ $? -eq 0 ]; then
+            echo "✅ Script de inicialización ejecutado exitosamente"
+          else
+            echo "❌ Error al ejecutar el script de inicialización"
+            exit 1
+          fi
+        env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_USER
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: init-scripts
+          mountPath: /scripts
+      volumes:
+      - name: init-scripts
+        configMap:
+          name: postgresql-init-script
+

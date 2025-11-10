@@ -85,7 +85,7 @@ services:
       # Montar logs si quieres persistirlos
       - ./logs:/app/logs
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:${PORT}', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:${PORT}/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})\""]
       interval: 30s
       timeout: 3s
       start_period: 40s
@@ -182,6 +182,26 @@ services:
     depends_on:
       - prometheus
 
+  # Jenkins - CI/CD
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    restart: unless-stopped
+    ports:
+      - "${JENKINS_PORT:-8080}:8080"
+      - "${JENKINS_AGENT_PORT:-50000}:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+    environment:
+      JENKINS_OPTS: "--httpPort=8080"
+    user: root
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
 volumes:
   db-data:
     driver: local
@@ -190,5 +210,7 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
+    driver: local
+  jenkins_home:
     driver: local
 

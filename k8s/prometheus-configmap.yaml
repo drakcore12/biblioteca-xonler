@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: biblioteca-xonler
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        monitor: 'biblioteca-xonler-monitor'
+
+    scrape_configs:
+      # Métricas de Prometheus mismo
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      # Métricas de la aplicación Node.js
+      - job_name: 'nodejs-app'
+        static_configs:
+          - targets: ['app-service:3000']
+        metrics_path: '/metrics'
+        scrape_interval: 10s
+
+      # Métricas de PostgreSQL
+      - job_name: 'postgres'
+        static_configs:
+          - targets: ['postgres-exporter-service:9187']
+        scrape_interval: 10s
+
+      # Métricas de Docker (cAdvisor)
+      - job_name: 'cadvisor'
+        static_configs:
+          - targets: ['cadvisor-service:8080']
+        scrape_interval: 10s
+

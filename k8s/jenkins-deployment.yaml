@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  namespace: biblioteca-xonler
+  labels:
+    app: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 50000
+          name: agent
+        env:
+        - name: JENKINS_OPTS
+          value: "--httpPort=8080"
+        volumeMounts:
+        - name: jenkins-storage
+          mountPath: /var/jenkins_home
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /login
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 5
+        readinessProbe:
+          httpGet:
+            path: /login
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 10
+          failureThreshold: 3
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+      volumes:
+      - name: jenkins-storage
+        persistentVolumeClaim:
+          claimName: jenkins-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: biblioteca-xonler
+  labels:
+    app: jenkins
+spec:
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+    nodePort: 30088  # Puerto externo para Jenkins UI
+  - port: 50000
+    targetPort: 50000
+    protocol: TCP
+    name: agent
+    nodePort: 30500  # Puerto externo para agentes Jenkins
+  selector:
+    app: jenkins
+
