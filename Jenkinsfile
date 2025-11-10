@@ -30,8 +30,8 @@ pipeline {
       }
       post {
         always {
-          junit 'junit.xml'
-          archiveArtifacts artifacts: 'junit.xml,test-results/**/*', allowEmptyArchive: true
+          junit 'test-results/junit.xml'
+          archiveArtifacts artifacts: 'test-results/junit.xml', allowEmptyArchive: true
         }
       }
     }
