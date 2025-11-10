@@ -12,6 +12,7 @@ pipeline {
           # Limpieza previa
           if (Test-Path "tunnel_url.txt") { Remove-Item "tunnel_url.txt" -Force }
           if (Test-Path "cloudflared.out") { Remove-Item "cloudflared.out" -Force }
+          if (Test-Path "cloudflared.err") { Remove-Item "cloudflared.err" -Force }
 
           # 1) Dependencias
           npm ci
@@ -41,9 +42,12 @@ pipeline {
 
           # 5) Ejecutar cloudflared en background y capturar la URL
           Write-Host "Lanzando cloudflared en background..."
-          $logFile = "cloudflared.out"
-          $cmd = "start \"\" /B cmd /c `"$exe`" tunnel --url http://$($env:HOST):$($env:PORT) > `"$logFile`" 2>&1"
-          cmd /c $cmd
+          $logFile = Join-Path $env:WORKSPACE "cloudflared.out"
+          $logErr = Join-Path $env:WORKSPACE "cloudflared.err"
+          
+          # Usar Start-Process con redirección explícita
+          $process = Start-Process -FilePath $exe -ArgumentList "tunnel", "--url", "http://$($env:HOST):$($env:PORT)" -NoNewWindow -RedirectStandardOutput $logFile -RedirectStandardError $logErr -PassThru
+          Write-Host "Cloudflared iniciado con PID: $($process.Id)"
           
           # Esperar un poco para que cloudflared inicie y empiece a escribir
           Start-Sleep -Seconds 3
@@ -52,34 +56,35 @@ pipeline {
           $regex = 'https://[a-z0-9-]+\\.trycloudflare\\.com'
           $url = $null
           $deadline = (Get-Date).AddSeconds(45)
-          $lastSize = 0
           
           Write-Host "Esperando a que cloudflared genere la URL..."
           while ((Get-Date) -lt $deadline -and -not $url) {
             Start-Sleep -Seconds 2
+            $content = ""
             if (Test-Path $logFile) {
               try {
-                $currentSize = (Get-Item $logFile).Length
-                if ($currentSize -gt $lastSize -or $lastSize -eq 0) {
-                  $content = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
-                  if ($content -match $regex) {
-                    $url = $Matches[0]
-                    "TUNNEL_URL=$url" | Set-Content "tunnel_url.txt"
-                    Write-Host "🔗 Túnel encontrado: $url"
-                    break
-                  }
-                  $lastSize = $currentSize
-                  # Mostrar últimas líneas para debug
-                  $lines = Get-Content $logFile -Tail 3 -ErrorAction SilentlyContinue
-                  if ($lines) {
-                    Write-Host "Últimas líneas del log: $($lines -join ' | ')"
-                  }
-                }
-              } catch {
-                Write-Host "Error leyendo log: $_"
-              }
+                $content += Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+              } catch {}
+            }
+            if (Test-Path $logErr) {
+              try {
+                $content += Get-Content $logErr -Raw -ErrorAction SilentlyContinue
+              } catch {}
+            }
+            
+            if ($content -match $regex) {
+              $url = $Matches[0]
+              $tunnelFile = Join-Path $env:WORKSPACE "tunnel_url.txt"
+              "TUNNEL_URL=$url" | Set-Content $tunnelFile
+              Write-Host "🔗 Túnel encontrado: $url"
+              break
+            }
+            
+            if ($content) {
+              $lines = $content -split "`n" | Select-Object -Last 3
+              Write-Host "Últimas líneas: $($lines -join ' | ')"
             } else {
-              Write-Host "Esperando a que se cree el archivo de log..."
+              Write-Host "Esperando a que cloudflared escriba en el log..."
             }
           }
           
@@ -88,8 +93,12 @@ pipeline {
           } else {
             Write-Host "⚠️ No se pudo capturar la URL en 45 segundos"
             if (Test-Path $logFile) {
-              Write-Host "Contenido del log:"
+              Write-Host "Contenido de stdout:"
               Get-Content $logFile -Tail 20 | Write-Host
+            }
+            if (Test-Path $logErr) {
+              Write-Host "Contenido de stderr:"
+              Get-Content $logErr -Tail 20 | Write-Host
             }
           }
         '''
@@ -99,7 +108,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: 'cloudflared.out,tunnel_url.txt', onlyIfSuccessful: false
+      archiveArtifacts artifacts: 'cloudflared.out,cloudflared.err,tunnel_url.txt', onlyIfSuccessful: false
       powershell '''
         Get-Process -Name "node","npm" -ErrorAction SilentlyContinue | ForEach-Object {
           try { Stop-Process -Id $_.Id -Force } catch {}
