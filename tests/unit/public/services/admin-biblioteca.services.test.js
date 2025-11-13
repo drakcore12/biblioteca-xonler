@@ -46,22 +46,8 @@ global.fetch = jest.fn();
 global.alert = jest.fn();
 global.console = { ...console, warn: jest.fn(), error: jest.fn() };
 
-// TODO: CORREGIR DESPUÉS - location no se puede redefinir en jsdom
-// Intentar mockear location.replace sin redefinir location completa
-let mockReplaceCalled = false;
-let mockReplaceUrl = null;
-try {
-  // Intentar usar jest.spyOn si location ya existe
-  if (globalThis.location && typeof globalThis.location.replace === 'function') {
-    jest.spyOn(globalThis.location, 'replace').mockImplementation((url) => {
-      mockReplaceCalled = true;
-      mockReplaceUrl = url;
-    });
-  }
-} catch (e) {
-  // Si falla, simplemente no verificamos location.replace
-  console.warn('No se pudo mockear location.replace:', e.message);
-}
+// location.replace es de solo lectura en jsdom, no se puede mockear
+// Los tests que usan location.replace no se pueden verificar directamente
 
 // =========================
 // Cargar módulo con vm
@@ -102,8 +88,6 @@ describe('admin-biblioteca.services.js', () => {
     jest.clearAllMocks();
     mockLocalStorage.getItem.mockReturnValue('test-token');
     mockSessionStorage.getItem.mockReturnValue(null);
-    mockReplaceCalled = false;
-    mockReplaceUrl = null;
     
     // Crear nueva instancia para cada test
     if (AdminBibliotecaService) {
