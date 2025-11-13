@@ -68,7 +68,7 @@ pipeline {
           bat '''
             @echo off
             echo Ejecutando tests unitarios...
-            call npm test
+            call npm test || npx jest --ci --reporters=default --reporters=jest-junit
             set TEST_EXIT=%ERRORLEVEL%
             if %TEST_EXIT% NEQ 0 (
               echo ⚠️ Algunos tests unitarios fallaron, pero continuando...
@@ -115,7 +115,7 @@ pipeline {
             if not exist "playwright-report" mkdir playwright-report
             
             echo Ejecutando tests E2E...
-            call npm run test:e2e
+            call npm run test:e2e || npx playwright test
             set E2E_EXIT=%ERRORLEVEL%
             if %E2E_EXIT% NEQ 0 (
               echo ⚠️ Algunos tests E2E fallaron, pero continuando...
@@ -149,7 +149,7 @@ pipeline {
             if not exist "test-results" mkdir test-results
             
             echo Ejecutando tests de carga...
-            call npm run test:load
+            call npm run test:load || npx artillery run tests/artillery-config.yml
             set LOAD_EXIT=%ERRORLEVEL%
             if %LOAD_EXIT% NEQ 0 (
               echo ⚠️ Tests de carga fallaron, pero continuando...
@@ -183,7 +183,7 @@ pipeline {
             )
             
             echo Ejecutando análisis de SonarQube...
-            call npm run sonar:local
+            call npm run sonar:local || npx sonarqube-scanner -Dsonar.host.url=http://localhost:9000
             set SONAR_EXIT=%ERRORLEVEL%
             if %SONAR_EXIT% NEQ 0 (
               echo ⚠️ Análisis de SonarQube falló, pero continuando...
