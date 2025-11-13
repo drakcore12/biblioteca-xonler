@@ -1,4 +1,7 @@
 // Servicio para manejar el registro de usuarios
+import { handleFormSubmit, showError, showSuccess, isValidEmail, validateRequired } from './common/form-handler.js';
+import { post } from './common/api-client.js';
+
 export function initRegistroForm() {
   const registerForm = document.getElementById('registerForm');
   if (!registerForm) {
@@ -9,29 +12,12 @@ export function initRegistroForm() {
   registerForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const submitBtn = registerForm.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    try {
-      // Deshabilitar botón y mostrar estado de carga
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Creando cuenta...';
-      
-      // Obtener datos del formulario
-      const formData = {
-        nombre: document.getElementById('registerName').value.trim(),
-        apellido: document.getElementById('registerApellido').value.trim(),
-        email: document.getElementById('registerEmail').value.trim(),
-        password: document.getElementById('registerPassword').value,
-        confirmPassword: document.getElementById('confirmPassword').value,
-        acceptTerms: document.getElementById('acceptTerms').checked
-      };
-      
+    await handleFormSubmit(registerForm, async (formData) => {
       // Validar datos
       const errores = validarFormularioRegistro(formData);
       if (errores.length > 0) {
-        mostrarError(errores.join('<br>'));
-        return;
+        showError(registerForm, errores.join('<br>'));
+        throw new Error('Errores de validación');
       }
       
       // Enviar registro
@@ -42,66 +28,110 @@ export function initRegistroForm() {
         password: formData.password ? '***' : 'undefined'
       });
 
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          nombre: formData.nombre,
-          apellido: formData.apellido,
-          email: formData.email,
-          password: formData.password
-        })
-      });
+      const data = await post('/api/auth/register', {
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        email: formData.email,
+        password: formData.password
+      }, { requireAuth: false });
       
-      console.log('📥 [REGISTER] Respuesta recibida:', {
-        status: response.status,
-        ok: response.ok
-      });
+      console.log('📋 [REGISTER] Datos completos recibidos:', data);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📋 [REGISTER] Datos completos recibidos:', data);
-        mostrarExito('Cuenta creada correctamente. Redirigiendo...');
-        
-        // Limpiar formulario
-        registerForm.reset();
-        
-        // Redirigir después de 2 segundos
-        setTimeout(() => {
-          const userRole = data.user?.rol || data.role;
-          console.log('🔄 [REGISTER] Redirigiendo por rol:', userRole);
-          console.log('🔄 [REGISTER] Datos completos del usuario:', data.user);
-          console.log('🔄 [REGISTER] Rol extraído:', userRole);
-          
-          switch (userRole?.toLowerCase()) {
-            case 'admin':
-            case 'adminadvanced':
-              console.log('🔄 [REGISTER] Redirigiendo a admin');
-              window.location.replace('/pages/admin/index.html');
-              break;
-            case 'usuario':
-            default:
-              console.log('🔄 [REGISTER] Redirigiendo a usuario');
-              window.location.replace('/pages/user/index.html');
-              break;
-          }
-        }, 2000);
-        
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      // ✅ CRÍTICO: Guardar token y datos de sesión
+      if (!data.token) {
+        console.warn('⚠️ [REGISTER] No se recibió token en la respuesta');
+        showError(registerForm, 'Error: No se recibió token de autenticación');
+        return;
       }
       
-    } catch (error) {
-      console.error('Error en registro:', error);
-      mostrarError('Error al crear la cuenta. Intenta nuevamente.');
-    } finally {
-      // Restaurar botón
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
+      // Guardar sesión (usar sessionStorage por defecto, no "remember me")
+      const storage = sessionStorage;
+      const role = (data.user?.rol || data.role || 'usuario').toLowerCase();
+      
+      // Guardar TODOS los datos ANTES de cualquier redirección
+      storage.setItem('token', data.token);
+      storage.setItem('role', role);
+      
+      // Inicializar lastActivity para el guard (importante para evitar expiración inmediata)
+      const now = Date.now();
+      storage.setItem('lastActivity', String(now));
+      
+      if (data.user?.id) {
+        storage.setItem('userId', String(data.user.id));
+      }
+      if (data.user?.nombre) {
+        storage.setItem('userName', data.user.nombre);
+      }
+      
+      // Verificar que se guardó correctamente
+      const tokenGuardado = storage.getItem('token');
+      const roleGuardado = storage.getItem('role');
+      
+      console.log('🔐 [REGISTER] Sesión guardada y verificada:', {
+        role: role,
+        roleGuardado: roleGuardado,
+        userId: data.user?.id,
+        userName: data.user?.nombre,
+        hasToken: !!data.token,
+        tokenGuardado: !!tokenGuardado,
+        tokenLength: data.token?.length,
+        tokenPreview: data.token ? `${data.token.substring(0, 20)}...` : 'null'
+      });
+      
+      // Verificar que el token se guardó correctamente antes de continuar
+      if (!tokenGuardado || tokenGuardado !== data.token) {
+        console.error('❌ [REGISTER] Error: Token no se guardó correctamente');
+        showError(registerForm, 'Error al guardar sesión. Intenta nuevamente.');
+        return;
+      }
+      
+      showSuccess(registerForm, 'Cuenta creada correctamente. Redirigiendo...');
+      
+      // Limpiar formulario
+      registerForm.reset();
+      
+      // Redirigir después de 1 segundo (reducido para mejor UX)
+      // IMPORTANTE: El token ya está guardado, así que el guard debería encontrarlo
+      setTimeout(() => {
+        const userRole = data.user?.rol || data.role || 'usuario';
+        const tokenVerificacion = storage.getItem('token');
+        
+        console.log('🔄 [REGISTER] Verificación antes de redirigir:', {
+          userRole: userRole,
+          tokenExiste: !!tokenVerificacion,
+          tokenCoincide: tokenVerificacion === data.token,
+          storageKeys: Object.keys(storage)
+        });
+        
+        if (!tokenVerificacion) {
+          console.error('❌ [REGISTER] Token perdido antes de redirigir!');
+          showError(registerForm, 'Error: Sesión perdida. Por favor, inicia sesión.');
+          return;
+        }
+        
+        console.log('🔄 [REGISTER] Redirigiendo por rol:', userRole);
+        
+        const runtimeLocation = globalThis?.location;
+        switch (userRole.toLowerCase()) {
+          case 'admin':
+          case 'adminadvanced':
+            runtimeLocation?.replace?.('/pages/admin/index.html');
+            break;
+          case 'usuario':
+          default:
+            runtimeLocation?.replace?.('/pages/user/index.html');
+            break;
+        }
+      }, 1000);
+      
+      return data;
+    }, {
+      loadingText: 'Creando cuenta...',
+      validator: (data) => {
+        const errores = validarFormularioRegistro(data);
+        return errores.length > 0 ? errores.join('<br>') : null;
+      }
+    });
   });
 }
 
@@ -109,15 +139,24 @@ export function initRegistroForm() {
 function validarFormularioRegistro(formData) {
   const errores = [];
   
-  if (!formData.nombre || formData.nombre.length < 2) {
+  const nombreError = validateRequired(formData.nombre, 'El nombre');
+  if (nombreError) {
+    errores.push(nombreError);
+  } else if (formData.nombre.length < 2) {
     errores.push('El nombre debe tener al menos 2 caracteres');
   }
   
-  if (!formData.apellido || formData.apellido.length < 2) {
+  const apellidoError = validateRequired(formData.apellido, 'El apellido');
+  if (apellidoError) {
+    errores.push(apellidoError);
+  } else if (formData.apellido.length < 2) {
     errores.push('El apellido debe tener al menos 2 caracteres');
   }
   
-  if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  const emailError = validateRequired(formData.email, 'El email');
+  if (emailError) {
+    errores.push(emailError);
+  } else if (!isValidEmail(formData.email)) {
     errores.push('El email debe ser válido');
   }
   
@@ -134,54 +173,6 @@ function validarFormularioRegistro(formData) {
   }
   
   return errores;
-}
-
-// Mostrar mensaje de éxito
-function mostrarExito(mensaje) {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = 'alert alert-success alert-dismissible fade show';
-  alertDiv.innerHTML = `
-    <i class="bi bi-check-circle me-2"></i>
-    ${mensaje}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  
-  // Insertar antes del formulario
-  const form = document.getElementById('registerForm');
-  if (form) {
-    form.parentNode.insertBefore(alertDiv, form);
-  }
-  
-  // Auto-remover después de 5 segundos
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.remove();
-    }
-  }, 5000);
-}
-
-// Mostrar mensaje de error
-function mostrarError(mensaje) {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-  alertDiv.innerHTML = `
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    ${mensaje}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  
-  // Insertar antes del formulario
-  const form = document.getElementById('registerForm');
-  if (form) {
-    form.parentNode.insertBefore(alertDiv, form);
-  }
-  
-  // Auto-remover después de 8 segundos
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.remove();
-    }
-  }, 8000);
 }
 
 // Función para validar contraseña en tiempo real
@@ -219,7 +210,7 @@ function calcularFortalezaPassword(password) {
   if (password.length >= 12) score++;
   if (/[a-z]/.test(password)) score++;
   if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
+  if (/\d/.test(password)) score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
   
   if (score <= 2) return 'débil';
@@ -250,9 +241,16 @@ function mostrarFortalezaPassword(fortaleza) {
   
   const color = colors[fortaleza] || 'secondary';
   
+  let shieldIcon = 'x';
+  if (fortaleza === 'fuerte') {
+    shieldIcon = 'check';
+  } else if (fortaleza === 'media') {
+    shieldIcon = 'exclamation';
+  }
+  
   existingIndicator.innerHTML = `
     <small class="text-${color}">
-      <i class="bi bi-shield-${fortaleza === 'fuerte' ? 'check' : fortaleza === 'media' ? 'exclamation' : 'x'}"></i>
+      <i class="bi bi-shield-${shieldIcon}"></i>
       Fortaleza: ${fortaleza}
     </small>
   `;

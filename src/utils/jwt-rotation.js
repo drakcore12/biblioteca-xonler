@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const crypto = require('node:crypto');
 
 class JWTRotation {
   constructor() {
@@ -7,6 +7,7 @@ class JWTRotation {
     this.currentKeyId = null;
     this.keyRotationInterval = 24 * 60 * 60 * 1000; // 24 horas
     this.maxKeys = 3; // Mantener máximo 3 claves
+    this.rotationInterval = null; // Intervalo de rotación
     
     // Inicializar con clave por defecto
     this.generateNewKey();
@@ -49,21 +50,43 @@ class JWTRotation {
     
     const keysToRemove = sortedKeys.slice(0, this.keys.size - this.maxKeys);
     
-    keysToRemove.forEach(([keyId]) => {
+    for (const [keyId] of keysToRemove) {
       this.keys.delete(keyId);
       console.log(`🗑️ [JWT] Clave antigua eliminada: ${keyId}`);
-    });
+    }
   }
 
   /**
    * Iniciar rotación automática de claves
    */
   startKeyRotation() {
-    setInterval(() => {
+    // Limpiar intervalo anterior si existe
+    if (this.rotationInterval) {
+      clearInterval(this.rotationInterval);
+    }
+    
+    this.rotationInterval = setInterval(() => {
       this.generateNewKey();
     }, this.keyRotationInterval);
     
+    // Usar unref() para que el intervalo no mantenga el proceso vivo
+    // Esto es importante para tests y cuando el proceso necesita terminar
+    if (this.rotationInterval && typeof this.rotationInterval.unref === 'function') {
+      this.rotationInterval.unref();
+    }
+    
     console.log(`⏰ [JWT] Rotación automática configurada cada ${this.keyRotationInterval / 1000 / 60} minutos`);
+  }
+
+  /**
+   * Detener rotación automática
+   */
+  stopKeyRotation() {
+    if (this.rotationInterval) {
+      clearInterval(this.rotationInterval);
+      this.rotationInterval = null;
+      console.log('⏹️ [JWT] Rotación automática detenida');
+    }
   }
 
   /**
@@ -95,7 +118,7 @@ class JWTRotation {
     try {
       // Decodificar sin verificar para obtener keyId
       const decoded = jwt.decode(token, { complete: true });
-      if (!decoded || !decoded.header || !decoded.payload) {
+      if (!decoded?.header || !decoded?.payload) {
         throw new Error('Token inválido');
       }
 
@@ -128,6 +151,7 @@ class JWTRotation {
               audience: 'biblioteca-users'
             });
           } catch (retryError) {
+            console.error('Error en reintento de rotación JWT:', retryError);
             throw error; // Lanzar error original
           }
         }

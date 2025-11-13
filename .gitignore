@@ -34,6 +34,8 @@ playwright-report/
 *.pid
 cloudflare-url.env
 temp_url.txt
+junit.xml
+*.test.cjs
 
 # Archivos temporales
 tmp/
@@ -51,6 +53,10 @@ secure/
 encryption-config.json
 security-report.json
 
+# Kubernetes Secrets (NO versionar secrets reales)
+k8s/secrets.yaml
+# Mantener secrets.yaml.example como template
+
 # Sistema operativo
 .DS_Store
 Thumbs.db
@@ -59,6 +65,17 @@ desktop.ini
 # CI/CD (mantener estos archivos)
 # !Jenkinsfile
 # !.github/
-# !artillery-config.yml
+# !tests/artillery-config.yml
 # !jest.config.js
 # !playwright.config.js
+# !babel.config.js
+
+# SonarQube
+.sonar/
+.scannerwork/
+sonar-project.properties.local
+.env.sonar
+
+# Artillery
+artillery-report.json
+artillery-*.json

@@ -1,0 +1,65 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    # Fase 1: Rampa de carga gradual
+    - duration: 30
+      arrivalRate: 2
+      name: "Fase de calentamiento"
+    # Fase 2: Carga sostenida
+    - duration: 60
+      arrivalRate: 5
+      name: "Carga normal"
+    # Fase 3: Pico de carga
+    - duration: 30
+      arrivalRate: 10
+      name: "Pico de carga"
+  plugins:
+    expect: {}
+  # Processor opcional - comentado si no existe
+  # processor: "./tests/load/artillery-processor.js"
+
+scenarios:
+  # Escenario 1: Navegación básica
+  - name: "Navegación principal"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          expect:
+            - statusCode: [200, 301, 302]
+      - think: 2
+      - get:
+          url: "/pages/guest/libros.html"
+          expect:
+            - statusCode: [200, 301, 302]
+
+  # Escenario 2: API de libros
+  - name: "API de libros"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/libros"
+          expect:
+            - statusCode: [200, 401]
+            - contentType: json
+      - think: 1
+
+  # Escenario 3: API de bibliotecas
+  - name: "API de bibliotecas"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/bibliotecas"
+          expect:
+            - statusCode: [200, 401]
+      - think: 1
+
+  # Escenario 4: Página de contacto
+  - name: "Página de contacto"
+    weight: 10
+    flow:
+      - get:
+          url: "/pages/guest/contacto.html"
+          expect:
+            - statusCode: [200, 301, 302]
+

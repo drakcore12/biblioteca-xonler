@@ -5,13 +5,7 @@ const { generatePending2FAToken } = require('./twofa.controller');
 const { setAuthCookies, clearAuthCookies } = require('../utils/cookie-utils');
 const simpleJWT = require('../utils/simple-jwt');
 const { logAudit, logSecurity } = require('../config/logger');
-
-// Helper para normalizar preferencias que pueden venir como string
-function asObject(x) {
-  if (!x) return {};
-  if (typeof x === 'object') return x;
-  try { return JSON.parse(x); } catch { return {}; }
-}
+const { asObject } = require('../utils/data-helpers');
 
 // Generar JWT token
 function generateToken(user) {
@@ -59,7 +53,7 @@ async function register(req, res) {
     }
 
     // Hash del password
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const saltRounds = Number.parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10);
     const passwordHash = await bcrypt.hash(password, saltRounds);
 
     // Insertar usuario (rol por defecto: usuario = 1)
@@ -574,7 +568,7 @@ async function resetPassword(req, res) {
     }
     
     // Hash de la nueva contraseña
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 12;
+    const saltRounds = Number.parseInt(process.env.BCRYPT_ROUNDS ?? '12', 10);
     const passwordHash = await bcrypt.hash(password, saltRounds);
     
     // Actualizar la contraseña del usuario

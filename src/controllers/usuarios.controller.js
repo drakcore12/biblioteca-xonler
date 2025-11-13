@@ -45,7 +45,7 @@ async function obtenerUsuarios(req, res) {
     // Contar total de registros
     const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM');
     const countResult = await pool.query(countQuery, params);
-    const total = parseInt(countResult.rows[0].count);
+    const total = Number.parseInt(countResult.rows[0].count, 10);
     
     // Añadir paginación
     paramCount++;
@@ -62,8 +62,8 @@ async function obtenerUsuarios(req, res) {
       success: true,
       data: result.rows,
       total: total,
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      limit: Number.parseInt(limit, 10),
+      offset: Number.parseInt(offset, 10)
     });
   } catch (error) {
     console.error('Error en obtenerUsuarios:', error);
@@ -597,7 +597,7 @@ async function eliminarUsuarioCompleto(req, res) {
       [userId]
     );
     
-    const totalPrestamosActivos = parseInt(prestamosActivos.rows[0].total);
+    const totalPrestamosActivos = Number.parseInt(prestamosActivos.rows[0].total, 10);
     
     if (totalPrestamosActivos > 0) {
       return res.status(400).json({ 
@@ -612,7 +612,7 @@ async function eliminarUsuarioCompleto(req, res) {
       [userId]
     );
     
-    const totalAdminBibliotecas = parseInt(adminBibliotecas.rows[0].total);
+    const totalAdminBibliotecas = Number.parseInt(adminBibliotecas.rows[0].total, 10);
     
     if (totalAdminBibliotecas > 0) {
       return res.status(400).json({ 

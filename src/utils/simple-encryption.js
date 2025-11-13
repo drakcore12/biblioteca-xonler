@@ -1,20 +1,21 @@
-const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
+const crypto = require('node:crypto');
+const fs = require('node:fs');
+const path = require('node:path');
 const { logError, logInfo } = require('../config/logger');
 
 /**
  * Sistema de encriptación simplificado para logs
  */
 class SimpleEncryption {
+  algorithm = 'aes-256-cbc';
+  keyLength = 32; // 256 bits
+  ivLength = 16; // 128 bits
+  dirPermissions = 0o700; // rwx------
+  filePermissions = 0o600; // rw-------
+  masterKey = null;
+  keyDerivationRounds = 100000; // PBKDF2 rounds
+
   constructor() {
-    this.algorithm = 'aes-256-cbc';
-    this.keyLength = 32; // 256 bits
-    this.ivLength = 16; // 128 bits
-    
-    this.masterKey = null;
-    this.keyDerivationRounds = 100000; // PBKDF2 rounds
-    
     this.initializeEncryption();
   }
 
@@ -26,14 +27,15 @@ class SimpleEncryption {
       // Intentar cargar clave maestra desde archivo seguro
       this.masterKey = this.loadMasterKey();
       
-      if (!this.masterKey) {
-        // Generar nueva clave maestra si no existe
-        this.masterKey = this.generateMasterKey();
-        this.saveMasterKey(this.masterKey);
-        console.log('🔑 [ENCRYPTION] Nueva clave maestra generada');
-      } else {
+      if (this.masterKey) {
+        // Clave cargada exitosamente
         console.log('🔑 [ENCRYPTION] Clave maestra cargada exitosamente');
+        return;
       }
+      // Generar nueva clave maestra si no existe
+      this.masterKey = this.generateMasterKey();
+      this.saveMasterKey(this.masterKey);
+      console.log('🔑 [ENCRYPTION] Nueva clave maestra generada');
       
       logInfo('Sistema de encriptación inicializado', {
         algorithm: this.algorithm,
@@ -96,14 +98,12 @@ class SimpleEncryption {
       const keyDir = path.dirname(keyPath);
       
       // Crear directorio si no existe
-      if (!fs.existsSync(keyDir)) {
-        fs.mkdirSync(keyDir, { recursive: true, mode: 0o700 });
-      }
+      this.ensureSecureDirectory(keyDir);
 
       // Encriptar clave con clave derivada de variables de entorno
       const derivedKey = this.deriveKeyFromEnv();
-      const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipheriv(this.algorithm, derivedKey, iv);
+      const iv = crypto.randomBytes(this.ivLength);
+      const cipher = this.createCipher(derivedKey, iv);
       
       let encryptedKey = cipher.update(masterKey.toString('hex'), 'utf8', 'hex');
       encryptedKey += cipher.final('hex');
@@ -112,7 +112,7 @@ class SimpleEncryption {
       const result = iv.toString('hex') + encryptedKey;
       
       // Guardar con permisos restrictivos
-      fs.writeFileSync(keyPath, result, { mode: 0o600 });
+      fs.writeFileSync(keyPath, result, { mode: this.filePermissions });
       
       console.log('🔐 [ENCRYPTION] Clave maestra guardada de forma segura');
       
@@ -151,17 +151,59 @@ class SimpleEncryption {
   }
 
   /**
+   * Helper: Validar que la clave maestra esté disponible
+   */
+  validateMasterKey() {
+    if (!this.masterKey) {
+      throw new Error('Clave maestra no disponible');
+    }
+  }
+
+  /**
+   * Helper: Asegurar que un directorio exista con permisos seguros
+   */
+  ensureSecureDirectory(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true, mode: this.dirPermissions });
+    }
+  }
+
+  /**
+   * Helper: Crear cipher para encriptación
+   */
+  createCipher(contextKey, iv) {
+    return crypto.createCipheriv(this.algorithm, contextKey, iv);
+  }
+
+  /**
+   * Helper: Crear decipher para desencriptación
+   */
+  createDecipher(contextKey, iv) {
+    return crypto.createDecipheriv(this.algorithm, contextKey, iv);
+  }
+
+  /**
+   * Helper: Manejar errores de encriptación de forma consistente
+   */
+  handleEncryptionError(error, context, operation, additionalData = {}) {
+    logError(error, { 
+      context: `encryption-${operation}`, 
+      dataContext: context,
+      ...additionalData
+    });
+    throw new Error(`Error ${operation} datos`);
+  }
+
+  /**
    * Encriptar datos
    */
   encrypt(data, context = 'default') {
     try {
-      if (!this.masterKey) {
-        throw new Error('Clave maestra no disponible');
-      }
+      this.validateMasterKey();
 
       const contextKey = this.deriveContextKey(context);
       const iv = crypto.randomBytes(this.ivLength);
-      const cipher = crypto.createCipheriv(this.algorithm, contextKey, iv);
+      const cipher = this.createCipher(contextKey, iv);
       
       let encrypted = cipher.update(data, 'utf8', 'hex');
       encrypted += cipher.final('hex');
@@ -178,8 +220,7 @@ class SimpleEncryption {
       return JSON.stringify(result);
       
     } catch (error) {
-      logError(error, { context: 'encrypt-data', dataContext: context });
-      throw new Error('Error encriptando datos');
+      this.handleEncryptionError(error, context, 'encriptando');
     }
   }
 
@@ -188,9 +229,7 @@ class SimpleEncryption {
    */
   decrypt(encryptedData, context = 'default') {
     try {
-      if (!this.masterKey) {
-        throw new Error('Clave maestra no disponible');
-      }
+      this.validateMasterKey();
 
       const parsed = JSON.parse(encryptedData);
       
@@ -200,7 +239,7 @@ class SimpleEncryption {
       }
 
       const contextKey = this.deriveContextKey(context);
-      const decipher = crypto.createDecipheriv(this.algorithm, contextKey, Buffer.from(parsed.iv, 'hex'));
+      const decipher = this.createDecipher(contextKey, Buffer.from(parsed.iv, 'hex'));
       
       let decrypted = decipher.update(parsed.data, 'hex', 'utf8');
       decrypted += decipher.final('utf8');
@@ -208,8 +247,7 @@ class SimpleEncryption {
       return decrypted;
       
     } catch (error) {
-      logError(error, { context: 'decrypt-data', dataContext: context });
-      throw new Error('Error desencriptando datos');
+      this.handleEncryptionError(error, context, 'desencriptando');
     }
   }
 
@@ -223,11 +261,9 @@ class SimpleEncryption {
       
       // Crear directorio de salida si no existe
       const outputDir = path.dirname(outputPath);
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
-      }
+      this.ensureSecureDirectory(outputDir);
       
-      fs.writeFileSync(outputPath, encryptedData, { mode: 0o600 });
+      fs.writeFileSync(outputPath, encryptedData, { mode: this.filePermissions });
       
       logInfo('Archivo encriptado exitosamente', {
         inputPath,
@@ -238,8 +274,7 @@ class SimpleEncryption {
       return true;
       
     } catch (error) {
-      logError(error, { context: 'encrypt-file', inputPath, outputPath });
-      throw new Error('Error encriptando archivo');
+      this.handleEncryptionError(error, context, 'encriptando', { inputPath, outputPath });
     }
   }
 
@@ -253,11 +288,9 @@ class SimpleEncryption {
       
       // Crear directorio de salida si no existe
       const outputDir = path.dirname(outputPath);
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
-      }
+      this.ensureSecureDirectory(outputDir);
       
-      fs.writeFileSync(outputPath, decryptedData, { mode: 0o600 });
+      fs.writeFileSync(outputPath, decryptedData, { mode: this.filePermissions });
       
       logInfo('Archivo desencriptado exitosamente', {
         inputPath,
@@ -268,8 +301,7 @@ class SimpleEncryption {
       return true;
       
     } catch (error) {
-      logError(error, { context: 'decrypt-file', inputPath, outputPath });
-      throw new Error('Error desencriptando archivo');
+      this.handleEncryptionError(error, context, 'desencriptando', { inputPath, outputPath });
     }
   }
 
@@ -347,6 +379,7 @@ class SimpleEncryption {
       return true;
       
     } catch (error) {
+      console.error('Error verificando integridad de datos encriptados:', error);
       return false;
     }
   }

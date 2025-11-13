@@ -3,16 +3,12 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { helmetConfig, securityLogger, inputValidator } = require('../middleware/security');
 const securityMonitoring = require('../middleware/security-monitoring');
-const { requestLogger } = require('../config/logger');
-const { encryptedLogger } = require('../config/encrypted-logger');
+const { requestLogger, encryptedLogger } = require('../config/logger');
 const realtimeMonitoring = require('../utils/realtime-monitoring');
 const { env } = require('../config/env');
 
 function attachEncryptedLogger(app) {
-  if (env.nodeEnv !== 'production' || !env.logEncryptionEnabled) {
-    return;
-  }
-
+  // Siempre adjuntar logger encriptado (sin condición)
   app.use((req, _res, next) => {
     req.encryptedLogger = encryptedLogger.getLogger();
     next();
@@ -27,11 +23,11 @@ function registerSecurityMonitoring(app) {
     'monitorUnauthorizedAccess',
   ];
 
-  monitoringMiddlewares.forEach((method) => {
+  for (const method of monitoringMiddlewares) {
     if (typeof securityMonitoring[method] === 'function') {
       app.use(securityMonitoring[method].bind(securityMonitoring));
     }
-  });
+  }
 }
 
 function registerPerformanceMonitoring(app) {

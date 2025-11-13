@@ -14,6 +14,19 @@ kubectl apply -f grafana-configmap.yaml
 kubectl apply -f postgresql-init-script-configmap.yaml
 
 Write-Host "🔐 Creando Secrets..." -ForegroundColor Cyan
+# Verificar que existe secrets.yaml
+if (-not (Test-Path secrets.yaml)) {
+    Write-Host "⚠️  secrets.yaml no encontrado. Creando desde template..." -ForegroundColor Yellow
+    if (Test-Path secrets.yaml.example) {
+        Copy-Item secrets.yaml.example secrets.yaml
+        Write-Host "✅ secrets.yaml creado desde template. POR FAVOR, edita los valores antes de continuar!" -ForegroundColor Yellow
+        Write-Host "   Presiona Enter cuando hayas editado secrets.yaml, o Ctrl+C para cancelar..." -ForegroundColor Yellow
+        Read-Host
+    } else {
+        Write-Host "❌ Error: No se encontró secrets.yaml ni secrets.yaml.example" -ForegroundColor Red
+        exit 1
+    }
+}
 kubectl apply -f secrets.yaml
 
 Write-Host "💾 Creando PersistentVolumeClaims..." -ForegroundColor Cyan
@@ -40,9 +53,14 @@ if ($LASTEXITCODE -eq 0) {
 Write-Host "📊 Desplegando PostgreSQL Exporter..." -ForegroundColor Cyan
 kubectl apply -f postgres-exporter-deployment.yaml
 
+Write-Host "🧭 Desplegando SonarQube..." -ForegroundColor Cyan
+kubectl apply -f sonarqube-deployment.yaml
+kubectl apply -f sonarqube-service.yaml
+Write-Host "⏳ Esperando a que SonarQube esté listo..." -ForegroundColor Yellow
+kubectl wait --for=condition=available deployment/sonarqube -n biblioteca-xonler --timeout=300s
+
 Write-Host "🌐 Desplegando aplicación Node.js..." -ForegroundColor Cyan
 kubectl apply -f app-deployment.yaml
-kubectl apply -f app-service.yaml
 
 Write-Host "📈 Desplegando Prometheus..." -ForegroundColor Cyan
 kubectl apply -f prometheus-deployment.yaml
@@ -53,8 +71,8 @@ kubectl apply -f grafana-deployment.yaml
 Write-Host "📦 Desplegando cAdvisor (DaemonSet)..." -ForegroundColor Cyan
 kubectl apply -f cadvisor-daemonset.yaml
 
-Write-Host "🗄️  Desplegando DBeaver..." -ForegroundColor Cyan
-kubectl apply -f dbeaver-deployment.yaml
+Write-Host "🗄️  Desplegando pgAdmin..." -ForegroundColor Cyan
+kubectl apply -f pgadmin-deployment.yaml
 
 Write-Host "🔧 Desplegando Jenkins..." -ForegroundColor Cyan
 kubectl apply -f jenkins-deployment.yaml
@@ -70,7 +88,8 @@ Write-Host "   - Grafana:        http://localhost:30001"
 Write-Host "   - Prometheus:     http://localhost:30090"
 Write-Host "   - Jenkins:        http://localhost:30088"
 Write-Host "   - cAdvisor:       http://localhost:30080"
-Write-Host "   - DBeaver:        http://localhost:30978"
+Write-Host "   - pgAdmin:        http://localhost:30978"
+Write-Host "   - SonarQube:      http://localhost:30900"
 Write-Host ""
 Write-Host "📊 Ver logs:" -ForegroundColor Yellow
 Write-Host "   kubectl logs -n biblioteca-xonler <pod-name>"

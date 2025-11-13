@@ -1,7 +1,7 @@
 const { logSecurity, logError } = require('../config/logger');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 /**
  * Sistema de alertas de seguridad
@@ -9,16 +9,16 @@ const path = require('path');
 class SecurityAlerts {
   constructor() {
     this.alertThresholds = {
-      failedLogins: parseInt(process.env.ALERT_THRESHOLD_FAILED_LOGINS) || 5, // Alertas después de 5 intentos fallidos
-      suspiciousActivity: parseInt(process.env.ALERT_THRESHOLD_SUSPICIOUS) || 3, // Alertas después de 3 actividades sospechosas
-      blockedIPs: parseInt(process.env.ALERT_THRESHOLD_BLOCKED_IPS) || 10, // Alertas cuando hay 10+ IPs bloqueadas
-      errorRate: parseFloat(process.env.ALERT_THRESHOLD_ERROR_RATE) || 0.1, // Alertas cuando la tasa de errores es > 10%
-      memoryUsage: parseFloat(process.env.ALERT_THRESHOLD_MEMORY) || 0.9, // Alertas cuando el uso de memoria es > 90%
-      diskUsage: parseFloat(process.env.ALERT_THRESHOLD_DISK) || 0.85 // Alertas cuando el uso de disco es > 85%
+      failedLogins: Number.parseInt(process.env.ALERT_THRESHOLD_FAILED_LOGINS ?? '5', 10), // Alertas después de 5 intentos fallidos
+      suspiciousActivity: Number.parseInt(process.env.ALERT_THRESHOLD_SUSPICIOUS ?? '3', 10), // Alertas después de 3 actividades sospechosas
+      blockedIPs: Number.parseInt(process.env.ALERT_THRESHOLD_BLOCKED_IPS ?? '10', 10), // Alertas cuando hay 10+ IPs bloqueadas
+      errorRate: Number.parseFloat(process.env.ALERT_THRESHOLD_ERROR_RATE ?? '0.1'), // Alertas cuando la tasa de errores es > 10%
+      memoryUsage: Number.parseFloat(process.env.ALERT_THRESHOLD_MEMORY ?? '0.9'), // Alertas cuando el uso de memoria es > 90%
+      diskUsage: Number.parseFloat(process.env.ALERT_THRESHOLD_DISK ?? '0.85') // Alertas cuando el uso de disco es > 85%
     };
     
     this.alertHistory = new Map();
-    this.cooldownPeriod = parseInt(process.env.ALERT_COOLDOWN_PERIOD) || (5 * 60 * 1000); // 5 minutos de cooldown
+    this.cooldownPeriod = Number.parseInt(process.env.ALERT_COOLDOWN_PERIOD ?? '300000', 10); // 5 minutos de cooldown
     this.notificationChannels = this.initializeNotificationChannels();
   }
 

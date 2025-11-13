@@ -1,12 +1,20 @@
 // Servicio unificado de autenticación
 class AuthService {
-  constructor() {
-    this.baseURL = '/api';
-    this.tokenKey = 'token';
-    this.roleKey = 'role';
-    this.userIdKey = 'userId';
-    this.userNameKey = 'userName';
+  baseURL = '/api';
+  
+  tokenKey = 'token';
+  roleKey = 'role';
+  userIdKey = 'userId';
+  userNameKey = 'userName';
+  // Helper para obtener runtime de forma segura
+  getRuntime() {
+    if (typeof globalThis === 'undefined') {
+      return {};
+    }
+    return globalThis;
   }
+  
+  runtime = this.getRuntime();
 
   // Obtener token de autenticación
   getToken() {
@@ -134,15 +142,15 @@ class AuthService {
   // Cerrar sesión
   logout() {
     // Limpiar almacenamiento local y de sesión
-    [localStorage, sessionStorage].forEach(storage => {
+    for (const storage of [localStorage, sessionStorage]) {
       storage.removeItem('token');
       storage.removeItem('role');
       storage.removeItem('userId');
       storage.removeItem('userName');
-    });
+    }
     
     // Redirigir al login
-    window.location.href = '/pages/guest/login.html';
+    this.runtime.location?.replace?.('/pages/guest/login.html');
   }
 
   // Guardar datos de sesión
@@ -308,14 +316,14 @@ const {
 } = authService;
 
 // Hacer disponible globalmente
-window.authService = authService;
-window.login = login;
-window.register = register;
-window.logout = logout;
-window.isAuthenticated = isAuthenticated;
-window.hasRole = hasRole;
-window.isAdmin = isAdmin;
-window.isSupAdmin = isSupAdmin;
-window.getCurrentUser = getCurrentUser;
-window.getAuthHeaders = getAuthHeaders;
-window.debugAuth = debugAuth;
+globalThis.authService = authService;
+globalThis.login = login;
+globalThis.register = register;
+globalThis.logout = logout;
+globalThis.isAuthenticated = isAuthenticated;
+globalThis.hasRole = hasRole;
+globalThis.isAdmin = isAdmin;
+globalThis.isSupAdmin = isSupAdmin;
+globalThis.getCurrentUser = getCurrentUser;
+globalThis.getAuthHeaders = getAuthHeaders;
+globalThis.debugAuth = debugAuth;

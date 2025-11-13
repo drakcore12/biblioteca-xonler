@@ -12,12 +12,17 @@ function authHeaders() {
 function handleAuthFailure(res) {
   if (res.status === 401) {
     // sesión inválida/expirada → limpiar y volver a login
-    ['localStorage', 'sessionStorage'].forEach(s => {
-      const st = window[s];
-      st.removeItem('token'); st.removeItem('role'); st.removeItem('userName'); st.removeItem('userId');
-    });
-    const current = location.pathname + location.search;
-    location.replace(`/pages/guest/login.html?next=${encodeURIComponent(current)}`);
+    for (const s of ['localStorage', 'sessionStorage']) {
+      const st = globalThis?.[s];
+      if (!st) continue;
+      st.removeItem('token');
+      st.removeItem('role');
+      st.removeItem('userName');
+      st.removeItem('userId');
+    }
+    const runtimeLocation = globalThis?.location;
+    const current = `${runtimeLocation?.pathname ?? ''}${runtimeLocation?.search ?? ''}`;
+    runtimeLocation?.replace?.(`/pages/guest/login.html?next=${encodeURIComponent(current)}`);
     return true;
   }
   return false;
@@ -28,7 +33,9 @@ async function aFetch(input, init = {}) {
   const headers = new Headers(init.headers || {});
   // añade Authorization cuando toque
   const extra = authHeaders();
-  Object.entries(extra).forEach(([k, v]) => headers.set(k, v));
+  for (const [k, v] of Object.entries(extra)) {
+    headers.set(k, v);
+  }
   // solo setea content-type en métodos con body
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
@@ -63,10 +70,13 @@ function obtenerUserId() {
 
 // base64url → string
 function base64UrlDecode(s) {
-  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  s = s.replaceAll('-', '+').replaceAll('_', '/');
   const pad = s.length % 4; // pad =
   if (pad) s += '='.repeat(4 - pad);
-  return decodeURIComponent(escape(atob(s)));
+  // NOSONAR S1874: escape() es necesario para decodificar correctamente caracteres especiales en base64
+  // decodeURIComponent requiere que escape() convierta caracteres especiales primero
+  // Alternativa moderna no funciona igual para todos los casos de base64
+  return decodeURIComponent(escape(atob(s))); // NOSONAR
 }
 
 // --- endpoints de usuario ---
@@ -84,7 +94,7 @@ async function fetchUsuarioActual() {
     }
   } catch (e) { 
     // ✅ ARREGLADO: Solo fallback si no es error de autenticación
-    if (e.message && e.message.includes('No autorizado')) {
+    if (e.message?.includes('No autorizado')) {
       throw e; // Re-lanzar errores de auth
     }
     console.log('🔄 Usando fallback por ID de usuario');
@@ -142,20 +152,71 @@ export function mostrarAlerta(tipo, mensaje, duracion = 5000) {
   return alertDiv;
 }
 
+/**
+ * Valida el formato de email
+ * @param {string} email - Email a validar
+ * @returns {boolean} True si es válido
+ */
+function validateEmailFormat(email) {
+  const trimmedEmail = email.trim();
+  if (trimmedEmail.length > 254 || trimmedEmail.length < 3) {
+    return false;
+  }
+  const parts = trimmedEmail.split('@');
+  if (parts.length !== 2) {
+    return false;
+  }
+  const [localPart, domainPart] = parts;
+  if (!localPart || localPart.length === 0 || localPart.length > 64 ||
+      !domainPart || domainPart.length === 0 || domainPart.length > 253) {
+    return false;
+  }
+  const localRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+  const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+  return localRegex.test(localPart) && domainRegex.test(domainPart);
+}
+
+/**
+ * Valida el formato de teléfono
+ * @param {string} phone - Teléfono a validar
+ * @returns {boolean} True si es válido
+ */
+function validatePhoneFormat(phone) {
+  const trimmedPhone = phone.trim();
+  if (trimmedPhone.length > 20 || trimmedPhone.length < 8) {
+    return false;
+  }
+  const phoneRegex = /^\+?\d[\d\s\-()]{6,19}$/;
+  return phoneRegex.test(trimmedPhone);
+}
+
+/**
+ * Valida el nombre
+ * @param {string} nombre - Nombre a validar
+ * @returns {boolean} True si es válido
+ */
+function validateNombre(nombre) {
+  return nombre && nombre.trim().length >= 2;
+}
+
 // ✅ ARREGLADO: Función para validar formularios
 export function validarFormularioPerfil(formData) {
   const errores = [];
   
-  if (!formData.nombre || formData.nombre.trim().length < 2) {
+  if (!validateNombre(formData.nombre)) {
     errores.push('El nombre debe tener al menos 2 caracteres');
   }
   
-  if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  // Validación segura de email (evita ReDoS)
+  if (!formData.email || typeof formData.email !== 'string' || !validateEmailFormat(formData.email)) {
     errores.push('El email debe ser válido');
   }
   
-  if (formData.telefono && !/^[\+]?[0-9\s\-\(\)]{8,}$/.test(formData.telefono)) {
-    errores.push('El teléfono debe ser válido');
+  // Validación segura de teléfono (evita ReDoS)
+  if (formData.telefono && typeof formData.telefono === 'string') {
+    if (!validatePhoneFormat(formData.telefono)) {
+      errores.push('El teléfono debe ser válido');
+    }
   }
   
   return errores;
@@ -184,12 +245,12 @@ export function validarCambioPassword(formData) {
 export function limpiarFormularios() {
   const forms = ['perfilForm', 'passwordForm', 'notificacionesForm', 'preferenciasForm'];
   
-  forms.forEach(formId => {
+  for (const formId of forms) {
     const form = document.getElementById(formId);
     if (form) {
       form.reset();
     }
-  });
+  }
   
   console.log('🧹 Formularios limpiados');
 }
@@ -299,7 +360,7 @@ export async function cambiarContraseña(datosPassword) {
 export async function guardarPreferencias(preferencias) {
   try {
     console.log('🔍 Guardando preferencias:', preferencias);
-    let res = await aFetch('/api/usuarios/me/preferencias', {
+    const res = await aFetch('/api/usuarios/me/preferencias', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'

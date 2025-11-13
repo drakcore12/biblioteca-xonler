@@ -88,6 +88,8 @@ SET default_table_access_method = heap;
 -- Name: admin_bibliotecas; Type: TABLE; Schema: public; Owner: postgres
 --
 
+
+
 CREATE TABLE public.admin_bibliotecas (
     usuario_id bigint NOT NULL,
     biblioteca_id bigint NOT NULL,

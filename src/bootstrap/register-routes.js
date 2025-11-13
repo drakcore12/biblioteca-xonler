@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 const express = require('express');
 const apiRoutes = require('../routes/index.routes');
 const securityRoutes = require('../routes/security.routes');
@@ -15,20 +15,21 @@ function registerApiRoutes(app) {
 }
 
 function registerStaticRoutes(app) {
+  // NOSONAR S2068: '/reset-password' es una ruta URL, no una contraseña hardcodeada
   const staticPages = {
     '/': 'pages/guest/index.html',
     '/contacto': 'pages/guest/contacto.html',
     '/login': 'pages/guest/login.html',
-    '/reset-password': 'pages/guest/reset-password.html',
+    '/reset-password': 'pages/guest/reset-password.html', // NOSONAR
     '/monitoring': 'pages/admin/monitoring.html',
     '/cleanup-tokens': 'cleanup-tokens.html',
   };
 
-  Object.entries(staticPages).forEach(([route, relativePath]) => {
+  for (const [route, relativePath] of Object.entries(staticPages)) {
     app.get(route, (_req, res) => {
       res.sendFile(path.join(PUBLIC_BASE_PATH, relativePath));
     });
-  });
+  }
 }
 
 function registerPublicAssets(app) {

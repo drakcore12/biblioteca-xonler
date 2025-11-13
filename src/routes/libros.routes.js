@@ -73,6 +73,7 @@ router.get('/:id', async (req, res) => {
     if (rows.length === 0) return res.status(404).json({ error: 'Libro no encontrado' });
     res.json(rows[0]);
   } catch (e) {
+    console.error('Error obteniendo libro:', e);
     res.status(500).json({ error: 'Error obteniendo libro' });
   }
 });

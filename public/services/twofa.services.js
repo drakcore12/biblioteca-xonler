@@ -24,8 +24,15 @@ function showAlert(type, message) {
   alertDiv = document.createElement('div');
   alertDiv.id = 'twofaAlert';
   alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+  let iconClass = 'info-circle';
+  if (type === 'success') {
+    iconClass = 'check-circle';
+  } else if (type === 'danger') {
+    iconClass = 'exclamation-triangle';
+  }
+  
   alertDiv.innerHTML = `
-    <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+    <i class="bi bi-${iconClass} me-2"></i>
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
   `;
@@ -38,7 +45,7 @@ function showAlert(type, message) {
 
   // Auto-ocultar después de 5 segundos
   setTimeout(() => {
-    if (alertDiv && alertDiv.parentNode) {
+    if (alertDiv?.parentNode) {
       alertDiv.remove();
     }
   }, 5000);
@@ -168,16 +175,16 @@ function update2FAUI(status) {
   const enabledDiv = document.getElementById('twofaEnabled');
 
   // Ocultar todos los divs
-  [statusDiv, setupDiv, qrDiv, enabledDiv].forEach(div => {
+  for (const div of [statusDiv, setupDiv, qrDiv, enabledDiv]) {
     if (div) div.style.display = 'none';
-  });
+  }
 
   if (status.enabled) {
     // 2FA está activado
     if (enabledDiv) enabledDiv.style.display = 'block';
-  } else {
+  } else if (setupDiv) {
     // 2FA no está activado
-    if (setupDiv) setupDiv.style.display = 'block';
+    setupDiv.style.display = 'block';
   }
 }
 
@@ -215,34 +222,36 @@ function setupEventListeners() {
 
   // Auto-submit en campos de código
   const codeInputs = ['twofaCode', 'disableTwofaCode'];
-  codeInputs.forEach(inputId => {
+  for (const inputId of codeInputs) {
     const input = document.getElementById(inputId);
-    if (input) {
-      input.addEventListener('input', (e) => {
-        const value = e.target.value.replace(/\D/g, ''); // Solo números
-        e.target.value = value;
-        
-        if (value.length === 6) {
-          // Auto-submit después de un breve delay
-          setTimeout(() => {
-            if (inputId === 'twofaCode') {
-              handleVerify2FA();
-            } else if (inputId === 'disableTwofaCode') {
-              handleConfirmDisable2FA();
-            }
-          }, 100);
-        }
-      });
-    }
-  });
+    if (!input) continue;
+    
+    input.addEventListener('input', (e) => {
+      const value = e.target.value.replaceAll(/\D/g, ''); // Solo números
+      e.target.value = value;
+      
+      if (value.length === 6) {
+        // Auto-submit después de un breve delay
+        setTimeout(() => {
+          if (inputId === 'twofaCode') {
+            handleVerify2FA();
+          } else if (inputId === 'disableTwofaCode') {
+            handleConfirmDisable2FA();
+          }
+        }, 100);
+      }
+    });
+  }
 }
 
 // Manejar inicio de configuración 2FA
 async function handleStart2FA() {
+  const btn = document.getElementById('btnStart2FA');
+  if (!btn) return;
+  
+  const originalText = btn.innerHTML;
+  
   try {
-    const btn = document.getElementById('btnStart2FA');
-    const originalText = btn.innerHTML;
-    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando QR...';
 
@@ -273,16 +282,18 @@ async function handleStart2FA() {
     console.error('Error iniciando 2FA:', error);
     showAlert('danger', `Error: ${error.message}`);
   } finally {
-    const btn = document.getElementById('btnStart2FA');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-qr-code me-2"></i>Configurar 2FA';
-    }
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 }
 
 // Manejar verificación de código 2FA
 async function handleVerify2FA() {
+  const btn = document.getElementById('btnVerify2FA');
+  if (!btn) return;
+  
+  const originalText = btn.innerHTML;
+  
   try {
     const code = document.getElementById('twofaCode').value.trim();
     
@@ -291,9 +302,6 @@ async function handleVerify2FA() {
       return;
     }
 
-    const btn = document.getElementById('btnVerify2FA');
-    const originalText = btn.innerHTML;
-    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verificando...';
 
@@ -315,11 +323,8 @@ async function handleVerify2FA() {
       codeInput.focus();
     }
   } finally {
-    const btn = document.getElementById('btnVerify2FA');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>Activar 2FA';
-    }
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 }
 
@@ -352,6 +357,11 @@ function handleDisable2FA() {
 
 // Manejar confirmación de desactivación 2FA
 async function handleConfirmDisable2FA() {
+  const btn = document.getElementById('btnConfirmDisable2FA');
+  if (!btn) return;
+  
+  const originalText = btn.innerHTML;
+  
   try {
     const code = document.getElementById('disableTwofaCode').value.trim();
     
@@ -360,9 +370,6 @@ async function handleConfirmDisable2FA() {
       return;
     }
 
-    const btn = document.getElementById('btnConfirmDisable2FA');
-    const originalText = btn.innerHTML;
-    
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Desactivando...';
 
@@ -388,10 +395,7 @@ async function handleConfirmDisable2FA() {
       codeInput.focus();
     }
   } finally {
-    const btn = document.getElementById('btnConfirmDisable2FA');
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="bi bi-shield-x me-2"></i>Desactivar 2FA';
-    }
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 }

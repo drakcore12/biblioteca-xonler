@@ -28,7 +28,7 @@ export function authHeaders(method = 'GET') {
 }
 
 function resolveImg(libro) {
-  if (libro.imagen_url && /^https?:\/\//i.test(libro.imagen_url)) {
+  if (libro?.imagen_url && /^https?:\/\//i.test(libro.imagen_url)) {
     return libro.imagen_url;
   }
   
@@ -49,6 +49,16 @@ function resolveImg(libro) {
   return '/assets/images/libro-placeholder.jpg';
 }
 
+function getDisponibilidadBadge(libro, extraClasses = '') {
+  if (libro.disponibilidad === undefined) return '';
+  
+  const badgeClass = libro.disponibilidad ? 'bg-success' : 'bg-danger';
+  const texto = libro.disponibilidad ? 'Disponible' : 'No disponible';
+  const classes = `badge ${badgeClass} ${extraClasses}`.trim();
+  
+  return `<span class="${classes}">${texto}</span>`;
+}
+
 
 // ============================================================================
 // UI HELPERS & DOM MANIPULATION
@@ -58,14 +68,14 @@ function setupImageFallbacks() {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) return;
 
-  librosGrid.querySelectorAll('img.libro-img').forEach(img => {
-    if (img._fallbackBound) return;
+  for (const img of librosGrid.querySelectorAll('img.libro-img')) {
+    if (img._fallbackBound) continue;
     img._fallbackBound = true;
     img.addEventListener('error', () => {
       console.log('🖼️ Imagen fallida, usando placeholder:', img.src);
       img.src = '/assets/images/libro-placeholder.jpg';
     });
-  });
+  }
 }
 
 function setupEventDelegation() {
@@ -152,6 +162,38 @@ let filtrosActuales = {};
 // CORE DATA FETCHING & API INTERACTIONS
 // ============================================================================
 
+/**
+ * Filtra libros según los criterios especificados
+ * @param {Array} libros - Array de libros a filtrar
+ * @param {object} filtros - Objeto con filtros (titulo, autor, categorias, disponibilidad, biblioteca)
+ * @returns {Array} Array de libros filtrados
+ */
+function filtrarLibros(libros, filtros) {
+  const t = (filtros.titulo || '').trim().toLowerCase();
+  const a = (filtros.autor || '').trim().toLowerCase();
+  const disp = filtros.disponibilidad;
+  const bib = filtros.biblioteca && filtros.biblioteca !== 'todas' ? filtros.biblioteca : null;
+  const hayCategoria = Array.isArray(filtros.categorias) && filtros.categorias.length > 0;
+
+  return libros.filter(l => {
+    const tituloOk = t ? String(l.titulo || '').toLowerCase().includes(t) : true;
+    const autorOk = a ? String(l.autor || '').toLowerCase().includes(a) : true;
+    
+    let catOk = true;
+    if (hayCategoria && filtros.categorias && filtros.categorias.length > 0) {
+      const libroCategoria = String(l.categoria || '');
+      catOk = filtros.categorias.some(cat => String(cat) === libroCategoria);
+    }
+    
+    let dispOk = true;
+    if (disp && disp !== 'todos') {
+      dispOk = disp === 'disponibles' ? !!l.disponibilidad : !l.disponibilidad;
+    }
+    const bibOk = bib ? (l.biblioteca_id === bib || l.biblioteca_id === Number.parseInt(bib, 10)) : true;
+    return tituloOk && autorOk && catOk && dispOk && bibOk;
+  });
+}
+
 export async function cargarLibros(filtros = {}, pagina = 1) {
   const librosGrid = document.getElementById('librosGrid');
   if (!librosGrid) {
@@ -229,31 +271,7 @@ export async function cargarLibros(filtros = {}, pagina = 1) {
     let dataset = crudos;
 
     if (hayFiltro) {
-      const t = (filtrosActuales.titulo || '').trim().toLowerCase();
-      const a = (filtrosActuales.autor || '').trim().toLowerCase();
-      const cat = hayCategoria ? String(filtrosActuales.categorias[0]).toLowerCase() : null;
-      const disp = filtrosActuales.disponibilidad;
-      const bib = hayBiblioteca ? filtrosActuales.biblioteca : null;
-
-      dataset = crudos.filter(l => {
-        const tituloOk = t ? String(l.titulo || '').toLowerCase().includes(t) : true;
-        const autorOk = a ? String(l.autor || '').toLowerCase().includes(a) : true;
-        
-        let catOk = true;
-        if (hayCategoria && filtrosActuales.categorias && filtrosActuales.categorias.length > 0) {
-          const libroCategoria = String(l.categoria || '');
-          catOk = filtrosActuales.categorias.some(cat => 
-            String(cat) === libroCategoria
-          );
-        }
-        
-        const dispOk = disp && disp !== 'todos'
-          ? (disp === 'disponibles' ? !!l.disponibilidad : !l.disponibilidad)
-          : true;
-        const bibOk = bib ? (l.biblioteca_id === bib || l.biblioteca_id === parseInt(bib)) : true;
-        return tituloOk && autorOk && catOk && dispOk && bibOk;
-      });
-
+      dataset = filtrarLibros(crudos, filtrosActuales);
     }
 
     if (!backendFuncionaCorrectamente || hayFiltro) {
@@ -329,10 +347,7 @@ function renderizarLibros(libros) {
             <p class="mb-1 small text-muted">${libro.autor || 'Sin autor'}</p>
             <div class="mb-2">
               ${libro.categoria ? `<span class="badge bg-primary me-2">${libro.categoria}</span>` : ''}
-              ${libro.disponibilidad !== undefined
-                ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} me-2">
-                     ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
-                   </span>` : ''}
+              ${getDisponibilidadBadge(libro)}
             </div>
             ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
           </div>
@@ -358,10 +373,7 @@ function renderizarLibros(libros) {
             <p class="card-text small text-muted">${libro.autor || 'Sin autor'}</p>
             ${libro.categoria ? `<span class="badge bg-primary mb-2">${libro.categoria}</span>` : ''}
             ${libro.isbn ? `<small class="text-muted">ISBN: ${libro.isbn}</small>` : ''}
-            ${libro.disponibilidad !== undefined
-              ? `<span class="badge ${libro.disponibilidad ? 'bg-success' : 'bg-danger'} mb-2 badge-disponibilidad">
-                   ${libro.disponibilidad ? 'Disponible' : 'No disponible'}
-                 </span>` : ''}
+            ${getDisponibilidadBadge(libro, 'mb-2 badge-disponibilidad')}
             <div class="mt-auto">
               <button class="btn btn-outline-primary btn-sm w-100 ver-detalle" data-id="${libro.id}">
                 Ver detalles
@@ -384,9 +396,10 @@ function actualizarContadorResultados(countVisibles, total = countVisibles, page
   if (!el) return;
   if (total === 0) {
     el.textContent = 'No se encontraron libros';
-  } else {
-    el.textContent = `Mostrando ${countVisibles} de ${total} libro${total !== 1 ? 's' : ''} — página ${page}/${totalPages}`;
+    return;
   }
+  const plural = total === 1 ? '' : 's';
+  el.textContent = `Mostrando ${countVisibles} de ${total} libro${plural} — página ${page}/${totalPages}`;
 }
 
 export async function cargarBibliotecas() {
@@ -413,11 +426,11 @@ export async function cargarBibliotecas() {
     
     let options = '<option value="todas">Todas las bibliotecas</option>';
     
-    bibliotecasArray.forEach(biblioteca => {
+    for (const biblioteca of bibliotecasArray) {
       const nombre = biblioteca.nombre || 'Biblioteca sin nombre';
       const id = biblioteca.id || 'unknown';
       options += `<option value="${id}">${nombre}</option>`;
-    });
+    }
     
     bibliotecaSelect.innerHTML = options;
     console.log(`✅ Selector de bibliotecas cargado con ${bibliotecasArray.length} opciones`);
@@ -498,9 +511,11 @@ function obtenerCategoriasSeleccionadas() {
   const categorias = [];
   const checkboxes = document.querySelectorAll('input[name="categoriasFavoritas"]:checked');
   
-  checkboxes.forEach(checkbox => {
-    categorias.push(checkbox.value);
-  });
+  for (const checkbox of checkboxes) {
+    if (checkbox.checked) {
+      categorias.push(checkbox.value);
+    }
+  }
   
   return categorias;
 }
@@ -524,26 +539,27 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
   const byNumDesc = (field) => (a, b) => (Number(b?.[field]) || 0) - (Number(a?.[field]) || 0);
 
   switch (key) {
-    case 'titulo':
+    case 'titulo': {
       arr.sort((a, b) => normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo)));
       break;
+    }
 
-    case 'autor':
+    case 'autor': {
       arr.sort((a, b) => normalizarTexto(a.autor).localeCompare(normalizarTexto(b.autor)));
       break;
+    }
 
     case 'recientes': {
       const getTs = (x) => {
         const c = x?.created_at || x?.updated_at || x?.fecha_alta;
-        const t = c ? Date.parse(c) : NaN;
+        const t = c ? Date.parse(c) : Number.NaN;
         return Number.isNaN(t) ? 0 : t;
       };
       arr.sort((a, b) => getTs(b) - getTs(a) || normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo)));
       break;
     }
 
-    case 'popularidad':
-
+    case 'popularidad': {
       arr.sort((a, b) => {
         const getPop = (x) => Number(x?.popularidad ?? 0);
         const pa = getPop(a);
@@ -554,9 +570,10 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
         return normalizarTexto(a.titulo).localeCompare(normalizarTexto(b.titulo));
       });
       break;
+    }
 
     case 'relevancia':
-    default:
+    default: {
       arr.sort((a, b) => {
         const r = byNumDesc('relevancia')(a, b);
         if (r !== 0) return r;
@@ -579,6 +596,7 @@ function ordenarDataset(dataset, criterio, filtros = {}) {
         arr.sort((x, y) => score(y) - score(x));
       }
       break;
+    }
   }
   return arr;
 }
@@ -595,23 +613,36 @@ function debounce(func, wait) {
 // URL BUILDING & API PARAMETER HANDLING
 // ============================================================================
 
-function buildLibrosUrl(filtros = {}) {
-  const params = new URLSearchParams();
-  
-  const orden = filtros.orden || 'popularidad';
-  params.set('orden', orden);
-  
+/**
+ * Agrega parámetros de búsqueda (título, autor, query) a URLSearchParams
+ * @param {URLSearchParams} params - Parámetros de URL
+ * @param {object} filtros - Filtros de búsqueda
+ */
+function addSearchParams(params, filtros) {
   const titulo = filtros.titulo?.trim();
   const autor = filtros.autor?.trim();
   
-  if (titulo && titulo.length >= 2) params.set('titulo', titulo);
-  if (autor && autor.length >= 2) params.set('autor', autor);
+  if (titulo && titulo.length >= 2) {
+    params.set('titulo', titulo);
+  }
+  if (autor && autor.length >= 2) {
+    params.set('autor', autor);
+  }
   if ((titulo && titulo.length >= 2) || (autor && autor.length >= 2)) {
     params.set('q', [titulo, autor].filter(Boolean).join(' '));
   }
-  
+}
+
+/**
+ * Agrega parámetros de filtros (categorías, disponibilidad, biblioteca) a URLSearchParams
+ * @param {URLSearchParams} params - Parámetros de URL
+ * @param {object} filtros - Filtros de búsqueda
+ */
+function addFilterParams(params, filtros) {
   if (Array.isArray(filtros.categorias) && filtros.categorias.length > 0) {
-    filtros.categorias.forEach(cat => params.append('categoria', String(cat)));
+    for (const cat of filtros.categorias) {
+      params.append('categoria', String(cat));
+    }
   }
   
   if (filtros.disponibilidad && filtros.disponibilidad !== 'todos') {
@@ -621,11 +652,29 @@ function buildLibrosUrl(filtros = {}) {
   if (filtros.biblioteca && filtros.biblioteca !== 'todas') {
     params.set('biblioteca', filtros.biblioteca);
   }
+}
 
+/**
+ * Agrega parámetros de paginación a URLSearchParams
+ * @param {URLSearchParams} params - Parámetros de URL
+ * @param {object} filtros - Filtros de búsqueda
+ */
+function addPaginationParams(params, filtros) {
   const limit = Number.isFinite(filtros.limit) ? filtros.limit : PAGINATION.pageSize;
   const offset = Number.isFinite(filtros.offset) ? filtros.offset : (PAGINATION.page - 1) * PAGINATION.pageSize;
   params.set('limit', String(limit));
   params.set('offset', String(offset));
+}
+
+function buildLibrosUrl(filtros = {}) {
+  const params = new URLSearchParams();
+  
+  const orden = filtros.orden || 'popularidad';
+  params.set('orden', orden);
+  
+  addSearchParams(params, filtros);
+  addFilterParams(params, filtros);
+  addPaginationParams(params, filtros);
   
   const url = `/api/libros${params.toString() ? '?' + params.toString() : ''}`;
   
@@ -644,17 +693,22 @@ function renderPagination() {
   const { page, totalPages } = PAGINATION;
   if (totalPages <= 1) { ul.innerHTML = ''; return; }
 
-  const mkItem = (label, target, disabled = false, active = false) => `
-    <li class="page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}">
+  const mkItem = (label, target, disabled = false, active = false) => {
+    const classes = ['page-item'];
+    if (disabled) classes.push('disabled');
+    if (active) classes.push('active');
+    return `
+    <li class="${classes.join(' ')}">
       <a class="page-link" href="#" data-page="${target}">${label}</a>
     </li>
   `;
+  };
 
   let html = mkItem('«', page - 1, page === 1);
 
   const max = 5;
   let start = Math.max(1, page - Math.floor(max / 2));
-  let end = Math.min(totalPages, start + max - 1);
+  const end = Math.min(totalPages, start + max - 1);
   if (end - start + 1 < max) start = Math.max(1, end - max + 1);
 
   for (let p = start; p <= end; p++) {
@@ -665,37 +719,122 @@ function renderPagination() {
 
   ul.innerHTML = html;
 
-  ul.querySelectorAll('a.page-link').forEach(a => {
+  for (const a of ul.querySelectorAll('a.page-link')) {
     a.addEventListener('click', (e) => {
       e.preventDefault();
-      const target = Number(a.dataset.page);
-      if (!Number.isNaN(target)) cargarLibros(filtrosActuales, target);
+      const targetPage = Number(a.dataset.page);
+      if (!Number.isNaN(targetPage)) {
+        cargarLibros(filtrosActuales, targetPage);
+      }
     });
-  });
+  }
 }
 
 // ============================================================================
 // MODAL & DETAIL VIEW FUNCTIONALITY
 // ============================================================================
 
-export async function verDetalleLibro(libroId) {
-  console.log('📖 Ver detalle del libro:', libroId);
+/**
+ * Verifica si un libro está disponible
+ * @param {object} libro - Objeto libro
+ * @returns {boolean} True si está disponible
+ */
+function isLibroDisponible(libro) {
+  return libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
+}
 
-  window.solicitarPrestamo = async function(libroId) {
+/**
+ * Actualiza la UI después de un préstamo exitoso
+ * @param {string} libroId - ID del libro
+ * @param {object} data - Datos de la respuesta del préstamo
+ */
+function updateUIAfterPrestamo(libroId, data) {
+  const disponibilidadElement = document.getElementById('modalBookDisponibilidad');
+  if (disponibilidadElement) {
+    disponibilidadElement.textContent = 'Prestado';
+    disponibilidadElement.className = 'badge bg-warning';
+  }
+
+  const libroCard = document.querySelector(`.libro-card[data-id="${libroId}"]`);
+  if (libroCard) {
+    const badgeDisponibilidad = libroCard.querySelector('.badge-disponibilidad');
+    if (badgeDisponibilidad) {
+      badgeDisponibilidad.textContent = 'No disponible';
+      badgeDisponibilidad.className = 'badge bg-danger mb-2 badge-disponibilidad';
+    }
+  }
+
+  cargarLibros(filtrosActuales, PAGINATION.page);
+}
+
+/**
+ * Maneja el éxito de una solicitud de préstamo
+ * @param {HTMLElement} btnPrestamo - Botón de préstamo
+ * @param {HTMLElement} statusDiv - Div de estado
+ * @param {string} libroId - ID del libro
+ * @param {object} data - Datos de la respuesta
+ */
+function handlePrestamoSuccess(btnPrestamo, statusDiv, libroId, data) {
+  btnPrestamo.classList.remove('btn-primary');
+  btnPrestamo.classList.add('btn-success');
+  btnPrestamo.innerHTML = '<i class="bi bi-check-circle me-1"></i>Préstamo solicitado';
+  
+  statusDiv.innerHTML = `
+    <div class="alert alert-success mb-0 py-1 px-2">
+      <small>
+        <i class="bi bi-info-circle me-1"></i>
+        Préstamo registrado correctamente. Fecha de devolución: 
+        <strong>${new Date(data.prestamo.fecha_vencimiento).toLocaleDateString()}</strong>
+      </small>
+    </div>
+  `;
+
+  updateUIAfterPrestamo(libroId, data);
+}
+
+/**
+ * Maneja el error de una solicitud de préstamo
+ * @param {HTMLElement} btnPrestamo - Botón de préstamo
+ * @param {HTMLElement} statusDiv - Div de estado
+ * @param {Error} error - Error capturado
+ */
+function handlePrestamoError(btnPrestamo, statusDiv, error) {
+  console.error('❌ Error solicitando préstamo:', error);
+  btnPrestamo.disabled = false;
+  btnPrestamo.innerHTML = '<i class="bi bi-book me-1"></i>Reintentar préstamo';
+  
+  statusDiv.innerHTML = `
+    <div class="alert alert-danger mb-0 py-1 px-2">
+      <small>
+        <i class="bi bi-exclamation-triangle me-1"></i>
+        ${error.message}
+      </small>
+    </div>
+  `;
+}
+
+/**
+ * Función para solicitar un préstamo
+ * @param {string} libroId - ID del libro
+ */
+function createSolicitarPrestamoHandler(libroId) {
+  return async function() {
+    const btnPrestamo = document.getElementById('btnSolicitarPrestamo');
+    const statusDiv = document.getElementById('modalPrestamoStatus');
+    
+    if (!btnPrestamo || !statusDiv) return;
+    
+    btnPrestamo.disabled = true;
+    btnPrestamo.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
+    
     try {
-      const btnPrestamo = document.getElementById('btnSolicitarPrestamo');
-      const statusDiv = document.getElementById('modalPrestamoStatus');
-      
-      btnPrestamo.disabled = true;
-      btnPrestamo.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Procesando...';
-      
       const response = await fetch('/api/prestamos', {
         method: 'POST',
         headers: {
           ...authHeaders('POST')
         },
         body: JSON.stringify({
-          libro_id: parseInt(libroId)
+          libro_id: Number.parseInt(libroId, 10)
         })
       });
       
@@ -705,53 +844,84 @@ export async function verDetalleLibro(libroId) {
       }
       
       const data = await response.json();
-
-      btnPrestamo.classList.remove('btn-primary');
-      btnPrestamo.classList.add('btn-success');
-      btnPrestamo.innerHTML = '<i class="bi bi-check-circle me-1"></i>Préstamo solicitado';
-      
-      statusDiv.innerHTML = `
-        <div class="alert alert-success mb-0 py-1 px-2">
-          <small>
-            <i class="bi bi-info-circle me-1"></i>
-            Préstamo registrado correctamente. Fecha de devolución: 
-            <strong>${new Date(data.prestamo.fecha_vencimiento).toLocaleDateString()}</strong>
-          </small>
-        </div>
-      `;
-
-      document.getElementById('modalBookDisponibilidad').textContent = 'Prestado';
-      document.getElementById('modalBookDisponibilidad').className = 'badge bg-warning';
-
-      const libroCard = document.querySelector(`.libro-card[data-id="${libroId}"]`);
-      if (libroCard) {
-        const badgeDisponibilidad = libroCard.querySelector('.badge-disponibilidad');
-        if (badgeDisponibilidad) {
-          badgeDisponibilidad.textContent = 'No disponible';
-          badgeDisponibilidad.className = 'badge bg-danger mb-2 badge-disponibilidad';
-        }
-      }
-
-      cargarLibros(filtrosActuales, PAGINATION.page);
+      handlePrestamoSuccess(btnPrestamo, statusDiv, libroId, data);
     } catch (error) {
-      console.error('❌ Error solicitando préstamo:', error);
-      
-      const btnPrestamo = document.getElementById('btnSolicitarPrestamo');
-      const statusDiv = document.getElementById('modalPrestamoStatus');
-      
-      btnPrestamo.disabled = false;
-      btnPrestamo.innerHTML = '<i class="bi bi-book me-1"></i>Reintentar préstamo';
-      
-      statusDiv.innerHTML = `
-        <div class="alert alert-danger mb-0 py-1 px-2">
-          <small>
-            <i class="bi bi-exclamation-triangle me-1"></i>
-            ${error.message}
-          </small>
-        </div>
-      `;
+      handlePrestamoError(btnPrestamo, statusDiv, error);
     }
   };
+}
+
+/**
+ * Renderiza los datos del libro en el modal
+ * @param {object} libro - Datos del libro
+ * @param {object} elements - Objeto con los elementos del DOM del modal
+ * @param {HTMLElement} elements.modalTitle - Título del modal
+ * @param {HTMLElement} elements.modalAuthor - Autor del modal
+ * @param {HTMLElement} elements.modalISBN - ISBN del modal
+ * @param {HTMLElement} elements.modalDescription - Descripción del modal
+ * @param {HTMLElement} [elements.modalCategoria] - Categoría del modal (opcional)
+ * @param {HTMLElement} [elements.modalImg] - Imagen del modal (opcional)
+ * @param {HTMLElement} [elements.btnPrestamo] - Botón de préstamo (opcional)
+ */
+function renderLibroData(libro, elements) {
+  const {
+    modalTitle,
+    modalAuthor,
+    modalISBN,
+    modalDescription,
+    modalCategoria,
+    modalImg,
+    btnPrestamo
+  } = elements;
+
+  modalTitle.textContent = libro.titulo || 'Sin título';
+  modalAuthor.textContent = libro.autor || 'Sin autor';
+  modalISBN.textContent = libro.isbn || 'Sin ISBN';
+  modalDescription.textContent = libro.descripcion || 'Sin descripción';
+
+  if (modalCategoria) {
+    modalCategoria.textContent = libro.categoria || 'Sin categoría';
+    modalCategoria.className = 'badge bg-secondary';
+  }
+
+  const disponibilidadElement = document.getElementById('modalBookDisponibilidad');
+  if (disponibilidadElement) {
+    const disponible = isLibroDisponible(libro);
+    disponibilidadElement.textContent = disponible ? 'Disponible' : 'No disponible';
+    disponibilidadElement.className = `badge ${disponible ? 'bg-success' : 'bg-danger'}`;
+  }
+  
+  if (btnPrestamo) {
+    const disponible = isLibroDisponible(libro);
+    btnPrestamo.disabled = !disponible;
+    btnPrestamo.dataset.libroId = libro.id;
+    btnPrestamo.className = `btn ${disponible ? 'btn-primary' : 'btn-secondary'}`;
+    btnPrestamo.innerHTML = disponible ? 
+      '<i class="bi bi-book me-1"></i>Solicitar préstamo' : 
+      '<i class="bi bi-x-circle me-1"></i>No disponible';
+  }
+
+  if (modalImg) {
+    modalImg.src = resolveImg(libro);
+    modalImg.alt = libro.titulo || 'Portada del libro';
+  }
+}
+
+/**
+ * Muestra el modal usando Bootstrap
+ * @param {HTMLElement} modal - Elemento del modal
+ */
+function showModal(modal) {
+  if (globalThis.bootstrap) {
+    const modalInstance = globalThis.bootstrap.Modal.getInstance(modal) || new globalThis.bootstrap.Modal(modal);
+    modalInstance.show();
+  }
+}
+
+export async function verDetalleLibro(libroId) {
+  console.log('📖 Ver detalle del libro:', libroId);
+
+  globalThis.solicitarPrestamo = createSolicitarPrestamoHandler(libroId);
 
   const modal = document.getElementById('bookDetailModal');
   const modalTitle = document.getElementById('bookDetailModalLabel');
@@ -762,78 +932,47 @@ export async function verDetalleLibro(libroId) {
   const modalCategoria = document.getElementById('modalBookCategoria');
   const btnPrestamo = document.getElementById('btnSolicitarPrestamo');
   
-  if (modal && modalTitle) {
-    modalTitle.textContent = 'Cargando...';
+  if (!modal || !modalTitle) return;
+  
+  modalTitle.textContent = 'Cargando...';
+  
+  try {
+    const response = await fetch(`/api/libros/${libroId}`, {
+      headers: { ...authHeaders('GET') }
+    });
     
-    try {
-
-      const response = await fetch(`/api/libros/${libroId}`, {
-        headers: { ...authHeaders('GET') }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('📚 Datos del libro obtenidos:', data);
-
-        const libro = data.libro || data;
-        console.log('📚 Libro extraído:', libro);
-
-        modalTitle.textContent = libro.titulo || 'Sin título';
-        modalAuthor.textContent = libro.autor || 'Sin autor';
-        modalISBN.textContent = libro.isbn || 'Sin ISBN';
-        modalDescription.textContent = libro.descripcion || 'Sin descripción';
-
-        if (modalCategoria) {
-          modalCategoria.textContent = libro.categoria || 'Sin categoría';
-          modalCategoria.className = 'badge bg-secondary';
-        }
-
-        const disponibilidadElement = document.getElementById('modalBookDisponibilidad');
-        if (disponibilidadElement) {
-          const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
-          disponibilidadElement.textContent = disponible ? 'Disponible' : 'No disponible';
-          disponibilidadElement.className = `badge ${disponible ? 'bg-success' : 'bg-danger'}`;
-          
-        }
-        
-        if (btnPrestamo) {
-          const disponible = libro.disponibilidad === true || libro.disponibilidad === 'true' || libro.disponible === true;
-          btnPrestamo.disabled = !disponible;
-          btnPrestamo.dataset.libroId = libro.id;
-          btnPrestamo.className = `btn ${disponible ? 'btn-primary' : 'btn-secondary'}`;
-          btnPrestamo.innerHTML = disponible ? 
-            '<i class="bi bi-book me-1"></i>Solicitar préstamo' : 
-            '<i class="bi bi-x-circle me-1"></i>No disponible';
-        }
-
-        if (modalImg) {
-          modalImg.src = resolveImg(libro);
-          modalImg.alt = libro.titulo || 'Portada del libro';
-        }
-        
-      } else {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
-      }
-
-      if (window.bootstrap) {
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
-      }
-      
-    } catch (error) {
-      console.error('❌ Error obteniendo detalles del libro:', error);
-      modalTitle.textContent = 'Error al cargar';
-      modalDescription.textContent = error.message;
-      
-      if (window.bootstrap) {
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
-      }
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    console.log('📚 Datos del libro obtenidos:', data);
+
+    const libro = data.libro || data;
+    console.log('📚 Libro extraído:', libro);
+
+    renderLibroData(libro, {
+      modalTitle,
+      modalAuthor,
+      modalISBN,
+      modalDescription,
+      modalCategoria,
+      modalImg,
+      btnPrestamo
+    });
+    showModal(modal);
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo detalles del libro:', error);
+    modalTitle.textContent = 'Error al cargar';
+    if (modalDescription) {
+      modalDescription.textContent = error.message;
+    }
+    showModal(modal);
   }
 }
 
-window.verDetalleLibro = async function(libroId) {
+globalThis.verDetalleLibro = async function(libroId) {
   return await verDetalleLibro(libroId);
 };
 
@@ -859,7 +998,7 @@ export function cambiarVista(modo) {
     viewList.classList.remove('active');
   }
 
-  const lote = (STATE.lastVisibles && STATE.lastVisibles.length)
+  const lote = STATE.lastVisibles?.length
     ? STATE.lastVisibles
     : getPageSlice(PAGINATION.page);
   renderizarLibros(lote);
@@ -869,7 +1008,7 @@ export function cambiarVista(modo) {
 export function ordenarLibros(criterio) {
   console.log('📚 Ordenando libros por:', criterio);
   
-  filtrosActuales = { ...(filtrosActuales || {}), orden: criterio || 'popularidad' };
+  filtrosActuales = { ...filtrosActuales, orden: criterio || 'popularidad' };
   
   cargarLibros(filtrosActuales, 1);
 }

@@ -23,6 +23,25 @@ data:
     
     -- La base de datos xonler ya fue creada por POSTGRES_DB
     -- Solo necesitamos crear las tablas dentro de ella
+
+    -- Crear usuario y base de datos para SonarQube si no existen
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'sonar') THEN
+        CREATE ROLE sonar LOGIN PASSWORD 'sonar';
+      END IF;
+    END
+    $$;
+
+    DO $$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'sonarqube') THEN
+        CREATE DATABASE sonarqube OWNER sonar;
+      END IF;
+    END
+    $$;
+
+    GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;
     
     CREATE SCHEMA IF NOT EXISTS public;
     ALTER SCHEMA public OWNER TO pg_database_owner;

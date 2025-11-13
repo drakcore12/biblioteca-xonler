@@ -3,16 +3,15 @@ const router = express.Router();
 const { hybridAuth } = require('../middleware/hybrid-auth');
 const securityMonitoring = require('../middleware/security-monitoring');
 const jwtRotation = require('../utils/jwt-rotation');
-const { logAudit } = require('../config/logger');
+const { logAudit, encryptedLogger } = require('../config/logger');
 const securityAlerts = require('../utils/security-alerts');
 const logBackup = require('../utils/log-backup');
 const realtimeMonitoring = require('../utils/realtime-monitoring');
 const encryptionManager = require('../utils/simple-encryption');
-const { encryptedLogger } = require('../config/encrypted-logger');
 
 // Middleware para requerir rol de administrador
 const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
+  if (req.user?.role !== 'admin') {
     return res.status(403).json({ 
       error: 'Acceso denegado', 
       message: 'Se requiere rol de administrador' 

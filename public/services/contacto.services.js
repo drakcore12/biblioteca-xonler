@@ -1,4 +1,7 @@
 // Servicio para manejar el formulario de contacto
+import { handleFormSubmit, showError, showSuccess, isValidEmail, validateRequired } from './common/form-handler.js';
+import { post } from './common/api-client.js';
+
 export function initContactoForm() {
   const contactForm = document.getElementById('contactForm');
   if (!contactForm) {
@@ -9,54 +12,26 @@ export function initContactoForm() {
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const submitBtn = contactForm.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    
-    try {
-      // Deshabilitar botón y mostrar estado de carga
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Enviando...';
-      
-      // Obtener datos del formulario
-      const formData = {
-        nombre: document.getElementById('nombre').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        asunto: document.getElementById('asunto').value,
-        mensaje: document.getElementById('mensaje').value.trim()
-      };
-      
+    await handleFormSubmit(contactForm, async (formData) => {
       // Validar datos
       const errores = validarFormularioContacto(formData);
       if (errores.length > 0) {
-        mostrarError(errores.join('<br>'));
-        return;
+        showError(contactForm, errores.join('<br>'));
+        throw new Error('Errores de validación');
       }
       
       // Enviar formulario
-      const response = await fetch('/api/contacto', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      if (response.ok) {
-        mostrarExito('Mensaje enviado correctamente. Te responderemos pronto.');
-        contactForm.reset();
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+      const result = await post('/api/contacto', formData, { requireAuth: false });
+      showSuccess(contactForm, 'Mensaje enviado correctamente. Te responderemos pronto.');
+      contactForm.reset();
+      return result;
+    }, {
+      loadingText: 'Enviando...',
+      validator: (data) => {
+        const errores = validarFormularioContacto(data);
+        return errores.length > 0 ? errores.join('<br>') : null;
       }
-      
-    } catch (error) {
-      console.error('Error enviando formulario de contacto:', error);
-      mostrarError('Error al enviar el mensaje. Intenta nuevamente.');
-    } finally {
-      // Restaurar botón
-      submitBtn.disabled = false;
-      submitBtn.textContent = originalText;
-    }
+    });
   });
 }
 
@@ -64,11 +39,17 @@ export function initContactoForm() {
 function validarFormularioContacto(formData) {
   const errores = [];
   
-  if (!formData.nombre || formData.nombre.length < 2) {
+  const nombreError = validateRequired(formData.nombre, 'El nombre');
+  if (nombreError) {
+    errores.push(nombreError);
+  } else if (formData.nombre.length < 2) {
     errores.push('El nombre debe tener al menos 2 caracteres');
   }
   
-  if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+  const emailError = validateRequired(formData.email, 'El email');
+  if (emailError) {
+    errores.push(emailError);
+  } else if (!isValidEmail(formData.email)) {
     errores.push('El email debe ser válido');
   }
   
@@ -76,59 +57,14 @@ function validarFormularioContacto(formData) {
     errores.push('Debes seleccionar un asunto');
   }
   
-  if (!formData.mensaje || formData.mensaje.length < 10) {
+  const mensajeError = validateRequired(formData.mensaje, 'El mensaje');
+  if (mensajeError) {
+    errores.push(mensajeError);
+  } else if (formData.mensaje.length < 10) {
     errores.push('El mensaje debe tener al menos 10 caracteres');
   }
   
   return errores;
-}
-
-// Mostrar mensaje de éxito
-function mostrarExito(mensaje) {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = 'alert alert-success alert-dismissible fade show';
-  alertDiv.innerHTML = `
-    <i class="bi bi-check-circle me-2"></i>
-    ${mensaje}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  
-  // Insertar antes del formulario
-  const form = document.getElementById('contactForm');
-  if (form) {
-    form.parentNode.insertBefore(alertDiv, form);
-  }
-  
-  // Auto-remover después de 5 segundos
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.remove();
-    }
-  }, 5000);
-}
-
-// Mostrar mensaje de error
-function mostrarError(mensaje) {
-  const alertDiv = document.createElement('div');
-  alertDiv.className = 'alert alert-danger alert-dismissible fade show';
-  alertDiv.innerHTML = `
-    <i class="bi bi-exclamation-triangle me-2"></i>
-    ${mensaje}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  `;
-  
-  // Insertar antes del formulario
-  const form = document.getElementById('contactForm');
-  if (form) {
-    form.parentNode.insertBefore(alertDiv, form);
-  }
-  
-  // Auto-remover después de 8 segundos
-  setTimeout(() => {
-    if (alertDiv.parentNode) {
-      alertDiv.remove();
-    }
-  }, 8000);
 }
 
 // Función para simular envío (cuando no hay backend de contacto)

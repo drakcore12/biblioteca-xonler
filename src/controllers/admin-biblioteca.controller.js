@@ -123,15 +123,15 @@ async function obtenerLibrosBiblioteca(req, res) {
     }
     
     const bibliotecaId = bibliotecaResult.rows[0].biblioteca_id;
-    const limitNum = Math.min(parseInt(limit, 10) || 20, 100);
-    const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
+    const limitNum = Math.min(Number.parseInt(limit, 10) || 20, 100);
+    const offsetNum = Math.max(Number.parseInt(offset, 10) || 0, 0);
     
     // Construir filtros
     const where = ['bl.biblioteca_id = $1'];
     const params = [bibliotecaId];
     let paramIndex = 2;
     
-    if (q && q.trim()) {
+    if (q?.trim()) {
       where.push(`(l.titulo ILIKE '%'||$${paramIndex}||'%' OR l.autor ILIKE '%'||$${paramIndex}||'%' OR l.isbn ILIKE '%'||$${paramIndex}||'%')`);
       params.push(q.trim());
       paramIndex++;
@@ -333,14 +333,14 @@ async function obtenerPrestamosBiblioteca(req, res) {
     }
     
     const bibliotecaId = bibliotecaResult.rows[0].biblioteca_id;
-    const limitNum = Math.min(parseInt(limit, 10) || 20, 100);
-    const offsetNum = Math.max(parseInt(offset, 10) || 0, 0);
+    const limitNum = Math.min(Number.parseInt(limit, 10) || 20, 100);
+    const offsetNum = Math.max(Number.parseInt(offset, 10) || 0, 0);
     
     // Construir filtro de estado
-    let estadoFilter = '';
     const params = [bibliotecaId];
-    let paramIndex = 2;
+    const paramIndex = 2;
     
+    let estadoFilter = '';
     switch (estado) {
       case 'activos':
         estadoFilter = 'AND p.fecha_devolucion IS NULL';
@@ -351,8 +351,6 @@ async function obtenerPrestamosBiblioteca(req, res) {
       case 'vencidos':
         estadoFilter = 'AND p.fecha_devolucion IS NULL AND p.fecha_prestamo < CURRENT_DATE - INTERVAL \'15 days\'';
         break;
-      default:
-        estadoFilter = '';
     }
     
     const sql = `

@@ -4,7 +4,8 @@ const client = require('prom-client');
 const register = new client.Registry();
 
 // Agregar métricas por defecto (CPU, memoria, etc.)
-client.collectDefaultMetrics({ register });
+// collectDefaultMetrics retorna un objeto con un método para detener la recolección
+const defaultMetrics = client.collectDefaultMetrics({ register });
 
 // Métricas personalizadas de la aplicación
 const httpRequestDuration = new client.Histogram({
@@ -45,12 +46,20 @@ register.registerMetric(dbQueryDuration);
 register.registerMetric(dbQueryTotal);
 register.registerMetric(activeConnections);
 
+// Función para detener la recolección de métricas por defecto (útil para tests)
+function stopDefaultMetrics() {
+  if (defaultMetrics && typeof defaultMetrics.stop === 'function') {
+    defaultMetrics.stop();
+  }
+}
+
 module.exports = {
   register,
   httpRequestDuration,
   httpRequestTotal,
   dbQueryDuration,
   dbQueryTotal,
-  activeConnections
+  activeConnections,
+  stopDefaultMetrics
 };
 

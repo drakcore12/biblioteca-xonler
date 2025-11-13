@@ -31,6 +31,60 @@ class SecurityMonitoring {
   }
 
   /**
+   * Verifica patrones sospechosos en un string
+   * @param {string} text - Texto a verificar
+   * @param {string} type - Tipo de verificación (URL, Body, Query)
+   * @param {object} suspicious - Objeto de resultados sospechosos
+   */
+  checkPatternsInText(text, type, suspicious) {
+    const scoreMap = { URL: 10, Body: 15, Query: 10 };
+    const score = scoreMap[type] || 10;
+    
+    for (let index = 0; index < this.suspiciousPatterns.length; index++) {
+      const pattern = this.suspiciousPatterns[index];
+      if (pattern.test(text)) {
+        suspicious.patterns.push(`${type} pattern ${index + 1}`);
+        suspicious.score += score;
+      }
+    }
+  }
+
+  /**
+   * Verifica headers sospechosos
+   * @param {object} headers - Headers de la request
+   * @param {object} suspicious - Objeto de resultados sospechosos
+   */
+  checkSuspiciousHeaders(headers, suspicious) {
+    const suspiciousHeaders = [
+      'x-forwarded-for',
+      'x-real-ip',
+      'x-cluster-client-ip',
+      'x-forwarded',
+      'forwarded-for',
+      'forwarded'
+    ];
+
+    for (const header of suspiciousHeaders) {
+      if (headers[header]) {
+        suspicious.patterns.push(`Suspicious header: ${header}`);
+        suspicious.score += 5;
+      }
+    }
+  }
+
+  /**
+   * Determina el nivel de amenaza basado en el score
+   * @param {object} suspicious - Objeto de resultados sospechosos
+   */
+  determineThreatLevel(suspicious) {
+    if (suspicious.score >= 50) {
+      suspicious.level = 'high';
+    } else if (suspicious.score >= 25) {
+      suspicious.level = 'medium';
+    }
+  }
+
+  /**
    * Detectar patrones sospechosos
    */
   detectSuspiciousActivity(req) {
@@ -41,58 +95,23 @@ class SecurityMonitoring {
     };
 
     // Verificar URL
-    this.suspiciousPatterns.forEach((pattern, index) => {
-      if (pattern.test(req.url)) {
-        suspicious.patterns.push(`URL pattern ${index + 1}`);
-        suspicious.score += 10;
-      }
-    });
+    this.checkPatternsInText(req.url, 'URL', suspicious);
 
     // Verificar body
     if (req.body && typeof req.body === 'object') {
-      const bodyStr = JSON.stringify(req.body);
-      this.suspiciousPatterns.forEach((pattern, index) => {
-        if (pattern.test(bodyStr)) {
-          suspicious.patterns.push(`Body pattern ${index + 1}`);
-          suspicious.score += 15;
-        }
-      });
+      this.checkPatternsInText(JSON.stringify(req.body), 'Body', suspicious);
     }
 
     // Verificar query parameters
     if (req.query && typeof req.query === 'object') {
-      const queryStr = JSON.stringify(req.query);
-      this.suspiciousPatterns.forEach((pattern, index) => {
-        if (pattern.test(queryStr)) {
-          suspicious.patterns.push(`Query pattern ${index + 1}`);
-          suspicious.score += 10;
-        }
-      });
+      this.checkPatternsInText(JSON.stringify(req.query), 'Query', suspicious);
     }
 
     // Verificar headers sospechosos
-    const suspiciousHeaders = [
-      'x-forwarded-for',
-      'x-real-ip',
-      'x-cluster-client-ip',
-      'x-forwarded',
-      'forwarded-for',
-      'forwarded'
-    ];
-
-    suspiciousHeaders.forEach(header => {
-      if (req.headers[header]) {
-        suspicious.patterns.push(`Suspicious header: ${header}`);
-        suspicious.score += 5;
-      }
-    });
+    this.checkSuspiciousHeaders(req.headers, suspicious);
 
     // Determinar nivel de amenaza
-    if (suspicious.score >= 50) {
-      suspicious.level = 'high';
-    } else if (suspicious.score >= 25) {
-      suspicious.level = 'medium';
-    }
+    this.determineThreatLevel(suspicious);
 
     return suspicious;
   }

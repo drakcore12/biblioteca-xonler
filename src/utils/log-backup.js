@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const { exec } = require('child_process');
-const { promisify } = require('util');
+const fs = require('node:fs');
+const path = require('node:path');
+const { exec } = require('node:child_process');
+const { promisify } = require('node:util');
 const { logInfo, logError } = require('../config/logger');
 const encryptionManager = require('./simple-encryption');
 
@@ -14,9 +14,9 @@ class LogBackup {
   constructor() {
     this.logDir = path.join(process.cwd(), 'logs');
     this.backupDir = path.join(process.cwd(), 'backups', 'logs');
-    this.retentionDays = parseInt(process.env.LOG_RETENTION_DAYS) || 30;
+    this.retentionDays = Number.parseInt(process.env.LOG_RETENTION_DAYS ?? '30', 10);
     this.compressionEnabled = process.env.LOG_COMPRESSION !== 'false';
-    this.encryptionEnabled = process.env.LOG_ENCRYPTION === 'true';
+    this.encryptionEnabled = true;  // Siempre activo
     this.encryptionKey = process.env.LOG_ENCRYPTION_KEY;
     
     this.ensureBackupDirectory();
@@ -253,13 +253,13 @@ class LogBackup {
       // Desencriptar si es necesario
       if (this.encryptionEnabled && backupPath.endsWith('.enc')) {
         await this.decryptBackup(backupPath);
-        backupPath = backupPath.replace('.enc', '');
+        backupPath = backupPath.replaceAll('.enc', '');
       }
 
       // Descomprimir si es necesario
       if (backupPath.endsWith('.tar.gz')) {
         await this.decompressBackup(backupPath);
-        backupPath = backupPath.replace('.tar.gz', '');
+        backupPath = backupPath.replaceAll('.tar.gz', '');
       }
 
       // Restaurar archivos
@@ -297,7 +297,7 @@ class LogBackup {
       const decryptedData = encryptionManager.decrypt(encryptedData, 'backup');
       
       // Guardar archivo desencriptado
-      const decryptedPath = encryptedPath.replace('.enc', '');
+      const decryptedPath = encryptedPath.replaceAll('.enc', '');
       fs.writeFileSync(decryptedPath, decryptedData, { mode: 0x180 }); // 0o600
       
       console.log(`✅ [BACKUP] Backup desencriptado: ${decryptedPath}`);
@@ -314,7 +314,7 @@ class LogBackup {
    */
   async decompressBackup(compressedPath) {
     try {
-      const extractPath = compressedPath.replace('.tar.gz', '');
+      const extractPath = compressedPath.replaceAll('.tar.gz', '');
       await execAsync(`tar -xzf "${compressedPath}" -C "${path.dirname(compressedPath)}"`);
       console.log(`📦 [BACKUP] Descomprimido: ${compressedPath}`);
       return extractPath;

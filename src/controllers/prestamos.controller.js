@@ -1,5 +1,53 @@
 const { pool } = require('../config/database');
 
+/**
+ * Construye la cláusula WHERE y parámetros para filtros de préstamos
+ * @param {object} filters - Filtros de búsqueda
+ * @returns {object} Objeto con whereClause y params
+ */
+function buildPrestamosFilters(filters) {
+  const { usuario_id, biblioteca_id, activo, fecha_desde, fecha_hasta } = filters;
+  let whereClause = '';
+  const params = [];
+  let paramIndex = 1;
+
+  if (usuario_id) {
+    whereClause += `WHERE p.usuario_id = $${paramIndex}`;
+    params.push(usuario_id);
+    paramIndex++;
+  }
+
+  if (biblioteca_id) {
+    whereClause += whereClause ? ' AND ' : 'WHERE ';
+    whereClause += `b.id = $${paramIndex}`;
+    params.push(biblioteca_id);
+    paramIndex++;
+  }
+
+  if (activo !== undefined) {
+    whereClause += whereClause ? ' AND ' : 'WHERE ';
+    whereClause += activo === 'true' 
+      ? `p.fecha_devolucion IS NULL`
+      : `p.fecha_devolucion IS NOT NULL`;
+  }
+
+  if (fecha_desde) {
+    whereClause += whereClause ? ' AND ' : 'WHERE ';
+    whereClause += `p.fecha_prestamo >= $${paramIndex}`;
+    params.push(fecha_desde);
+    paramIndex++;
+  }
+
+  if (fecha_hasta) {
+    whereClause += whereClause ? ' AND ' : 'WHERE ';
+    whereClause += `p.fecha_prestamo <= $${paramIndex}`;
+    params.push(fecha_hasta);
+    paramIndex++;
+  }
+
+  return { whereClause, params, paramIndex };
+}
+
 // GET /prestamos - Listar préstamos con filtros (admin)
 async function obtenerPrestamos(req, res) {
   try {
@@ -8,49 +56,12 @@ async function obtenerPrestamos(req, res) {
       limit = 50, offset = 0 
     } = req.query;
     
-    let whereClause = '';
-    let params = [];
-    let paramIndex = 1;
-
-    // Construir filtros dinámicos
-    if (usuario_id) {
-      whereClause += `WHERE p.usuario_id = $${paramIndex}`;
-      params.push(usuario_id);
-      paramIndex++;
-    }
-
-    if (biblioteca_id) {
-      whereClause += whereClause ? ' AND ' : 'WHERE ';
-      whereClause += `b.id = $${paramIndex}`;
-      params.push(biblioteca_id);
-      paramIndex++;
-    }
-
-    if (activo !== undefined) {
-      whereClause += whereClause ? ' AND ' : 'WHERE ';
-      if (activo === 'true') {
-        whereClause += `p.fecha_devolucion IS NULL`;
-      } else {
-        whereClause += `p.fecha_devolucion IS NOT NULL`;
-      }
-    }
-
-    if (fecha_desde) {
-      whereClause += whereClause ? ' AND ' : 'WHERE ';
-      whereClause += `p.fecha_prestamo >= $${paramIndex}`;
-      params.push(fecha_desde);
-      paramIndex++;
-    }
-
-    if (fecha_hasta) {
-      whereClause += whereClause ? ' AND ' : 'WHERE ';
-      whereClause += `p.fecha_prestamo <= $${paramIndex}`;
-      params.push(fecha_hasta);
-      paramIndex++;
-    }
+    const { whereClause, params, paramIndex } = buildPrestamosFilters({
+      usuario_id, biblioteca_id, activo, fecha_desde, fecha_hasta
+    });
 
     // Agregar paginación
-    params.push(parseInt(limit), parseInt(offset));
+    params.push(Number.parseInt(limit, 10), Number.parseInt(offset, 10));
 
     const result = await pool.query(`
       SELECT 
@@ -91,9 +102,9 @@ async function obtenerPrestamos(req, res) {
     res.json({
       prestamos: result.rows,
       paginacion: {
-        total: parseInt(countResult.rows[0].total),
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        total: Number.parseInt(countResult.rows[0].total, 10),
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10)
       }
     });
 
@@ -151,7 +162,7 @@ async function crearPrestamo(req, res) {
     const { libro_id, fecha_prestamo } = req.body;
     
     // Verificar que el usuario está autenticado
-    if (!req.user || !req.user.id) {
+    if (!req.user?.id) {
       return res.status(401).json({ error: 'Usuario no autenticado' });
     }
     

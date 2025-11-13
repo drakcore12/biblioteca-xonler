@@ -6,20 +6,61 @@ services:
     container_name: pg-main
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-xonler}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "${DB_PORT}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       # Script SQL inicial
       - ./db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-xonler}"]
       interval: 5s
       timeout: 3s
       retries: 20
+
+  # Init job para crear base de datos sonarqube automáticamente
+  db-init-sonar:
+    image: postgres:15-alpine
+    container_name: db-init-sonar
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGPASSWORD: ${DB_PASSWORD:-postgres}
+      SONAR_DB_PASSWORD: ${SONAR_DB_PASSWORD:-sonar}
+      PGHOST: db
+      PGPORT: 5432
+    command: >
+      sh -c "
+        export PGPASSWORD=$${POSTGRES_PASSWORD} &&
+        until pg_isready -h db -p 5432 -U $${POSTGRES_USER} -d postgres; do
+          echo '⏳ Esperando a que PostgreSQL esté listo...'
+          sleep 2
+        done &&
+        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"
+          DO \\$\\$
+          BEGIN
+            IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'sonar') THEN
+              CREATE ROLE sonar WITH LOGIN ENCRYPTED PASSWORD '$${SONAR_DB_PASSWORD}';
+            ELSE
+              ALTER ROLE sonar WITH PASSWORD '$${SONAR_DB_PASSWORD}';
+            END IF;
+          END
+          \\$\\$;
+        \" &&
+        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'sonarqube'\" | grep -q 1 ||
+        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"CREATE DATABASE sonarqube OWNER sonar;\" &&
+        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;\" &&
+        echo '✅ Configuración de SonarQube completada'
+      "
+    networks:
+      - default
 
   app:
     build:
@@ -36,10 +77,10 @@ services:
       HOST: ${HOST}
       # Variables de base de datos (conecta usando el nombre del servicio 'db')
       DB_HOST: db
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-xonler}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       # Configuración del Pool de Conexiones
       DB_POOL_MAX: ${DB_POOL_MAX}
       DB_POOL_IDLE_TIMEOUT: ${DB_POOL_IDLE_TIMEOUT}
@@ -96,20 +137,23 @@ services:
         node --enable-source-maps src/server.js
       "
 
-  # Opcional: DBeaver CloudBeaver (web UI para administración de bases de datos)
-  dbeaver:
-    image: dbeaver/cloudbeaver:latest
-    container_name: dbeaver
+  # pgAdmin - Web UI para administración de PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "${DBEAVER_PORT}:8978"
+      - "${PGADMIN_PORT:-30978}:80"
     environment:
-      CB_SERVER_URL: http://0.0.0.0:8978
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@biblioteca-xonler.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
-      - dbeaver-workspace:/opt/cloudbeaver/workspace
+      - pgadmin-data:/var/lib/pgadmin
 
   # Prometheus - Recolector de métricas
   prometheus:
@@ -140,7 +184,7 @@ services:
     container_name: postgres-exporter
     restart: unless-stopped
     environment:
-      DATA_SOURCE_NAME: "postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-xonler}?sslmode=disable"
     ports:
       - "${POSTGRES_EXPORTER_PORT:-9187}:9187"
     depends_on:
@@ -153,7 +197,7 @@ services:
     container_name: cadvisor
     restart: unless-stopped
     ports:
-      - "${CADVISOR_PORT:-8080}:8080"
+      - "8081:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -172,8 +216,6 @@ services:
     ports:
       - "${GRAFANA_PORT:-3001}:3000"
     environment:
-      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_SERVER_ROOT_URL: "http://localhost:${GRAFANA_PORT:-3001}"
     volumes:
@@ -188,7 +230,7 @@ services:
     container_name: jenkins
     restart: unless-stopped
     ports:
-      - "${JENKINS_PORT:-8080}:8080"
+      - "${JENKINS_PORT:-18080}:8080"
       - "${JENKINS_AGENT_PORT:-50000}:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
@@ -202,15 +244,47 @@ services:
       retries: 5
       start_period: 60s
 
+  sonarqube:
+    image: sonarqube:community
+    container_name: sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      - SONAR_JDBC_URL=jdbc:postgresql://db:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=${SONAR_DB_PASSWORD:-sonar}
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      db-init-sonar:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/api/system/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 volumes:
   db-data:
     driver: local
-  dbeaver-workspace:
+  pgadmin-data:
     driver: local
   prometheus-data:
     driver: local
   grafana-data:
     driver: local
   jenkins_home:
+    driver: local
+  sonarqube_data:
+    driver: local
+  sonarqube_extensions:
+    driver: local
+  sonarqube_logs:
     driver: local
 

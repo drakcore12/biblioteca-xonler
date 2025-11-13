@@ -8,7 +8,7 @@ const { logSecurity } = require('../config/logger');
 function jwtCompatibility(req, res, next) {
   const authHeader = req.headers.authorization;
   
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return next();
   }
 

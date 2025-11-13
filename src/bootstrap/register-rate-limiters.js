@@ -28,11 +28,20 @@ function shouldSkipStaticResources(req) {
   );
 }
 
+function shouldSkipHealthChecks(req) {
+  return (
+    req.path === '/health' ||
+    req.path === '/api/health' ||
+    req.path === '/metrics'
+  );
+}
+
 function registerRateLimiters(app) {
   const generalLimiter = createGeneralLimiter();
 
   app.use((req, res, next) => {
-    if (shouldSkipStaticResources(req)) {
+    // Excluir recursos estáticos y health checks del rate limiting
+    if (shouldSkipStaticResources(req) || shouldSkipHealthChecks(req)) {
       return next();
     }
     return generalLimiter(req, res, next);

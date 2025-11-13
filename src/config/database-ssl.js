@@ -13,27 +13,30 @@ const createSecurePool = () => {
     host: process.env.DB_HOST || 'localhost',
     database: process.env.DB_NAME || 'biblioteca_xonler',
     password: process.env.DB_PASSWORD || 'password',
-    port: parseInt(process.env.DB_PORT) || 5432,
-    max: parseInt(process.env.DB_POOL_MAX) || 20, // Máximo de conexiones en el pool
-    idleTimeoutMillis: parseInt(process.env.DB_POOL_IDLE_TIMEOUT) || 30000, // Tiempo de inactividad antes de cerrar conexión
-    connectionTimeoutMillis: parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT) || 2000, // Tiempo de espera para nueva conexión
+    port: Number.parseInt(process.env.DB_PORT ?? '5432', 10),
+    max: Number.parseInt(process.env.DB_POOL_MAX ?? '20', 10), // Máximo de conexiones en el pool
+    idleTimeoutMillis: Number.parseInt(process.env.DB_POOL_IDLE_TIMEOUT ?? '30000', 10), // Tiempo de inactividad antes de cerrar conexión
+    connectionTimeoutMillis: Number.parseInt(process.env.DB_POOL_CONNECTION_TIMEOUT ?? '2000', 10), // Tiempo de espera para nueva conexión
   };
 
   // Configuración SSL
-  const sslConfig = {
-    // En producción, SSL es obligatorio
-    ssl: isProduction ? {
+  let sslValue = false;
+  if (isProduction) {
+    sslValue = {
       rejectUnauthorized: true,
       ca: process.env.DB_SSL_CA, // Certificado de CA
       cert: process.env.DB_SSL_CERT, // Certificado del cliente
       key: process.env.DB_SSL_KEY, // Clave privada del cliente
       servername: process.env.DB_HOST // Nombre del servidor
-    } : isDevelopment ? {
-      // En desarrollo, SSL opcional pero recomendado
+    };
+  } else if (isDevelopment) {
+    // En desarrollo, SSL opcional pero recomendado
+    sslValue = {
       rejectUnauthorized: false,
       sslmode: 'prefer'
-    } : false
-  };
+    };
+  }
+  const sslConfig = { ssl: sslValue };
 
   // Configuración de logging
   const loggingConfig = {

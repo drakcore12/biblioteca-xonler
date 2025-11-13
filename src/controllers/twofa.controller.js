@@ -106,6 +106,7 @@ async function verify2FA(req, res) {
       encoding: 'base32',
       token: code,
       step: TOTP_STEP,
+      // NOSONAR: window es un parámetro de speakeasy.totp.verify, no el objeto global window
       window: TOTP_WINDOW,
     });
     if (!ok) return res.status(400).json({ error: 'Código inválido' });
@@ -132,6 +133,7 @@ async function disable2FA(req, res) {
         encoding: 'base32',
         token: code,
         step: TOTP_STEP,
+        // NOSONAR: window es un parámetro de speakeasy.totp.verify, no el objeto global window
         window: TOTP_WINDOW,
       });
       if (!ok) return res.status(401).json({ error: 'Código inválido' });
@@ -160,7 +162,7 @@ async function verify2FALogin(req, res) {
 
     // Verificar token pendiente
     const payload = jwt.verify(pending2faToken, process.env.JWT_SECRET);
-    if (!payload || payload.twofa !== 1) {
+    if (payload?.twofa !== 1) {
       return res.status(401).json({ 
         error: 'Token de 2FA inválido o expirado' 
       });
@@ -168,7 +170,7 @@ async function verify2FALogin(req, res) {
 
     // Obtener usuario
     const user = await db.getById(payload.sub);
-    if (!user || !user.dobleautenticacion) {
+    if (!user?.dobleautenticacion) {
       return res.status(400).json({ 
         error: '2FA no está activo para este usuario' 
       });
@@ -188,6 +190,7 @@ async function verify2FALogin(req, res) {
       encoding: 'base32',
       token: code,
       step: TOTP_STEP,
+      // NOSONAR: window es un parámetro de speakeasy.totp.verify, no el objeto global window
       window: TOTP_WINDOW
     });
 

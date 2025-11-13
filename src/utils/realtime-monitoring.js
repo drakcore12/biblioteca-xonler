@@ -1,6 +1,6 @@
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
+const os = require('node:os');
+const fs = require('node:fs');
+const path = require('node:path');
 const { logInfo, logError } = require('../config/logger');
 const securityAlerts = require('./security-alerts');
 
@@ -17,13 +17,13 @@ class RealtimeMonitoring {
     };
     
     this.monitoringInterval = null;
-    this.updateInterval = parseInt(process.env.MONITORING_INTERVAL) || 30000; // 30 segundos
+    this.updateInterval = Number.parseInt(process.env.MONITORING_INTERVAL ?? '30000', 10); // 30 segundos
     this.alertThresholds = {
-      cpu: parseFloat(process.env.MONITORING_THRESHOLD_CPU) || 0.8, // 80%
-      memory: parseFloat(process.env.MONITORING_THRESHOLD_MEMORY) || 0.85, // 85%
-      disk: parseFloat(process.env.MONITORING_THRESHOLD_DISK) || 0.9, // 90%
-      responseTime: parseInt(process.env.MONITORING_THRESHOLD_RESPONSE_TIME) || 1000, // 1 segundo
-      errorRate: parseFloat(process.env.MONITORING_THRESHOLD_ERROR_RATE) || 0.05 // 5%
+      cpu: Number.parseFloat(process.env.MONITORING_THRESHOLD_CPU ?? '0.8'), // 80%
+      memory: Number.parseFloat(process.env.MONITORING_THRESHOLD_MEMORY ?? '0.85'), // 85%
+      disk: Number.parseFloat(process.env.MONITORING_THRESHOLD_DISK ?? '0.9'), // 90%
+      responseTime: Number.parseInt(process.env.MONITORING_THRESHOLD_RESPONSE_TIME ?? '1000', 10), // 1 segundo
+      errorRate: Number.parseFloat(process.env.MONITORING_THRESHOLD_ERROR_RATE ?? '0.05') // 5%
     };
     
     this.requestMetrics = {
@@ -48,6 +48,12 @@ class RealtimeMonitoring {
       this.collectMetrics();
       this.checkThresholds();
     }, this.updateInterval);
+    
+    // Usar unref() para que el intervalo no mantenga el proceso vivo
+    // Esto es importante para tests y cuando el proceso necesita terminar
+    if (this.monitoringInterval && typeof this.monitoringInterval.unref === 'function') {
+      this.monitoringInterval.unref();
+    }
 
     console.log(`📊 [MONITORING] Monitoreo en tiempo real iniciado (intervalo: ${this.updateInterval}ms)`);
   }
@@ -119,12 +125,12 @@ class RealtimeMonitoring {
     let totalIdle = 0;
     let totalTick = 0;
 
-    cpus.forEach(cpu => {
+    for (const cpu of cpus) {
       for (const type in cpu.times) {
         totalTick += cpu.times[type];
       }
       totalIdle += cpu.times.idle;
-    });
+    }
 
     return {
       cores: cpus.length,
@@ -155,7 +161,7 @@ class RealtimeMonitoring {
    */
   getDiskUsage() {
     try {
-      const stats = fs.statSync(process.cwd());
+      fs.statSync(process.cwd());
       // En un entorno real, usaría una librería como 'diskusage'
       // Por ahora, simulamos el uso de disco
       return {
@@ -165,6 +171,7 @@ class RealtimeMonitoring {
         usage: 0.5
       };
     } catch (error) {
+      console.error('Error obteniendo uso de disco:', error);
       return {
         total: 0,
         used: 0,
@@ -275,7 +282,7 @@ class RealtimeMonitoring {
     }
 
     // Mantener solo los últimos N tiempos de respuesta (configurable)
-    const maxResponseTimes = parseInt(process.env.MONITORING_MAX_RESPONSE_TIMES) || 1000;
+    const maxResponseTimes = Number.parseInt(process.env.MONITORING_MAX_RESPONSE_TIMES ?? '1000', 10);
     if (this.requestMetrics.responseTimes.length > maxResponseTimes) {
       this.requestMetrics.responseTimes = this.requestMetrics.responseTimes.slice(-maxResponseTimes);
     }

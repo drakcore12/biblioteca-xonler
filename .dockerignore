@@ -5,17 +5,20 @@ yarn-error.log
 # Nota: package-lock.json se necesita para npm ci, no excluir
 
 # Testing
-coverage
-.nyc_output
-test-results
-playwright-report
-__tests__
-tests
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+.playwright/
+__tests__/
+tests/
 *.test.js
 *.spec.js
 jest.config.js
 playwright.config.js
-artillery-config.yml
+babel.config.js
+tests/artillery-config.yml
+*.test.cjs
 
 # Development
 .env
@@ -86,6 +89,8 @@ Dockerfile.dev
 junit.xml
 coverage/
 .nyc_output/
+.scannerwork/
+.sonar/
 
 # Misc
 *.bak

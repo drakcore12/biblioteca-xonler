@@ -1,7 +1,7 @@
 // configuracion.js - Script modular para la página de configuración
-import { requireAuth, requireRole } from '/js/common/guard.js';
-import { mostrarAlerta } from '/services/user.services.js';
-import { init2FAUI } from '/services/twofa.services.js';
+import { requireAuth, requireRole } from '../common/guard.js';
+import { mostrarAlerta } from '../../services/user.services.js';
+import { init2FAUI } from '../../services/twofa.services.js';
 
 // ===== VARIABLES GLOBALES =====
 let userSvc = null;
@@ -13,10 +13,10 @@ async function initPage() {
     
     console.log('Usuario autenticado, cargando página de configuración...');
     
-    // ✅ ARREGLADO: 1) Evita submits accidentales
-    document.querySelectorAll('form').forEach(f => {
-        f.addEventListener('submit', e => e.preventDefault());
-    });
+    const forms = document.querySelectorAll('form');
+    for (const form of forms) {
+        form.addEventListener('submit', (e) => e.preventDefault());
+    }
     
     // ✅ ARREGLADO: 2) Botones seguros
     document.getElementById('btnGuardar')?.setAttribute('type', 'button');
@@ -46,7 +46,7 @@ async function loadUserData() {
     console.log('Cargando datos del usuario...');
     
     try {
-        userSvc = await import('/services/user.services.js');
+        userSvc = await import('../../services/user.services.js');
         const usuario = await userSvc.cargarPerfilCompleto();
         
         if (usuario) {
@@ -66,7 +66,7 @@ async function loadUserPreferences() {
     console.log('Cargando preferencias del usuario...');
     
     try {
-        if (!userSvc) userSvc = await import('/services/user.services.js');
+        if (!userSvc) userSvc = await import('../../services/user.services.js');
         const usuario = await userSvc.cargarPerfilCompleto();
         
         if (usuario) {
@@ -86,7 +86,7 @@ async function loadUserPreferences() {
 function toDateInputValue(fecha) {
     if (!fecha) return '';                         // vacío si no hay fecha
     const d = new Date(fecha);                     // puede venir con Z
-    if (isNaN(d)) return '';                       // fecha inválida
+    if (Number.isNaN(d)) return '';                       // fecha inválida
     // ✅ ARREGLADO: Formato más robusto YYYY-MM-DD
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -108,10 +108,10 @@ function populateUserFields(usuario) {
         'codigoPostal': usuario.codigoPostal || ''
     };
     
-    Object.entries(fields).forEach(([id, value]) => {
+    for (const [id, value] of Object.entries(fields)) {
         const element = document.getElementById(id);
         if (element) element.value = value;
-    });
+    }
     
     // ✅ ARREGLADO: Manejar fecha de nacimiento correctamente
     const fechaInput = document.getElementById('fechaNacimiento');
@@ -129,17 +129,17 @@ function populatePreferenceFields(usuario) {
         'maxResultados': usuario.maxResultados || '20'
     };
     
-    Object.entries(preferences).forEach(([id, value]) => {
+    for (const [id, value] of Object.entries(preferences)) {
         const element = document.getElementById(id);
         if (element) element.value = value;
-    });
+    }
     
     // Categorías favoritas
     if (usuario.categoriasFavoritas && Array.isArray(usuario.categoriasFavoritas)) {
-        usuario.categoriasFavoritas.forEach(categoria => {
+        for (const categoria of usuario.categoriasFavoritas) {
             const checkbox = document.getElementById(`cat${categoria.charAt(0).toUpperCase() + categoria.slice(1)}`);
             if (checkbox) checkbox.checked = true;
-        });
+        }
     }
     
     // Notificaciones
@@ -152,10 +152,10 @@ function populatePreferenceFields(usuario) {
         'appMantenimiento': usuario.appMantenimiento || false
     };
     
-    Object.entries(notifications).forEach(([id, value]) => {
+    for (const [id, value] of Object.entries(notifications)) {
         const element = document.getElementById(id);
-        if (element) element.checked = value;
-    });
+        if (element) element.checked = Boolean(value);
+    }
 }
 
 // ===== FALLBACKS =====
@@ -175,10 +175,10 @@ function setDefaultPreferences() {
         'maxResultados': '20'
     };
     
-    Object.entries(defaults).forEach(([id, value]) => {
+    for (const [id, value] of Object.entries(defaults)) {
         const element = document.getElementById(id);
         if (element) element.value = value;
-    });
+    }
     
     console.log('⚠️ Usando preferencias por defecto');
 }
@@ -188,7 +188,7 @@ async function saveAllChanges() {
     console.log('Guardando cambios...');
     
     try {
-        if (!userSvc) userSvc = await import('/services/user.services.js');
+        if (!userSvc) userSvc = await import('../../services/user.services.js');
         
         if (!validateForms()) return;
         
@@ -275,7 +275,7 @@ async function changePassword() {
     console.log('Cambiando contraseña...');
     
     try {
-        if (!userSvc) userSvc = await import('/services/user.services.js');
+        if (!userSvc) userSvc = await import('../../services/user.services.js');
         
         const passwordData = collectPasswordData();
         
@@ -344,7 +344,9 @@ function validateForms() {
 function obtenerCategoriasSeleccionadas() {
     const categorias = [];
     const checkboxes = document.querySelectorAll('input[name="categoriasFavoritas"]:checked');
-    checkboxes.forEach(checkbox => categorias.push(checkbox.value));
+    for (const checkbox of checkboxes) {
+        categorias.push(checkbox.value);
+    }
     return categorias;
 }
 
@@ -402,20 +404,21 @@ function showFallbackAlert(type, message) {
 // ===== LOGOUT =====
 function logout() {
     // Usar la nueva función de logout limpia
-    import('/js/common/guard.js').then(module => {
+    import('../common/guard.js').then(module => {
         if (module.doLogout) {
             module.doLogout();
         } else {
             // Fallback si no está disponible
-            ['localStorage', 'sessionStorage'].forEach(storage => {
-                const st = window[storage];
-                st.removeItem('token');
-                st.removeItem('role');
-                st.removeItem('userName');
-                st.removeItem('userId');
-            });
-            window.location.replace('/pages/guest/login.html');
-        }
+            for (const storage of ['localStorage', 'sessionStorage']) {
+              const st = globalThis?.[storage];
+              if (!st) continue;
+              st.removeItem('token');
+              st.removeItem('role');
+              st.removeItem('userName');
+              st.removeItem('userId');
+            }
+            globalThis?.location?.replace?.('/pages/guest/login.html');
+          }
     });
 }
 

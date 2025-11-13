@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const AppError = require('../utils/app-error');
 
 /**
  * GET /api/bibliotecas
@@ -7,46 +8,92 @@ const { pool } = require('../config/database');
 async function obtenerBibliotecas(req, res) {
   try {
     const { q = null, colegio_id = null } = req.query;
-    const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
-    const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
+    const limit = Math.min(Number.parseInt(req.query.limit ?? '50', 10), 100);
+    const offset = Math.max(Number.parseInt(req.query.offset ?? '0', 10), 0);
+
+    // Normalizar parámetros de búsqueda
+    const searchTerm = q && q.trim() ? q.trim() : null;
+    const colegioIdValue = colegio_id ? Number.parseInt(colegio_id, 10) : null;
+
+    // Construir condiciones WHERE dinámicamente para evitar problemas con NULL
+    const conditions = [];
+    const params = [];
+    let paramIndex = 1;
+
+    if (searchTerm) {
+      conditions.push(`(b.nombre ILIKE $${paramIndex} OR b.direccion ILIKE $${paramIndex})`);
+      params.push(`%${searchTerm}%`);
+      paramIndex++;
+    }
+
+    if (colegioIdValue !== null) {
+      conditions.push(`b.colegio_id = $${paramIndex}`);
+      params.push(colegioIdValue);
+      paramIndex++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const sql = `
       SELECT b.id, b.nombre, b.direccion, b.colegio_id,
              c.nombre AS colegio_nombre, c.direccion AS colegio_direccion,
              COALESCE(admin_count.total_admins, 0) AS total_admins,
              COALESCE(libros_count.total_libros, 0) AS total_libros
-      FROM bibliotecas b
-      JOIN colegios c ON c.id = b.colegio_id
+      FROM public.bibliotecas b
+      LEFT JOIN public.colegios c ON c.id = b.colegio_id
       LEFT JOIN (
         SELECT biblioteca_id, COUNT(*) AS total_admins
-        FROM usuario_biblioteca
+        FROM public.usuario_biblioteca
         GROUP BY biblioteca_id
       ) admin_count ON admin_count.biblioteca_id = b.id
       LEFT JOIN (
         SELECT biblioteca_id, COUNT(*) AS total_libros
-        FROM biblioteca_libros
+        FROM public.biblioteca_libros
         GROUP BY biblioteca_id
       ) libros_count ON libros_count.biblioteca_id = b.id
-      WHERE ($1::text IS NULL OR b.nombre ILIKE '%'||$1||'%' OR b.direccion ILIKE '%'||$1||'%')
-        AND ($2::bigint IS NULL OR b.colegio_id = $2::bigint)
+      ${whereClause}
       ORDER BY b.id
-      LIMIT $3 OFFSET $4
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
-    const { rows } = await pool.query(sql, [q, colegio_id ? Number(colegio_id) : null, limit, offset]);
+    params.push(limit, offset);
+    const { rows } = await pool.query(sql, params);
 
     // total para paginación (opcional)
     const countSql = `
       SELECT COUNT(*)::int AS total
-      FROM bibliotecas b
-      WHERE ($1::text IS NULL OR b.nombre ILIKE '%'||$1||'%' OR b.direccion ILIKE '%'||$1||'%')
-        AND ($2::bigint IS NULL OR b.colegio_id = $2::bigint)
+      FROM public.bibliotecas b
+      ${whereClause}
     `;
-    const { rows: countRows } = await pool.query(countSql, [q, colegio_id ? Number(colegio_id) : null]);
+    const countParams = params.slice(0, -2); // Remover limit y offset
+    const { rows: countRows } = await pool.query(countSql, countParams);
 
-    res.json({ data: rows, paginacion: { total: countRows[0].total, limit, offset } });
+    res.json({ data: rows, paginacion: { total: countRows[0]?.total || 0, limit, offset } });
   } catch (e) {
-    console.error('❌ obtenerBibliotecas:', e);
-    res.status(500).json({ error: 'Error listando bibliotecas' });
+    console.error('❌ obtenerBibliotecas:', e?.message || e);
+    console.error('Stack:', e?.stack);
+    
+    // Detectar errores de conexión a la base de datos
+    if (e?.code === '28P01' || e?.message?.includes('password') || e?.message?.includes('autentificación')) {
+      console.error('🔴 Error de autenticación con PostgreSQL. Verifica las credenciales en .env');
+      return res.status(500).json({ 
+        error: 'Error de conexión a la base de datos',
+        details: process.env.NODE_ENV === 'development' ? 'Verifica DB_USER, DB_PASSWORD y que PostgreSQL esté corriendo' : undefined
+      });
+    }
+    
+    if (e?.code === 'ECONNREFUSED' || e?.message?.includes('connect')) {
+      console.error('🔴 No se puede conectar a PostgreSQL. Verifica que el servidor esté corriendo.');
+      return res.status(500).json({ 
+        error: 'Error de conexión a la base de datos',
+        details: process.env.NODE_ENV === 'development' ? 'Verifica DB_HOST, DB_PORT y que PostgreSQL esté corriendo' : undefined
+      });
+    }
+    
+    if (e instanceof AppError) {
+      return res.status(e.statusCode).json({ error: e.message });
+    }
+    
+    res.status(500).json({ error: 'Error listando bibliotecas', details: process.env.NODE_ENV === 'development' ? e.message : undefined });
   }
 }
 
@@ -61,16 +108,16 @@ async function obtenerBibliotecaPorId(req, res) {
              c.nombre AS colegio_nombre, c.direccion AS colegio_direccion,
              COALESCE(admin_count.total_admins, 0) AS total_admins,
              COALESCE(libros_count.total_libros, 0) AS total_libros
-      FROM bibliotecas b
-      JOIN colegios c ON c.id = b.colegio_id
+      FROM public.bibliotecas b
+      LEFT JOIN public.colegios c ON c.id = b.colegio_id
       LEFT JOIN (
         SELECT biblioteca_id, COUNT(*) AS total_admins
-        FROM usuario_biblioteca
+        FROM public.usuario_biblioteca
         GROUP BY biblioteca_id
       ) admin_count ON admin_count.biblioteca_id = b.id
       LEFT JOIN (
         SELECT biblioteca_id, COUNT(*) AS total_libros
-        FROM biblioteca_libros
+        FROM public.biblioteca_libros
         GROUP BY biblioteca_id
       ) libros_count ON libros_count.biblioteca_id = b.id
       WHERE b.id = $1
@@ -93,11 +140,11 @@ async function obtenerLibrosPorBiblioteca(req, res) {
   try {
     const { id } = req.params;
     const { q = null, categoria = null } = req.query;
-    const limit = Math.min(parseInt(req.query.limit || '50', 10), 100);
-    const offset = Math.max(parseInt(req.query.offset || '0', 10), 0);
+    const limit = Math.min(Number.parseInt(req.query.limit ?? '50', 10), 100);
+    const offset = Math.max(Number.parseInt(req.query.offset ?? '0', 10), 0);
 
     // Existe la biblioteca?
-    const exist = await pool.query('SELECT 1 FROM bibliotecas WHERE id = $1', [id]);
+    const exist = await pool.query('SELECT 1 FROM public.bibliotecas WHERE id = $1', [id]);
     if (exist.rowCount === 0) return res.status(404).json({ error: 'Biblioteca no encontrada' });
 
     const sql = `
@@ -108,13 +155,13 @@ async function obtenerLibrosPorBiblioteca(req, res) {
         CASE
           WHEN EXISTS (
             SELECT 1
-            FROM prestamos p
+            FROM public.prestamos p
             WHERE p.biblioteca_libro_id = bl.id
               AND p.fecha_devolucion IS NULL
           ) THEN false ELSE true
         END AS disponible
-      FROM biblioteca_libros bl
-      JOIN libros l ON l.id = bl.libro_id
+      FROM public.biblioteca_libros bl
+      JOIN public.libros l ON l.id = bl.libro_id
       WHERE bl.biblioteca_id = $1
         AND ($2::text IS NULL OR l.titulo ILIKE '%'||$2||'%' OR l.autor ILIKE '%'||$2||'%' OR l.isbn ILIKE '%'||$2||'%')
         AND ($3::text IS NULL OR l.categoria = $3)
@@ -127,8 +174,8 @@ async function obtenerLibrosPorBiblioteca(req, res) {
     // total (opcional)
     const countSql = `
       SELECT COUNT(*)::int AS total
-      FROM biblioteca_libros bl
-      JOIN libros l ON l.id = bl.libro_id
+      FROM public.biblioteca_libros bl
+      JOIN public.libros l ON l.id = bl.libro_id
       WHERE bl.biblioteca_id = $1
         AND ($2::text IS NULL OR l.titulo ILIKE '%'||$2||'%' OR l.autor ILIKE '%'||$2||'%' OR l.isbn ILIKE '%'||$2||'%')
         AND ($3::text IS NULL OR l.categoria = $3)
@@ -152,7 +199,7 @@ async function crearBiblioteca(req, res) {
     if (!nombre || !colegio_id) return res.status(400).json({ error: 'nombre y colegio_id son obligatorios' });
 
     const sql = `
-      INSERT INTO bibliotecas (nombre, direccion, colegio_id)
+      INSERT INTO public.bibliotecas (nombre, direccion, colegio_id)
       VALUES ($1, $2, $3)
       RETURNING *
     `;
@@ -175,14 +222,15 @@ async function actualizarBiblioteca(req, res) {
     const { nombre = null, direccion = null, colegio_id = null } = req.body;
 
     const sql = `
-      UPDATE bibliotecas
+      UPDATE public.bibliotecas
       SET nombre    = COALESCE($2, nombre),
           direccion = COALESCE($3, direccion),
           colegio_id= COALESCE($4, colegio_id)
       WHERE id = $1
       RETURNING *
     `;
-    const { rows } = await pool.query(sql, [id, nombre, direccion, colegio_id !== null ? Number(colegio_id) : null]);
+    const colegioIdValue = colegio_id === null ? null : Number(colegio_id);
+    const { rows } = await pool.query(sql, [id, nombre, direccion, colegioIdValue]);
     if (rows.length === 0) return res.status(404).json({ error: 'Biblioteca no encontrada' });
     res.json(rows[0]);
   } catch (e) {
@@ -202,12 +250,12 @@ async function eliminarBiblioteca(req, res) {
     const { id } = req.params;
 
     // ¿Tiene libros asociados?
-    const rel = await client.query('SELECT 1 FROM biblioteca_libros WHERE biblioteca_id = $1 LIMIT 1', [id]);
+    const rel = await client.query('SELECT 1 FROM public.biblioteca_libros WHERE biblioteca_id = $1 LIMIT 1', [id]);
     if (rel.rowCount > 0) {
       return res.status(409).json({ error: 'No se puede eliminar: la biblioteca tiene libros asociados' });
     }
 
-    const del = await client.query('DELETE FROM bibliotecas WHERE id = $1 RETURNING id', [id]);
+    const del = await client.query('DELETE FROM public.bibliotecas WHERE id = $1 RETURNING id', [id]);
     if (del.rowCount === 0) return res.status(404).json({ error: 'Biblioteca no encontrada' });
     res.status(204).end();
   } catch (e) {

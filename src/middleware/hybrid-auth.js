@@ -1,10 +1,17 @@
 // src/middleware/hybrid-auth.js
 // Middleware híbrido de autenticación: Cookies HTTP-only + localStorage fallback
-const jwt = require('jsonwebtoken');
 const { checkCookieStatus } = require('../utils/cookie-utils');
-const jwtRotation = require('../utils/jwt-rotation');
 const { logSecurity } = require('../config/logger');
 const { jwtCompatibility } = require('./jwt-compatibility');
+const { unauthorized } = require('../utils/http-response');
+const {
+  requireRole: requireRoleCommon,
+  requireAnyRole: requireAnyRoleCommon,
+  requireOwnershipOrAdmin: requireOwnershipOrAdminCommon,
+  handleAuthError,
+  handleAuthServerError,
+  extractTokenFromHeader
+} = require('../utils/auth-middleware-helpers');
 
 /**
  * Middleware híbrido de autenticación
@@ -13,19 +20,18 @@ const { jwtCompatibility } = require('./jwt-compatibility');
 function hybridAuth(req, res, next) {
   try {
     let token = null;
-    let authSource = 'none';
     
     // 1. PRIORIDAD: Intentar obtener token de cookie HTTP-only
-    if (req.cookies && req.cookies.authToken) {
+    if (req.cookies?.authToken) {
       token = req.cookies.authToken;
-      authSource = 'cookie';
       console.log('🍪 [HYBRID-AUTH] Token obtenido de cookie HTTP-only');
     }
     // 2. FALLBACK: Header Authorization (localStorage/sessionStorage)
-    else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.substring(7);
-      authSource = 'header';
-      console.log('🔑 [HYBRID-AUTH] Token obtenido de header Authorization (localStorage)');
+    else {
+      token = extractTokenFromHeader(req);
+      if (token) {
+        console.log('🔑 [HYBRID-AUTH] Token obtenido de header Authorization (localStorage)');
+      }
     }
     
     if (!token) {
@@ -43,126 +49,18 @@ function hybridAuth(req, res, next) {
   } catch (error) {
     console.error('❌ [HYBRID-AUTH] Error de autenticación:', error.message);
     
-    // Log de seguridad para tokens inválidos
-    logSecurity('warn', 'Error de autenticación', {
-      ip: req.ip || req.connection.remoteAddress,
-      userAgent: req.get('User-Agent'),
-      url: req.url,
-      error: error.message,
-      errorType: error.name
-    });
-    
-    if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ 
-        error: 'Token inválido',
-        message: 'El token proporcionado no es válido',
-        authSource: 'invalid'
-      });
+    if (handleAuthError(error, res, req, logSecurity, { authSource: 'error' })) {
+      return;
     }
     
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
-        error: 'Token expirado',
-        message: 'El token ha expirado, inicia sesión nuevamente',
-        authSource: 'expired'
-      });
-    }
-    
-    return res.status(500).json({ 
-      error: 'Error de autenticación',
-      message: 'Error interno del servidor durante la autenticación',
-      authSource: 'error'
-    });
+    return handleAuthServerError(res, 'error');
   }
 }
 
-/**
- * Middleware para requerir un rol específico (usa hybridAuth)
- */
-function requireRole(role) {
-  return (req, res, next) => {
-    // Primero verificar que el usuario esté autenticado
-    if (!req.user) {
-      return res.status(401).json({ 
-        error: 'No autenticado',
-        message: 'Debes iniciar sesión para acceder a este recurso'
-      });
-    }
-    
-    // Verificar que el usuario tenga el rol requerido
-    // Supadmin tiene acceso a todo, admin tiene acceso a la mayoría de recursos
-    if (req.user.role !== role && req.user.role !== 'admin' && req.user.role !== 'supadmin') {
-      return res.status(403).json({ 
-        error: 'Acceso denegado',
-        message: `Se requiere rol '${role}' para acceder a este recurso. Tu rol actual es '${req.user.role}'`
-      });
-    }
-    
-    console.log(`🔒 [HYBRID-AUTH] Acceso autorizado para usuario ${req.user.id} con rol ${req.user.role}`);
-    next();
-  };
-}
-
-/**
- * Middleware para requerir múltiples roles (cualquiera de ellos)
- */
-function requireAnyRole(roles) {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        error: 'No autenticado',
-        message: 'Debes iniciar sesión para acceder a este recurso'
-      });
-    }
-    
-    // Verificar que el usuario tenga al menos uno de los roles requeridos
-    // Supadmin tiene acceso a todo, admin tiene acceso a la mayoría de recursos
-    const hasRequiredRole = roles.includes(req.user.role) || req.user.role === 'admin' || req.user.role === 'supadmin';
-    
-    if (!hasRequiredRole) {
-      return res.status(403).json({ 
-        error: 'Acceso denegado',
-        message: `Se requiere uno de estos roles: ${roles.join(', ')}. Tu rol actual es '${req.user.role}'`
-      });
-    }
-    
-    console.log(`🔒 [HYBRID-AUTH] Acceso autorizado para usuario ${req.user.id} con rol ${req.user.role}`);
-    next();
-  };
-}
-
-/**
- * Middleware para verificar que el usuario sea propietario del recurso o admin
- */
-function requireOwnershipOrAdmin(resourceIdParam = 'id') {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        error: 'No autenticado',
-        message: 'Debes iniciar sesión para acceder a este recurso'
-      });
-    }
-    
-    const resourceId = req.params[resourceIdParam];
-    
-    // Los administradores y supadmin pueden acceder a cualquier recurso
-    if (req.user.role === 'admin' || req.user.role === 'supadmin') {
-      console.log(`🔒 [HYBRID-AUTH] ${req.user.role} ${req.user.id} accediendo a recurso ${resourceId}`);
-      return next();
-    }
-    
-    // Verificar que el usuario sea propietario del recurso
-    if (req.user.id !== parseInt(resourceId)) {
-      return res.status(403).json({ 
-        error: 'Acceso denegado',
-        message: 'Solo puedes acceder a tus propios recursos'
-      });
-    }
-    
-    console.log(`🔒 [HYBRID-AUTH] Usuario ${req.user.id} accediendo a su propio recurso ${resourceId}`);
-    next();
-  };
-}
+// Re-exportar funciones comunes con prefijo para logging
+const requireRole = requireRoleCommon;
+const requireAnyRole = requireAnyRoleCommon;
+const requireOwnershipOrAdmin = requireOwnershipOrAdminCommon;
 
 /**
  * Middleware de debug para verificar estado de autenticación

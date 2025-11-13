@@ -112,10 +112,10 @@
 
   <!-- Scripts de autenticación y login -->
   <script type="module">
-    import { requireAnon } from '/js/common/guard.js';
-    import { initLoginForm } from '/services/login.services.js';
-    import { initRegistroForm, initPasswordValidation } from '/services/registro.services.js';
-    import { loadGuestLayout } from '/services/component-loader.services.js';
+    import { requireAnon } from '../../js/common/guard.js';
+    import { initLoginForm } from '../../services/login.services.js';
+    import { initRegistroForm, initPasswordValidation } from '../../services/registro.services.js';
+    import { loadGuestLayout } from '../../services/component-loader.services.js';
     
     // Función para inicializar la validación
     function boot() {
@@ -371,10 +371,20 @@
       }
     }
     
-    // Función para validar email
+    // Función para validar email (validación segura para evitar ReDoS)
     function isValidEmail(email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      return emailRegex.test(email);
+      if (!email || typeof email !== 'string') return false;
+      const trimmedEmail = email.trim();
+      if (trimmedEmail.length > 254 || trimmedEmail.length < 3) return false;
+      const parts = trimmedEmail.split('@');
+      if (parts.length !== 2) return false;
+      const [localPart, domainPart] = parts;
+      if (!localPart || localPart.length === 0 || localPart.length > 64) return false;
+      if (!domainPart || domainPart.length === 0 || domainPart.length > 253) return false;
+      const localRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/;
+      if (!localRegex.test(localPart)) return false;
+      const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+      return domainRegex.test(domainPart);
     }
   </script>
   

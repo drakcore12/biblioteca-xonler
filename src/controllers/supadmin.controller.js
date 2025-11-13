@@ -1,4 +1,5 @@
 const { pool } = require('../config/database');
+const crypto = require('node:crypto');
 const { logger } = require('../config/logger');
 
 class SupAdminController {
@@ -105,33 +106,33 @@ class SupAdminController {
 
       // Procesar datos de usuarios por rol
       const usuariosPorRolObj = {};
-      usuariosPorRol.rows.forEach(row => {
-        usuariosPorRolObj[row.rol] = parseInt(row.total);
-      });
+      for (const row of usuariosPorRol.rows) {
+        usuariosPorRolObj[row.rol] = Number.parseInt(row.total, 10);
+      }
 
       // Procesar datos de bibliotecas por colegio
       const bibliotecasPorColegioArray = bibliotecasPorColegio.rows.map(row => ({
         nombre: row.nombre,
-        total: parseInt(row.total)
+        total: Number.parseInt(row.total, 10)
       }));
 
       // Procesar actividad de 30 días
       const actividad30DiasArray = actividad30Dias.rows.map(row => ({
         fecha: row.fecha.toISOString().split('T')[0],
-        nuevos_usuarios: parseInt(row.nuevos_usuarios)
+        nuevos_usuarios: Number.parseInt(row.nuevos_usuarios, 10)
       }));
 
       // Procesar préstamos por categoría
       const prestamosPorCategoriaArray = prestamosPorCategoria.rows.map(row => ({
         categoria: row.categoria || 'Sin categoría',
-        total: parseInt(row.total)
+        total: Number.parseInt(row.total, 10)
       }));
 
       // Procesar top libros
       const topLibrosArray = topLibros.rows.map(row => ({
         titulo: row.titulo,
         autor: row.autor,
-        total_prestamos: parseInt(row.total_prestamos)
+        total_prestamos: Number.parseInt(row.total_prestamos, 10)
       }));
 
       // Procesar top usuarios
@@ -139,14 +140,14 @@ class SupAdminController {
         nombre: row.nombre,
         apellido: row.apellido,
         email: row.email,
-        total_prestamos: parseInt(row.total_prestamos)
+        total_prestamos: Number.parseInt(row.total_prestamos, 10)
       }));
 
       const estadisticas = {
-        total_usuarios: parseInt(totalUsuarios.rows[0].total),
-        total_bibliotecas: parseInt(totalBibliotecas.rows[0].total),
-        total_libros: parseInt(totalLibros.rows[0].total),
-        prestamos_activos: parseInt(prestamosActivos.rows[0].total),
+        total_usuarios: Number.parseInt(totalUsuarios.rows[0].total, 10),
+        total_bibliotecas: Number.parseInt(totalBibliotecas.rows[0].total, 10),
+        total_libros: Number.parseInt(totalLibros.rows[0].total, 10),
+        prestamos_activos: Number.parseInt(prestamosActivos.rows[0].total, 10),
         usuarios_por_rol: usuariosPorRolObj,
         bibliotecas_por_colegio: bibliotecasPorColegioArray,
         actividad_30_dias: actividad30DiasArray,
@@ -154,10 +155,11 @@ class SupAdminController {
         top_libros: topLibrosArray,
         top_usuarios: topUsuariosArray,
         metricas: {
-          tiempo_respuesta: Math.floor(Math.random() * 100) + 50,
+          // Usar crypto.randomInt() en lugar de Math.random() para seguridad (CSPRNG)
+          tiempo_respuesta: crypto.randomInt(50, 150), // 50-149ms
           uptime: 99.9,
-          requests_hora: Math.floor(Math.random() * 1000) + 500,
-          errores_hora: Math.floor(Math.random() * 10)
+          requests_hora: crypto.randomInt(500, 1500), // 500-1499 requests/hora
+          errores_hora: crypto.randomInt(0, 10) // 0-9 errores/hora
         }
       };
 
@@ -183,7 +185,7 @@ class SupAdminController {
       const { limit = 10, tipo } = req.query;
       console.log(`📊 [SUPADMIN] Obteniendo actividad reciente (limit: ${limit}, tipo: ${tipo})`);
 
-      let actividades = [];
+      const actividades = [];
 
       // Obtener usuarios recientes
       const usuariosRecientes = await pool.query(`
@@ -234,7 +236,7 @@ class SupAdminController {
       `);
 
       // Procesar usuarios recientes
-      usuariosRecientes.rows.forEach(usuario => {
+      for (const usuario of usuariosRecientes.rows) {
         actividades.push({
           id: `user_${usuario.id}`,
           tipo: 'usuario_registrado',
@@ -250,10 +252,10 @@ class SupAdminController {
             rol: usuario.rol 
           }
         });
-      });
+      }
 
       // Procesar préstamos recientes
-      prestamosRecientes.rows.forEach(prestamo => {
+      for (const prestamo of prestamosRecientes.rows) {
         const esDevolucion = prestamo.fecha_devolucion !== null;
         const accionTexto = esDevolucion 
           ? `Devolución realizada: "${prestamo.titulo}"`
@@ -277,10 +279,10 @@ class SupAdminController {
             fecha_devolucion: prestamo.fecha_devolucion ? prestamo.fecha_devolucion.toISOString() : null
           }
         });
-      });
+      }
 
       // Procesar libros recientes
-      librosRecientes.rows.forEach(libro => {
+      for (const libro of librosRecientes.rows) {
         const accionTexto = `Nuevo libro agregado: "${libro.titulo}"`;
         actividades.push({
           id: `libro_${libro.id}`,
@@ -298,7 +300,7 @@ class SupAdminController {
             categoria: libro.categoria || 'Sin categoría'
           }
         });
-      });
+      }
 
       // Ordenar por timestamp descendente
       actividades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -310,7 +312,7 @@ class SupAdminController {
       }
 
       // Limitar resultados
-      const resultado = actividadesFiltradas.slice(0, parseInt(limit));
+      const resultado = actividadesFiltradas.slice(0, Number.parseInt(limit, 10));
 
       console.log('✅ [SUPADMIN] Actividad reciente obtenida exitosamente');
       res.json({
@@ -329,6 +331,164 @@ class SupAdminController {
     }
   }
 
+  /**
+   * Procesa logs de aplicación (usuarios y préstamos)
+   * @param {object} pool - Pool de conexiones a la base de datos
+   * @returns {Promise<Array>} Array de logs procesados
+   */
+  async processApplicationLogs(pool) {
+    const logs = [];
+    const usuariosRecientes = await pool.query(`
+      SELECT 
+        u.id,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.created_at,
+        r.name as rol
+      FROM usuarios u
+      JOIN roles r ON u.rol_id = r.id
+      ORDER BY u.created_at DESC
+      LIMIT 10
+    `);
+
+    const prestamosRecientes = await pool.query(`
+      SELECT 
+        p.id,
+        p.fecha_prestamo,
+        p.fecha_devolucion,
+        u.nombre,
+        u.apellido,
+        u.email,
+        l.titulo
+      FROM prestamos p
+      JOIN usuarios u ON p.usuario_id = u.id
+      JOIN biblioteca_libros bl ON p.biblioteca_libro_id = bl.id
+      JOIN libros l ON bl.libro_id = l.id
+      ORDER BY p.fecha_prestamo DESC
+      LIMIT 10
+    `);
+
+    for (const usuario of usuariosRecientes.rows) {
+      logs.push({
+        timestamp: usuario.created_at.toISOString(),
+        nivel: 'info',
+        mensaje: `Usuario registrado: ${usuario.nombre} ${usuario.apellido}`,
+        usuario: usuario.email,
+        ip: '127.0.0.1',
+        detalles: { rol: usuario.rol }
+      });
+    }
+
+    for (const prestamo of prestamosRecientes.rows) {
+      const esDevolucion = prestamo.fecha_devolucion !== null;
+      logs.push({
+        timestamp: esDevolucion ? prestamo.fecha_devolucion.toISOString() : prestamo.fecha_prestamo.toISOString(),
+        nivel: 'info',
+        mensaje: esDevolucion ? `Libro devuelto: ${prestamo.titulo}` : `Préstamo realizado: ${prestamo.titulo}`,
+        usuario: prestamo.email,
+        ip: '127.0.0.1',
+        detalles: { 
+          libro: prestamo.titulo,
+          fecha_prestamo: prestamo.fecha_prestamo.toISOString(),
+          fecha_devolucion: prestamo.fecha_devolucion ? prestamo.fecha_devolucion.toISOString() : null
+        }
+      });
+    }
+
+    return logs;
+  }
+
+  /**
+   * Procesa logs de seguridad
+   * @param {object} pool - Pool de conexiones a la base de datos
+   * @returns {Promise<Array>} Array de logs procesados
+   */
+  async processSecurityLogs(pool) {
+    const logs = [];
+    const usuariosConLogin = await pool.query(`
+      SELECT 
+        u.id,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.created_at,
+        r.name as rol
+      FROM usuarios u
+      JOIN roles r ON u.rol_id = r.id
+      ORDER BY u.created_at DESC
+      LIMIT 5
+    `);
+
+    for (const usuario of usuariosConLogin.rows) {
+      logs.push({
+        timestamp: usuario.created_at.toISOString(),
+        evento: 'login_exitoso',
+        usuario: usuario.email,
+        ip: '127.0.0.1',
+        estado: 'exitoso',
+        detalles: `Autenticación exitosa para ${usuario.nombre} ${usuario.apellido} (${usuario.rol})`
+      });
+    }
+
+    return logs;
+  }
+
+  /**
+   * Procesa logs de auditoría
+   * @param {object} pool - Pool de conexiones a la base de datos
+   * @returns {Promise<Array>} Array de logs procesados
+   */
+  async processAuditLogs(pool) {
+    const logs = [];
+    const cambiosRecientes = await pool.query(`
+      SELECT 
+        u.id,
+        u.nombre,
+        u.apellido,
+        u.email,
+        u.created_at,
+        u.updated_at,
+        r.name as rol
+      FROM usuarios u
+      JOIN roles r ON u.rol_id = r.id
+      WHERE u.updated_at > u.created_at
+      ORDER BY u.updated_at DESC
+      LIMIT 5
+    `);
+
+    for (const usuario of cambiosRecientes.rows) {
+      logs.push({
+        timestamp: usuario.updated_at.toISOString(),
+        accion: 'actualizar_usuario',
+        usuario: usuario.email,
+        recurso: 'usuarios',
+        resultado: 'exitoso',
+        ip: '127.0.0.1',
+        detalles: `Usuario ${usuario.nombre} ${usuario.apellido} actualizado`
+      });
+    }
+
+    return logs;
+  }
+
+  /**
+   * Procesa logs de error
+   * @returns {Array} Array de logs de error
+   */
+  processErrorLogs() {
+    return [
+      {
+        timestamp: new Date().toISOString(),
+        nivel: 'error',
+        mensaje: 'Error de conexión a la base de datos',
+        usuario: 'sistema',
+        ip: '127.0.0.1',
+        detalles: 'Timeout en consulta de usuarios'
+      }
+    ];
+  }
+
   // Obtener logs del sistema
   async obtenerLogs(req, res) {
     try {
@@ -343,140 +503,16 @@ class SupAdminController {
 
       console.log(`📊 [SUPADMIN] Obteniendo logs del sistema (tipo: ${tipo}, nivel: ${nivel})`);
 
-      // Obtener logs de la base de datos (simulado con datos de usuarios y préstamos)
       let logs = [];
 
       if (tipo === 'application') {
-        // Logs de aplicación - usuarios recientes y préstamos
-        const usuariosRecientes = await pool.query(`
-          SELECT 
-            u.id,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.created_at,
-            r.name as rol
-          FROM usuarios u
-          JOIN roles r ON u.rol_id = r.id
-          ORDER BY u.created_at DESC
-          LIMIT 10
-        `);
-
-        const prestamosRecientes = await pool.query(`
-          SELECT 
-            p.id,
-            p.fecha_prestamo,
-            p.fecha_devolucion,
-            u.nombre,
-            u.apellido,
-            u.email,
-            l.titulo
-          FROM prestamos p
-          JOIN usuarios u ON p.usuario_id = u.id
-          JOIN biblioteca_libros bl ON p.biblioteca_libro_id = bl.id
-          JOIN libros l ON bl.libro_id = l.id
-          ORDER BY p.fecha_prestamo DESC
-          LIMIT 10
-        `);
-
-        // Procesar usuarios como logs
-        usuariosRecientes.rows.forEach(usuario => {
-          logs.push({
-            timestamp: usuario.created_at.toISOString(),
-            nivel: 'info',
-            mensaje: `Usuario registrado: ${usuario.nombre} ${usuario.apellido}`,
-            usuario: usuario.email,
-            ip: '127.0.0.1',
-            detalles: { rol: usuario.rol }
-          });
-        });
-
-        // Procesar préstamos como logs
-        prestamosRecientes.rows.forEach(prestamo => {
-          const esDevolucion = prestamo.fecha_devolucion !== null;
-          logs.push({
-            timestamp: esDevolucion ? prestamo.fecha_devolucion.toISOString() : prestamo.fecha_prestamo.toISOString(),
-            nivel: 'info',
-            mensaje: esDevolucion ? `Libro devuelto: ${prestamo.titulo}` : `Préstamo realizado: ${prestamo.titulo}`,
-            usuario: prestamo.email,
-            ip: '127.0.0.1',
-            detalles: { 
-              libro: prestamo.titulo,
-              fecha_prestamo: prestamo.fecha_prestamo.toISOString(),
-              fecha_devolucion: prestamo.fecha_devolucion ? prestamo.fecha_devolucion.toISOString() : null
-            }
-          });
-        });
-
+        logs = await this.processApplicationLogs(pool);
       } else if (tipo === 'security') {
-        // Logs de seguridad - intentos de login
-        const usuariosConLogin = await pool.query(`
-          SELECT 
-            u.id,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.created_at,
-            r.name as rol
-          FROM usuarios u
-          JOIN roles r ON u.rol_id = r.id
-          ORDER BY u.created_at DESC
-          LIMIT 5
-        `);
-
-        usuariosConLogin.rows.forEach(usuario => {
-          logs.push({
-            timestamp: usuario.created_at.toISOString(),
-            evento: 'login_exitoso',
-            usuario: usuario.email,
-            ip: '127.0.0.1',
-            estado: 'exitoso',
-            detalles: `Autenticación exitosa para ${usuario.nombre} ${usuario.apellido} (${usuario.rol})`
-          });
-        });
-
+        logs = await this.processSecurityLogs(pool);
       } else if (tipo === 'audit') {
-        // Logs de auditoría - cambios en el sistema
-        const cambiosRecientes = await pool.query(`
-          SELECT 
-            u.id,
-            u.nombre,
-            u.apellido,
-            u.email,
-            u.created_at,
-            u.updated_at,
-            r.name as rol
-          FROM usuarios u
-          JOIN roles r ON u.rol_id = r.id
-          WHERE u.updated_at > u.created_at
-          ORDER BY u.updated_at DESC
-          LIMIT 5
-        `);
-
-        cambiosRecientes.rows.forEach(usuario => {
-          logs.push({
-            timestamp: usuario.updated_at.toISOString(),
-            accion: 'actualizar_usuario',
-            usuario: usuario.email,
-            recurso: 'usuarios',
-            resultado: 'exitoso',
-            ip: '127.0.0.1',
-            detalles: `Usuario ${usuario.nombre} ${usuario.apellido} actualizado`
-          });
-        });
-
+        logs = await this.processAuditLogs(pool);
       } else if (tipo === 'error') {
-        // Logs de error - errores del sistema
-        logs = [
-          {
-            timestamp: new Date().toISOString(),
-            nivel: 'error',
-            mensaje: 'Error de conexión a la base de datos',
-            usuario: 'sistema',
-            ip: '127.0.0.1',
-            detalles: 'Timeout en consulta de usuarios'
-          }
-        ];
+        logs = this.processErrorLogs();
       }
 
       // Ordenar por timestamp descendente
@@ -499,15 +535,15 @@ class SupAdminController {
 
       // Aplicar paginación
       const total = logs.length;
-      const logsPaginados = logs.slice(parseInt(offset), parseInt(offset) + parseInt(limit));
+      const logsPaginados = logs.slice(Number.parseInt(offset, 10), Number.parseInt(offset, 10) + Number.parseInt(limit, 10));
 
       console.log('✅ [SUPADMIN] Logs obtenidos exitosamente');
       res.json({
         success: true,
         data: logsPaginados,
         total: total,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        limit: Number.parseInt(limit, 10),
+        offset: Number.parseInt(offset, 10)
       });
 
     } catch (error) {

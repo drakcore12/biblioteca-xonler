@@ -1,7 +1,19 @@
 // Archivo de debug para verificar el estado de la sesión
 // Úsalo en la consola del navegador para diagnosticar problemas
 
+const { log } = console;
+// Helper para obtener runtime de forma segura
+function getRuntime() {
+  if (typeof globalThis === 'undefined') {
+    return {};
+  }
+  return globalThis;
+}
+const runtime = getRuntime();
+const runtimeLocation = runtime?.location;
+
 export function debugSession() {
+  console.group('🧪 Debug Session');
   console.log('=== DEBUG SESSION ===');
   
   // Verificar storage
@@ -20,8 +32,8 @@ export function debugSession() {
   console.log('📝 UserName (session):', sessionUserName || '❌ Ausente');
   
   // Verificar ruta actual
-  console.log('📍 Ruta actual:', window.location.pathname);
-  console.log('🔍 Parámetros:', window.location.search);
+  console.log('📍 Ruta actual:', runtimeLocation?.pathname ?? 'desconocida');
+  console.log('🔍 Parámetros:', runtimeLocation?.search ?? '');
   
   // Verificar si hay sesión activa
   const hasToken = localToken || sessionToken;
@@ -48,16 +60,12 @@ export function debugSession() {
 // Función para limpiar sesión (útil para testing)
 export function clearSession() {
   console.log('🧹 Limpiando sesión...');
-  localStorage.removeItem('token');
-  localStorage.removeItem('role');
-  localStorage.removeItem('userName');
-  sessionStorage.removeItem('token');
-  sessionStorage.removeItem('role');
-  sessionStorage.removeItem('userName');
+  localStorage.clear();
+  sessionStorage.clear();
   console.log('✅ Sesión limpiada');
   
   // Recargar página para aplicar cambios
-  window.location.reload();
+  runtimeLocation?.reload?.();
 }
 
 // Función para simular login (útil para testing)
@@ -73,7 +81,7 @@ export function simulateLogin(role = 'usuario', remember = false) {
   console.log('🔄 Recargando página...');
   
   setTimeout(() => {
-    window.location.reload();
+    runtimeLocation?.reload?.();
   }, 1000);
 }
 
@@ -82,7 +90,7 @@ export async function testGuards() {
   console.log('🧪 Probando guardas...');
   
   try {
-    const { requireAuth, requireRole } = await import('/js/common/guard.js');
+    const { requireAuth, requireRole } = await import('./common/guard.js');
     
     console.log('1️⃣ Probando requireAuth...');
     await requireAuth();
@@ -119,12 +127,12 @@ export function showHelp() {
 }
 
 // Auto-exportar funciones globales para uso en consola
-if (typeof window !== 'undefined') {
-  window.debugSession = debugSession;
-  window.clearSession = clearSession;
-  window.simulateLogin = simulateLogin;
-  window.testGuards = testGuards;
-  window.showHelp = showHelp;
+if (typeof globalThis !== 'undefined') {
+  globalThis.debugSession = debugSession;
+  globalThis.clearSession = clearSession;
+  globalThis.simulateLogin = simulateLogin;
+  globalThis.testGuards = testGuards;
+  globalThis.showHelp = showHelp;
   
   console.log('🔧 Debug tools cargados. Escribe showHelp() para ver comandos disponibles.');
 }

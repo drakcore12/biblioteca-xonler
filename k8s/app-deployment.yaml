@@ -115,6 +115,16 @@ spec:
             configMapKeyRef:
               name: app-config
               key: LOG_COMPRESSION
+        - name: LOG_ENCRYPTION
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_ENCRYPTION
+        - name: LOG_ENCRYPTION_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_ENCRYPTION_KEY
         - name: ENCRYPTION_KEY_DIR
           valueFrom:
             configMapKeyRef:
@@ -130,6 +140,116 @@ spec:
             configMapKeyRef:
               name: app-config
               key: FRONTEND_URL
+        - name: SMTP_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SMTP_HOST
+        - name: SMTP_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SMTP_PORT
+        - name: SMTP_SECURE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SMTP_SECURE
+        - name: SMTP_USER
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SMTP_USER
+        - name: SMTP_FROM
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: SMTP_FROM
+        - name: ALERT_EMAIL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_EMAIL
+        - name: WEBHOOK_URL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: WEBHOOK_URL
+        - name: MONITORING_INTERVAL
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_INTERVAL
+        - name: MONITORING_THRESHOLD_CPU
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_THRESHOLD_CPU
+        - name: MONITORING_THRESHOLD_MEMORY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_THRESHOLD_MEMORY
+        - name: MONITORING_THRESHOLD_DISK
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_THRESHOLD_DISK
+        - name: MONITORING_THRESHOLD_RESPONSE_TIME
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_THRESHOLD_RESPONSE_TIME
+        - name: MONITORING_THRESHOLD_ERROR_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_THRESHOLD_ERROR_RATE
+        - name: MONITORING_MAX_RESPONSE_TIMES
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONITORING_MAX_RESPONSE_TIMES
+        - name: ALERT_THRESHOLD_FAILED_LOGINS
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_FAILED_LOGINS
+        - name: ALERT_THRESHOLD_SUSPICIOUS
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_SUSPICIOUS
+        - name: ALERT_THRESHOLD_BLOCKED_IPS
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_BLOCKED_IPS
+        - name: ALERT_THRESHOLD_ERROR_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_ERROR_RATE
+        - name: ALERT_THRESHOLD_MEMORY
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_MEMORY
+        - name: ALERT_THRESHOLD_DISK
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_THRESHOLD_DISK
+        - name: ALERT_COOLDOWN_PERIOD
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: ALERT_COOLDOWN_PERIOD
+        - name: COOKIE_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: COOKIE_DOMAIN
         # Variables desde Secrets
         - name: DB_PASSWORD
           valueFrom:

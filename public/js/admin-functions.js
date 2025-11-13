@@ -1,12 +1,25 @@
 // Funciones adicionales para el admin dashboard
 
 // Variables globales (si no están definidas)
-if (typeof librosPaginacion === 'undefined') {
-  var librosPaginacion = { current: 1, total: 0, limit: 20 };
+let librosPaginacion = { current: 1, total: 0, limit: 20 };
+if (typeof globalThis !== 'undefined') {
+  if (globalThis.librosPaginacion === undefined) {
+    globalThis.librosPaginacion = librosPaginacion;
+  } else {
+    librosPaginacion = globalThis.librosPaginacion;
+  }
 }
-if (typeof prestamosPaginacion === 'undefined') {
-  var prestamosPaginacion = { current: 1, total: 0, limit: 20 };
+
+let prestamosPaginacion = { current: 1, total: 0, limit: 20 };
+if (typeof globalThis !== 'undefined') {
+  if (globalThis.prestamosPaginacion === undefined) {
+    globalThis.prestamosPaginacion = prestamosPaginacion;
+  } else {
+    prestamosPaginacion = globalThis.prestamosPaginacion;
+  }
 }
+
+let prestamosChart;
 
 // Funciones de utilidad
 function mostrarLoading(mostrar = true) {
@@ -169,6 +182,12 @@ function mostrarTablaPrestamos(prestamos) {
 
   tbody.innerHTML = prestamos.map(prestamo => {
     const estado = adminBibliotecaService.obtenerEstadoPrestamo(prestamo);
+    const isDevuelto = Boolean(prestamo.fecha_devolucion);
+    const accionHtml = isDevuelto
+      ? '<span class="text-muted">Devuelto</span>'
+      : `<button class="btn btn-sm btn-success" onclick="marcarDevuelto(${prestamo.id})">
+              <i class="bi bi-check-circle"></i> Marcar Devuelto
+            </button>`;
     return `
       <tr>
         <td>${prestamo.usuario_nombre}</td>
@@ -177,12 +196,7 @@ function mostrarTablaPrestamos(prestamos) {
         <td>${adminBibliotecaService.formatearFecha(prestamo.fecha_devolucion)}</td>
         <td><span class="badge bg-${estado.clase}">${estado.texto}</span></td>
         <td>
-          ${!prestamo.fecha_devolucion ? 
-            `<button class="btn btn-sm btn-success" onclick="marcarDevuelto(${prestamo.id})">
-              <i class="bi bi-check-circle"></i> Marcar Devuelto
-            </button>` : 
-            '<span class="text-muted">Devuelto</span>'
-          }
+          ${accionHtml}
         </td>
       </tr>
     `;

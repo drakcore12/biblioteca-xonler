@@ -29,12 +29,898 @@ data:
     providers:
       - name: 'Default'
         orgId: 1
-        folder: ''
+        folder: 'Provisioned'
         type: file
         disableDeletion: false
         updateIntervalSeconds: 10
-        allowUiUpdates: true
+        allowUiUpdates: false
         options:
           path: /etc/grafana/provisioning/dashboards
   nodejs-dashboard.json: |
-    {       "uid": "nodejs-app-metrics",       "title": "Node.js Application Metrics",       "tags": [         "nodejs",         "application"       ],       "timezone": "browser",       "schemaVersion": 27,       "version": 1,       "refresh": "10s",       "panels": [         {           "id": 1,           "title": "HTTP Requests Rate",           "type": "stat",           "gridPos": {             "h": 4,             "w": 6,             "x": 0,             "y": 0           },           "targets": [             {               "expr": "rate(http_requests_total[5m])",               "refId": "A",               "legendFormat": "{{method}} {{route}}"             }           ],           "fieldConfig": {             "defaults": {               "unit": "reqps",               "decimals": 2             }           }         },         {           "id": 2,           "title": "HTTP Request Duration (p95)",           "type": "stat",           "gridPos": {             "h": 4,             "w": 6,             "x": 6,             "y": 0           },           "targets": [             {               "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",               "refId": "A"             }           ],           "fieldConfig": {             "defaults": {               "unit": "s",               "decimals": 3             }           }         },         {           "id": 3,           "title": "HTTP Status Codes",           "type": "stat",           "gridPos": {             "h": 4,             "w": 6,             "x": 12,             "y": 0           },           "targets": [             {               "expr": "sum(rate(http_requests_total[5m])) by (status)",               "refId": "A",               "legendFormat": "{{status}}"             }           ],           "fieldConfig": {             "defaults": {               "unit": "reqps",               "decimals": 2             }           }         },         {           "id": 4,           "title": "Active Connections",           "type": "stat",           "gridPos": {             "h": 4,             "w": 6,             "x": 18,             "y": 0           },           "targets": [             {               "expr": "active_connections",               "refId": "A"             }           ],           "fieldConfig": {             "defaults": {               "unit": "short",               "decimals": 0             }           }         },         {           "id": 5,           "title": "HTTP Requests Over Time",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 0,             "y": 4           },           "targets": [             {               "expr": "rate(http_requests_total[5m])",               "refId": "A",               "legendFormat": "{{method}} {{route}} {{status}}"             }           ],           "fieldConfig": {             "defaults": {               "unit": "reqps",               "decimals": 2             }           }         },         {           "id": 6,           "title": "HTTP Request Duration",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 12,             "y": 4           },           "targets": [             {               "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",               "refId": "A",               "legendFormat": "p50"             },             {               "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",               "refId": "B",               "legendFormat": "p95"             },             {               "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",               "refId": "C",               "legendFormat": "p99"             }           ],           "fieldConfig": {             "defaults": {               "unit": "s",               "decimals": 3             }           }         },         {           "id": 7,           "title": "Database Queries Rate",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 0,             "y": 12           },           "targets": [             {               "expr": "rate(db_queries_total[5m])",               "refId": "A",               "legendFormat": "{{query_type}} {{table}}"             }           ],           "fieldConfig": {             "defaults": {               "unit": "reqps",               "decimals": 2             }           }         },         {           "id": 8,           "title": "Database Query Duration",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 12,             "y": 12           },           "targets": [             {               "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",               "refId": "A",               "legendFormat": "p95"             }           ],           "fieldConfig": {             "defaults": {               "unit": "s",               "decimals": 3             }           }         },         {           "id": 9,           "title": "CPU Usage",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 0,             "y": 20           },           "targets": [             {               "expr": "rate(process_cpu_user_seconds_total[5m]) * 100",               "refId": "A",               "legendFormat": "CPU %"             }           ],           "fieldConfig": {             "defaults": {               "unit": "percent",               "decimals": 2             }           }         },         {           "id": 10,           "title": "Memory Usage",           "type": "timeseries",           "gridPos": {             "h": 8,             "w": 12,             "x": 12,             "y": 20           },           "targets": [             {               "expr": "process_resident_memory_bytes",               "refId": "A",               "legendFormat": "Memory"             }           ],           "fieldConfig": {             "defaults": {               "unit": "bytes",               "decimals": 2             }           }         }       ],       "time": {         "from": "now-15m",         "to": "now"       },       "timepicker": {},       "templating": {         "list": []       },       "annotations": {         "list": []       }     }     
+    {
+      "uid": "nodejs-app-metrics",
+      "title": "Node.js Application Metrics",
+      "tags": [
+        "nodejs",
+        "application"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 27,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "HTTP Requests Rate",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "rate(http_requests_total[5m])",
+              "refId": "A",
+              "legendFormat": "{{method}} {{route}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "HTTP Request Duration (p95)",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "HTTP Status Codes",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(http_requests_total[5m])) by (status)",
+              "refId": "A",
+              "legendFormat": "{{status}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Active Connections",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "active_connections",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "HTTP Requests Over Time",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "rate(http_requests_total[5m])",
+              "refId": "A",
+              "legendFormat": "{{method}} {{route}} {{status}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "HTTP Request Duration",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+              "refId": "A",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+              "refId": "B",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+              "refId": "C",
+              "legendFormat": "p99"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            }
+          }
+        },
+        {
+          "id": 7,
+          "title": "Database Queries Rate",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "rate(db_queries_total[5m])",
+              "refId": "A",
+              "legendFormat": "{{query_type}} {{table}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 8,
+          "title": "Database Query Duration",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m]))",
+              "refId": "A",
+              "legendFormat": "p95"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "rate(process_cpu_user_seconds_total[5m]) * 100",
+              "refId": "A",
+              "legendFormat": "CPU %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 10,
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "process_resident_memory_bytes",
+              "refId": "A",
+              "legendFormat": "Memory"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 2
+            }
+          }
+        }
+      ],
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "templating": {
+        "list": []
+      },
+      "annotations": {
+        "list": []
+      }
+    }
+  postgresql-dashboard.json: |
+    {
+      "uid": "postgresql-db-metrics",
+      "title": "PostgreSQL Database Metrics",
+      "tags": [
+        "postgresql",
+        "database"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 27,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Active Connections",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "pg_stat_database_numbackends",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Cache Hit Ratio",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_blks_hit[5m])) / (sum(rate(pg_stat_database_blks_hit[5m])) + sum(rate(pg_stat_database_blks_read[5m]))) * 100",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Transactions Committed",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_xact_commit[5m]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Transactions Rolled Back",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_xact_rollback[5m]))",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "Database Size",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "pg_database_size_bytes",
+              "refId": "A",
+              "legendFormat": "{{datname}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "Active Connections Over Time",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "pg_stat_database_numbackends",
+              "refId": "A",
+              "legendFormat": "{{datname}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            }
+          }
+        },
+        {
+          "id": 7,
+          "title": "Cache Hit Ratio Over Time",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_blks_hit[5m])) / (sum(rate(pg_stat_database_blks_hit[5m])) + sum(rate(pg_stat_database_blks_read[5m]))) * 100",
+              "refId": "A",
+              "legendFormat": "Cache Hit Ratio"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 8,
+          "title": "Tuples Inserted/Updated/Deleted",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_tup_inserted[5m]))",
+              "refId": "A",
+              "legendFormat": "Inserted"
+            },
+            {
+              "expr": "sum(rate(pg_stat_database_tup_updated[5m]))",
+              "refId": "B",
+              "legendFormat": "Updated"
+            },
+            {
+              "expr": "sum(rate(pg_stat_database_tup_deleted[5m]))",
+              "refId": "C",
+              "legendFormat": "Deleted"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "Deadlocks",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(pg_stat_database_deadlocks[5m]))",
+              "refId": "A",
+              "legendFormat": "Deadlocks"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 10,
+          "title": "Locks",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "pg_locks_count",
+              "refId": "A",
+              "legendFormat": "{{mode}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            }
+          }
+        }
+      ],
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "templating": {
+        "list": []
+      },
+      "annotations": {
+        "list": []
+      }
+    }
+  host-metrics-dashboard.json: |
+    {
+      "uid": "host-metrics",
+      "title": "Host Metrics",
+      "tags": [
+        "host",
+        "node-exporter",
+        "system"
+      ],
+      "timezone": "browser",
+      "schemaVersion": 27,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "CPU Usage",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 0,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "refId": "A",
+              "legendFormat": "CPU Usage %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 70, "color": "yellow"},
+                  {"value": 90, "color": "red"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 2,
+          "title": "Memory Usage",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 6,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+              "refId": "A",
+              "legendFormat": "Memory Usage %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 70, "color": "yellow"},
+                  {"value": 90, "color": "red"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Disk Usage",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 12,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100",
+              "refId": "A",
+              "legendFormat": "Disk Usage %"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {"value": 0, "color": "green"},
+                  {"value": 70, "color": "yellow"},
+                  {"value": 90, "color": "red"}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": 4,
+          "title": "Load Average",
+          "type": "stat",
+          "gridPos": {
+            "h": 4,
+            "w": 6,
+            "x": 18,
+            "y": 0
+          },
+          "targets": [
+            {
+              "expr": "node_load1",
+              "refId": "A",
+              "legendFormat": "1m Load"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 5,
+          "title": "CPU Usage Over Time",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "100 - (avg(irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "refId": "A",
+              "legendFormat": "CPU Usage"
+            },
+            {
+              "expr": "avg(irate(node_cpu_seconds_total{mode=\"user\"}[5m])) * 100",
+              "refId": "B",
+              "legendFormat": "User"
+            },
+            {
+              "expr": "avg(irate(node_cpu_seconds_total{mode=\"system\"}[5m])) * 100",
+              "refId": "C",
+              "legendFormat": "System"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 6,
+          "title": "Memory Usage Over Time",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 4
+          },
+          "targets": [
+            {
+              "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+              "refId": "A",
+              "legendFormat": "Used"
+            },
+            {
+              "expr": "node_memory_MemAvailable_bytes",
+              "refId": "B",
+              "legendFormat": "Available"
+            },
+            {
+              "expr": "node_memory_MemTotal_bytes",
+              "refId": "C",
+              "legendFormat": "Total"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 7,
+          "title": "Disk I/O",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "rate(node_disk_read_bytes_total[5m])",
+              "refId": "A",
+              "legendFormat": "{{device}} - Read"
+            },
+            {
+              "expr": "rate(node_disk_written_bytes_total[5m])",
+              "refId": "B",
+              "legendFormat": "{{device}} - Write"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 8,
+          "title": "Network I/O",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 12
+          },
+          "targets": [
+            {
+              "expr": "rate(node_network_receive_bytes_total[5m])",
+              "refId": "A",
+              "legendFormat": "{{device}} - Receive"
+            },
+            {
+              "expr": "rate(node_network_transmit_bytes_total[5m])",
+              "refId": "B",
+              "legendFormat": "{{device}} - Transmit"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 9,
+          "title": "Disk Space Usage",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "node_filesystem_size_bytes{mountpoint=\"/\"} - node_filesystem_avail_bytes{mountpoint=\"/\"}",
+              "refId": "A",
+              "legendFormat": "Used"
+            },
+            {
+              "expr": "node_filesystem_avail_bytes{mountpoint=\"/\"}",
+              "refId": "B",
+              "legendFormat": "Available"
+            },
+            {
+              "expr": "node_filesystem_size_bytes{mountpoint=\"/\"}",
+              "refId": "C",
+              "legendFormat": "Total"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 2
+            }
+          }
+        },
+        {
+          "id": 10,
+          "title": "Load Average",
+          "type": "timeseries",
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 20
+          },
+          "targets": [
+            {
+              "expr": "node_load1",
+              "refId": "A",
+              "legendFormat": "1m"
+            },
+            {
+              "expr": "node_load5",
+              "refId": "B",
+              "legendFormat": "5m"
+            },
+            {
+              "expr": "node_load15",
+              "refId": "C",
+              "legendFormat": "15m"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 2
+            }
+          }
+        }
+      ],
+      "time": {
+        "from": "now-15m",
+        "to": "now"
+      },
+      "timepicker": {},
+      "templating": {
+        "list": []
+      },
+      "annotations": {
+        "list": []
+      }
+    }
+     

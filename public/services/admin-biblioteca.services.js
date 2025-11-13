@@ -27,7 +27,7 @@ class AdminBibliotecaService {
           localStorage.clear();
           sessionStorage.clear();
           alert('Sesión expirada. Serás redirigido al login.');
-          window.location.href = '/pages/guest/login.html';
+          globalThis?.location?.replace?.('/pages/guest/login.html');
           return;
         }
         throw new Error(data.error || 'Error en la petición');
@@ -70,14 +70,14 @@ class AdminBibliotecaService {
   async obtenerLibros(filtros = {}) {
     const params = new URLSearchParams();
     
-    Object.entries(filtros).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        params.append(key, value);
-      }
-    });
+    for (const [key, value] of Object.entries(filtros)) {
+      if (value === null || value === undefined || value === '') continue;
+      params.append(key, value);
+    }
 
     const queryString = params.toString();
-    const endpoint = `/admin/libros${queryString ? `?${queryString}` : ''}`;
+    const queryPart = queryString ? `?${queryString}` : '';
+    const endpoint = `/admin/libros${queryPart}`;
     
     return this.makeRequest(endpoint);
   }
@@ -126,14 +126,14 @@ class AdminBibliotecaService {
   async obtenerPrestamos(filtros = {}) {
     const params = new URLSearchParams();
     
-    Object.entries(filtros).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        params.append(key, value);
-      }
-    });
+    for (const [key, value] of Object.entries(filtros)) {
+      if (value === null || value === undefined || value === '') continue;
+      params.append(key, value);
+    }
 
     const queryString = params.toString();
-    const endpoint = `/admin/prestamos${queryString ? `?${queryString}` : ''}`;
+    const queryPart = queryString ? `?${queryString}` : '';
+    const endpoint = `/admin/prestamos${queryPart}`;
     
     return this.makeRequest(endpoint);
   }
@@ -157,14 +157,14 @@ class AdminBibliotecaService {
   async obtenerTodosLosLibros(filtros = {}) {
     const params = new URLSearchParams();
     
-    Object.entries(filtros).forEach(([key, value]) => {
-      if (value !== null && value !== undefined && value !== '') {
-        params.append(key, value);
-      }
-    });
+    for (const [key, value] of Object.entries(filtros)) {
+      if (value === null || value === undefined || value === '') continue;
+      params.append(key, value);
+    }
 
     const queryString = params.toString();
-    const endpoint = `/libros${queryString ? `?${queryString}` : ''}`;
+    const queryPart = queryString ? `?${queryString}` : '';
+    const endpoint = `/libros${queryPart}`;
     
     return this.makeRequest(endpoint);
   }
@@ -176,7 +176,7 @@ class AdminBibliotecaService {
     try {
       const response = await this.obtenerTodosLosLibros({ limit: 1000 });
       const categorias = [...new Set(response.data.map(libro => libro.categoria))];
-      return categorias.sort();
+      return categorias.sort((a, b) => (a || '').localeCompare(b || ''));
     } catch (error) {
       console.error('Error obteniendo categorías:', error);
       return [];
@@ -202,7 +202,7 @@ class AdminBibliotecaService {
     }
     
     const fechaPrestamo = new Date(prestamo.fecha_prestamo);
-    const diasTranscurridos = Math.floor((new Date() - fechaPrestamo) / (1000 * 60 * 60 * 24));
+    const diasTranscurridos = Math.floor((Date.now() - fechaPrestamo.getTime()) / (1000 * 60 * 60 * 24));
     
     if (diasTranscurridos > 15) {
       return { texto: 'Vencido', clase: 'danger' };
@@ -219,10 +219,10 @@ class AdminBibliotecaService {
    */
   calcularDiasRetraso(fechaPrestamo) {
     const fecha = new Date(fechaPrestamo);
-    const diasTranscurridos = Math.floor((new Date() - fecha) / (1000 * 60 * 60 * 24));
+    const diasTranscurridos = Math.floor((Date.now() - fecha.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, diasTranscurridos - 15);
   }
 }
 
 // Crear instancia global
-window.adminBibliotecaService = new AdminBibliotecaService();
+globalThis.adminBibliotecaService = new AdminBibliotecaService();

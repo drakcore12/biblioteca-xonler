@@ -39,8 +39,8 @@ router.get('/test-db', async (req, res) => {
     res.json({
       status: 'OK',
       counts: {
-        libros: parseInt(librosResult.rows[0].count),
-        biblioteca_libros: parseInt(blResult.rows[0].count)
+        libros: Number.parseInt(librosResult.rows[0].count, 10),
+        biblioteca_libros: Number.parseInt(blResult.rows[0].count, 10)
       },
       libros_no_asignados: librosNoAsignadosResult.rows
     });

@@ -49,18 +49,20 @@ function mostrarMensajeBienvenida() {
 function setupNavigationEvents() {
   // Navegación del header
   const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-  navLinks.forEach(link => {
+  for (const link of navLinks) {
     link.addEventListener('click', (e) => {
       // Remover clase active de todos los links
-      navLinks.forEach(l => l.classList.remove('active'));
+      for (const l of navLinks) {
+        l.classList.remove('active');
+      }
       // Agregar clase active al link clickeado
       link.classList.add('active');
     });
-  });
+  }
   
   // Navegación de acceso rápido
   const quickAccessLinks = document.querySelectorAll('.list-group-item a');
-  quickAccessLinks.forEach(link => {
+  for (const link of quickAccessLinks) {
     link.addEventListener('click', (e) => {
       // Agregar efecto visual al hacer clic
       link.style.transform = 'scale(0.95)';
@@ -68,7 +70,7 @@ function setupNavigationEvents() {
         link.style.transform = '';
       }, 150);
     });
-  });
+  }
 }
 
 // Configurar botones de acción
@@ -222,7 +224,8 @@ export function mostrarNoticias() {
 export function initVisualEffects() {
   // Efecto de aparición gradual para las tarjetas
   const cards = document.querySelectorAll('.card');
-  cards.forEach((card, index) => {
+  let index = 0;
+  for (const card of cards) {
     card.style.opacity = '0';
     card.style.transform = 'translateY(20px)';
     card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
@@ -231,11 +234,12 @@ export function initVisualEffects() {
       card.style.opacity = '1';
       card.style.transform = 'translateY(0)';
     }, index * 100);
-  });
+    index += 1;
+  }
   
   // Efecto hover para los botones
   const buttons = document.querySelectorAll('.btn');
-  buttons.forEach(button => {
+  for (const button of buttons) {
     button.addEventListener('mouseenter', () => {
       button.style.transform = 'translateY(-2px)';
       button.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
@@ -245,5 +249,5 @@ export function initVisualEffects() {
       button.style.transform = '';
       button.style.boxShadow = '';
     });
-  });
+  }
 }

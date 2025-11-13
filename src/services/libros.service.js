@@ -35,13 +35,13 @@ function parseCategorias(queryCategorias, legacyCategoria) {
 }
 
 function normalizeLimit(limit) {
-  const parsed = parseInt(limit, 10);
+  const parsed = Number.parseInt(limit, 10);
   if (Number.isNaN(parsed) || parsed <= 0) return DEFAULT_LIMIT;
   return Math.min(parsed, MAX_LIMIT);
 }
 
 function normalizeOffset(offset) {
-  const parsed = parseInt(offset, 10);
+  const parsed = Number.parseInt(offset, 10);
   if (Number.isNaN(parsed) || parsed < 0) return 0;
   return parsed;
 }
@@ -71,10 +71,12 @@ function buildWhereClause({ searchTerm, categorias, disponibilidad, bibliotecaId
 
   if (Array.isArray(categorias) && categorias.length > 0) {
     const categoriaPlaceholders = categorias
-      .map((_, idx) => `l.categoria = $${index + idx}`)
+      .map((_, idx) => `lower(l.categoria) = lower($${index + idx})`)
       .join(' OR ');
     clauses.push(`(${categoriaPlaceholders})`);
-    categorias.forEach(cat => params.push(cat));
+    for (const cat of categorias) {
+      params.push(cat);
+    }
     index += categorias.length;
   }
 
@@ -84,7 +86,7 @@ function buildWhereClause({ searchTerm, categorias, disponibilidad, bibliotecaId
     index += 1;
   }
 
-  if (bibliotecaId) {
+  if (bibliotecaId !== null && bibliotecaId !== undefined) {
     clauses.push(`bl.biblioteca_id = $${index}`);
     params.push(bibliotecaId);
     index += 1;
@@ -111,7 +113,14 @@ function normalizeLibroFilters(query = {}) {
   const searchTerm = typeof q === 'string' && q.trim() ? q.trim() : null;
   const categoriaFinal = parseCategorias(categorias, categoria);
   const disponibilidadValue = parseDisponibilidad(disponibilidad);
-  const bibliotecaId = biblioteca_id && biblioteca_id !== 'todas' ? biblioteca_id : null;
+  
+  // Normalizar biblioteca_id: conservar 0 como valor válido, filtrar NaN
+  let bibliotecaId = null;
+  if (biblioteca_id !== null && biblioteca_id !== undefined && biblioteca_id !== 'todas') {
+    const parsedBib = Number(biblioteca_id);
+    bibliotecaId = Number.isFinite(parsedBib) ? parsedBib : null;
+  }
+  
   const order = normalizeOrder(orden);
 
   return {
@@ -206,7 +215,7 @@ async function ensureIsbnUnique(isbn, excludeId = null) {
   if (!isbn) return;
 
   const params = [isbn];
-  let queryText = 'SELECT id FROM libros WHERE isbn = $1';
+  let queryText = 'SELECT id FROM public.libros WHERE isbn = $1';
 
   if (excludeId) {
     params.push(excludeId);
@@ -231,7 +240,7 @@ async function createLibro(payload) {
 
   const { rows } = await pool.query(
     `
-      INSERT INTO libros (titulo, autor, isbn, categoria, imagen_url, descripcion, disponibilidad)
+      INSERT INTO public.libros (titulo, autor, isbn, categoria, imagen_url, descripcion, disponibilidad)
       VALUES ($1, $2, $3, $4, $5, $6, true)
       RETURNING id, titulo, autor, isbn, categoria, imagen_url, descripcion, disponibilidad
     `,
@@ -253,7 +262,7 @@ async function updateLibro(id, payload) {
 
   const { rows } = await pool.query(
     `
-      UPDATE libros
+      UPDATE public.libros
       SET titulo = $1, autor = $2, isbn = $3, categoria = $4,
           imagen_url = $5, descripcion = $6, disponibilidad = $7
       WHERE id = $8
@@ -291,7 +300,7 @@ async function updateLibroImage(id, imagePath) {
 
   const { rows } = await pool.query(
     `
-      UPDATE libros
+      UPDATE public.libros
       SET imagen_url = $1
       WHERE id = $2
       RETURNING id, titulo, imagen_url

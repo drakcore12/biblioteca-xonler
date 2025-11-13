@@ -1,5 +1,5 @@
 function registerErrorHandlers(app) {
-  // eslint-disable-next-line no-unused-vars
+   
   app.use((err, req, res, next) => {
     console.error('❌ Error no manejado:', err);
     if (res.headersSent) {

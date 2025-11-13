@@ -29,6 +29,7 @@ class SimpleJWT {
         audience: process.env.JWT_AUDIENCE || 'biblioteca-users'
       });
     } catch (error) {
+      console.error('Error verificando token JWT:', error);
       throw new Error('Token inválido');
     }
   }

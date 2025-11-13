@@ -1,12 +1,12 @@
 // src/routes/bibliotecas.routes.js
 const express = require('express');
-const path = require('path');
+const path = require('node:path');
 const router = express.Router();
 
 // 👇 SIEMPRE relativo al archivo actual (sin slash inicial)
 const ctrlPath = path.join(__dirname, '..', 'controllers', 'bibliotecas.controller.js');
 const raw = require(ctrlPath);
-const ctrl = raw && raw.default ? raw.default : raw;
+const ctrl = raw?.default ?? raw;
 
 function assertFn(fn, name) {
   if (typeof fn !== 'function') {

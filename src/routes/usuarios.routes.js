@@ -12,8 +12,7 @@ const {
   eliminarUsuarioCompleto,
   loginUsuario,
   cambiarPasswordUsuario,
-  actualizarPreferenciasUsuario,
-  debugUsuarioReferencias
+  actualizarPreferenciasUsuario
 } = require('../controllers/usuarios.controller');
 
 const { hybridAuth } = require('../middleware/hybrid-auth');
@@ -72,9 +71,9 @@ router.get('/check/:id', hybridAuth, async (req, res) => {
       usuario_id: id,
       usuario_existe: usuario.rows.length > 0,
       usuario_data: usuario.rows[0] || null,
-      prestamos_total: parseInt(prestamos.rows[0].total),
-      admin_bibliotecas_total: parseInt(adminBibliotecas.rows[0].total),
-      usuario_biblioteca_total: parseInt(usuarioBiblioteca.rows[0].total)
+      prestamos_total: Number.parseInt(prestamos.rows[0].total, 10),
+      admin_bibliotecas_total: Number.parseInt(adminBibliotecas.rows[0].total, 10),
+      usuario_biblioteca_total: Number.parseInt(usuarioBiblioteca.rows[0].total, 10)
     });
   } catch (error) {
     console.error('❌ [DEBUG] Error:', error);
@@ -155,92 +154,5 @@ router.delete('/test-delete/:id', hybridAuth, async (req, res) => {
     });
   }
 });
-
-// Test de eliminación directa (sin transacción)
-router.delete('/direct-delete/:id', hybridAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { pool } = require('../config/database');
-    
-    console.log(`🧪 [DIRECT DELETE] Iniciando eliminación directa de usuario ID: ${id}`);
-    
-    // Verificar si el usuario existe
-    const usuario = await pool.query('SELECT id, nombre, email FROM usuarios WHERE id = $1', [id]);
-    if (usuario.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    
-    console.log(`👤 [DIRECT DELETE] Usuario encontrado:`, usuario.rows[0]);
-    
-    // Eliminar préstamos primero
-    console.log(`🔄 [DIRECT DELETE] Eliminando préstamos...`);
-    const prestamosEliminados = await pool.query('DELETE FROM prestamos WHERE usuario_id = $1', [id]);
-    console.log(`🗑️ [DIRECT DELETE] Préstamos eliminados:`, prestamosEliminados.rowCount);
-    
-    // Eliminar relaciones usuario-biblioteca
-    console.log(`🔄 [DIRECT DELETE] Eliminando relaciones usuario-biblioteca...`);
-    const usuarioBibliotecaEliminados = await pool.query('DELETE FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
-    console.log(`🗑️ [DIRECT DELETE] Usuario-biblioteca eliminados:`, usuarioBibliotecaEliminados.rowCount);
-    
-    // Eliminar relaciones admin-biblioteca
-    console.log(`🔄 [DIRECT DELETE] Eliminando relaciones admin-biblioteca...`);
-    const adminBibliotecaEliminados = await pool.query('DELETE FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
-    console.log(`🗑️ [DIRECT DELETE] Admin-biblioteca eliminados:`, adminBibliotecaEliminados.rowCount);
-    
-    // Eliminar usuario
-    console.log(`🔄 [DIRECT DELETE] Eliminando usuario...`);
-    const usuarioEliminado = await pool.query('DELETE FROM usuarios WHERE id = $1', [id]);
-    console.log(`🗑️ [DIRECT DELETE] Usuario eliminado:`, usuarioEliminado.rowCount);
-    
-    res.json({
-      success: true,
-      message: 'Usuario eliminado exitosamente',
-      detalles: {
-        prestamos_eliminados: prestamosEliminados.rowCount,
-        usuario_biblioteca_eliminados: usuarioBibliotecaEliminados.rowCount,
-        admin_biblioteca_eliminados: adminBibliotecaEliminados.rowCount,
-        usuario_eliminado: usuarioEliminado.rowCount
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ [DIRECT DELETE] Error:', error);
-    res.status(500).json({ 
-      error: error.message, 
-      code: error.code,
-      detail: error.detail,
-      constraint: error.constraint
-    });
-  }
-});
-
-// Debug simple
-router.get('/debug/:id', hybridAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { pool } = require('../config/database');
-    
-    // Verificar préstamos
-    const prestamos = await pool.query('SELECT id, fecha_prestamo, fecha_devolucion FROM prestamos WHERE usuario_id = $1', [id]);
-    
-    // Verificar admin_bibliotecas
-    const adminBibliotecas = await pool.query('SELECT biblioteca_id FROM admin_bibliotecas WHERE usuario_id = $1', [id]);
-    
-    // Verificar usuario_biblioteca
-    const usuarioBiblioteca = await pool.query('SELECT biblioteca_id FROM usuario_biblioteca WHERE usuario_id = $1', [id]);
-    
-    res.json({
-      usuario_id: id,
-      prestamos: prestamos.rows,
-      admin_bibliotecas: adminBibliotecas.rows,
-      usuario_biblioteca: usuarioBiblioteca.rows
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Debug route
-router.get('/:id/debug', hybridAuth, debugUsuarioReferencias);        // Debug referencias del usuario
 
 module.exports = router;
