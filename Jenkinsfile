@@ -94,10 +94,10 @@ pipeline {
           bat '''
             @echo off
             cd /d %WORKSPACE%
-            echo Deteniendo contenedores existentes...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose down
-            echo Iniciando contenedores...
+            echo Iniciando contenedores si no existen...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
+            echo Reiniciando app y db...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app db
             timeout /t 15 /nobreak >nul
             echo ✅ Servidor iniciado
           '''
