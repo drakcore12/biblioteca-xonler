@@ -56,9 +56,9 @@ pipeline {
       }
     }
 
-    stage('Tests Unitarios') {
-      steps {
-        script {
+        stage('Tests Unitarios') {
+          steps {
+            script {
           echo "🧪 Ejecutando tests unitarios..."
           bat '''
             @echo off
@@ -67,22 +67,22 @@ pipeline {
             if not exist "test-results" mkdir test-results
             if exist "junit.xml" copy junit.xml test-results\\junit.xml
             exit /b 0
-          '''
-        }
-      }
-      post {
-        always {
-          script {
-            def junitFile = 'test-results/junit.xml'
-            if (fileExists(junitFile)) {
-              junit junitFile
-            } else if (fileExists('junit.xml')) {
-              junit 'junit.xml'
-            } else {
-              echo "⚠️ No se encontró archivo junit.xml para publicar"
+              '''
             }
           }
-          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+          post {
+            always {
+              script {
+                def junitFile = 'test-results/junit.xml'
+                if (fileExists(junitFile)) {
+                  junit junitFile
+                } else if (fileExists('junit.xml')) {
+                  junit 'junit.xml'
+                } else {
+                  echo "⚠️ No se encontró archivo junit.xml para publicar"
+                }
+              }
+              archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
         }
       }
     }
@@ -96,10 +96,12 @@ pipeline {
             cd /d %WORKSPACE%
             echo Iniciando contenedores si no existen...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
-            echo Reiniciando app y db...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app db
+            echo Reconstruyendo imagen de app con codigo fresco...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build app
+            echo Reiniciando app y db con nueva imagen...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --force-recreate app db
             timeout /t 15 /nobreak >nul
-            echo ✅ Servidor iniciado
+            echo ✅ Servidor iniciado con codigo actualizado
           '''
         }
       }
@@ -117,12 +119,12 @@ pipeline {
             if not exist "playwright-report" mkdir playwright-report
             call npm run test:e2e
             echo ✅ Tests E2E completados
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
+              '''
+            }
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
           // publishHTML requiere plugin HTML Publisher - comentado por ahora
           // publishHTML([
           //   reportDir: 'playwright-report',
@@ -130,13 +132,13 @@ pipeline {
           //   reportName: 'Playwright Report',
           //   keepAll: true
           // ])
+            }
+          }
         }
-      }
-    }
 
-    stage('Tests de Carga') {
-      steps {
-        script {
+        stage('Tests de Carga') {
+          steps {
+            script {
           echo "⚡ Ejecutando tests de carga..."
           bat '''
             @echo off
@@ -144,12 +146,12 @@ pipeline {
             if not exist "test-results" mkdir test-results
             call npm run test:load
             echo ✅ Tests de carga completados
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+              '''
+            }
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
         }
       }
     }
