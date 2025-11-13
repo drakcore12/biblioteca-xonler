@@ -1,24 +1,24 @@
 const express = require('express');
 
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock controller
-jest.mock('../../src/controllers/libros.controller', () => ({
+jest.mock('../../../src/controllers/libros.controller', () => ({
   obtenerRecomendaciones: jest.fn((req, res) => res.json({ message: 'recomendaciones' }))
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-const librosRoutes = require('../../src/routes/libros.routes');
-const { pool } = require('../../src/config/database');
+const librosRoutes = require('../../../src/routes/libros.routes');
+const { pool } = require('../../../src/config/database');
 
 describe('libros.routes', () => {
   it('debe tener ruta GET /test-db configurada', () => {

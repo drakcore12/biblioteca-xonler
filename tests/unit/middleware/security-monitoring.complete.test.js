@@ -1,4 +1,4 @@
-const securityMonitoring = require('../../src/middleware/security-monitoring');
+const securityMonitoring = require('../../../src/middleware/security-monitoring');
 
 describe('security-monitoring - cobertura completa', () => {
   let mockReq, mockRes, mockNext;

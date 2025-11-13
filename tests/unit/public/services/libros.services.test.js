@@ -126,7 +126,7 @@ let librosService;
 // Helper para cargar el módulo después de montar el DOM y resembrar mocks
 const loadLibrosService = () => {
   jest.resetModules(); // Limpia el cache de módulos
-  const mod = require('../../../public/services/libros.services.js');
+  const mod = require('../../../../public/services/libros.services.js');
   librosService = {
     default: mod.default || mod,
     authHeaders: mod.authHeaders,

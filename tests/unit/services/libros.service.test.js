@@ -1,12 +1,12 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock AppError
-jest.mock('../../src/utils/app-error', () => {
+jest.mock('../../../src/utils/app-error', () => {
   return class AppError extends Error {
     constructor(message, statusCode, details) {
       super(message);
@@ -16,9 +16,9 @@ jest.mock('../../src/utils/app-error', () => {
   };
 });
 
-const librosService = require('../../src/services/libros.service');
-const { pool } = require('../../src/config/database');
-const AppError = require('../../src/utils/app-error');
+const librosService = require('../../../src/services/libros.service');
+const { pool } = require('../../../src/config/database');
+const AppError = require('../../../src/utils/app-error');
 
 describe('libros.service', () => {
   beforeEach(() => {

@@ -18,7 +18,7 @@ global.console = {
 // ============================================================================
 
 jest.resetModules();
-const formHandler = require('../../../../public/services/common/form-handler.js');
+const formHandler = require('../../../../../public/services/common/form-handler.js');
 
 // ============================================================================
 // TESTS

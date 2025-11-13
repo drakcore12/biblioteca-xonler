@@ -1,4 +1,4 @@
-const { QueryBuilder } = require('../../src/utils/query-builder');
+const { QueryBuilder } = require('../../../src/utils/query-builder');
 
 describe('QueryBuilder', () => {
   let builder;

@@ -1,4 +1,4 @@
-const { createSecurePool, getSSLConfig, validateSSLConfig } = require('../../src/config/database-ssl');
+const { createSecurePool, getSSLConfig, validateSSLConfig } = require('../../../src/config/database-ssl');
 
 describe('database-ssl', () => {
   beforeEach(() => {

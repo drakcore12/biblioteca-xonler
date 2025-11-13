@@ -1,4 +1,4 @@
-const AppError = require('../../src/utils/app-error');
+const AppError = require('../../../src/utils/app-error');
 
 describe('app-error', () => {
   describe('constructor', () => {

@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -12,34 +12,34 @@ jest.mock('bcrypt', () => ({
 }));
 
 // Mock simple-jwt
-jest.mock('../../src/utils/simple-jwt', () => ({
+jest.mock('../../../src/utils/simple-jwt', () => ({
   generateToken: jest.fn(),
   verifyToken: jest.fn()
 }));
 
 // Mock cookie-utils
-jest.mock('../../src/utils/cookie-utils', () => ({
+jest.mock('../../../src/utils/cookie-utils', () => ({
   setAuthCookies: jest.fn(),
   clearAuthCookies: jest.fn()
 }));
 
 // Mock twofa.controller
-jest.mock('../../src/controllers/twofa.controller', () => ({
+jest.mock('../../../src/controllers/twofa.controller', () => ({
   generatePending2FAToken: jest.fn()
 }));
 
 // Mock logger
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logAudit: jest.fn(),
   logSecurity: jest.fn()
 }));
 
-const { register, login, me, refresh, logout } = require('../../src/controllers/auth.controller');
-const { pool } = require('../../src/config/database');
+const { register, login, me, refresh, logout } = require('../../../src/controllers/auth.controller');
+const { pool } = require('../../../src/config/database');
 const bcrypt = require('bcrypt');
-const simpleJWT = require('../../src/utils/simple-jwt');
-const { setAuthCookies, clearAuthCookies } = require('../../src/utils/cookie-utils');
-const { generatePending2FAToken } = require('../../src/controllers/twofa.controller');
+const simpleJWT = require('../../../src/utils/simple-jwt');
+const { setAuthCookies, clearAuthCookies } = require('../../../src/utils/cookie-utils');
+const { generatePending2FAToken } = require('../../../src/controllers/twofa.controller');
 
 describe('auth.controller', () => {
   let mockReq, mockRes;

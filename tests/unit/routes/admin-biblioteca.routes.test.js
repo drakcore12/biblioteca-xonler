@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/admin-biblioteca.controller', () => ({
+jest.mock('../../../src/controllers/admin-biblioteca.controller', () => ({
   obtenerBibliotecaAsignada: jest.fn((req, res) => res.json({ message: 'obtenerBibliotecaAsignada' })),
   obtenerEstadisticasBiblioteca: jest.fn((req, res) => res.json({ message: 'obtenerEstadisticasBiblioteca' })),
   obtenerLibrosBiblioteca: jest.fn((req, res) => res.json({ message: 'obtenerLibrosBiblioteca' })),
@@ -13,15 +13,15 @@ jest.mock('../../src/controllers/admin-biblioteca.controller', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-jest.mock('../../src/middleware/auth', () => ({
+jest.mock('../../../src/middleware/auth', () => ({
   requireRole: jest.fn(() => (req, res, next) => next())
 }));
 
-const adminBibliotecaRoutes = require('../../src/routes/admin-biblioteca.routes');
+const adminBibliotecaRoutes = require('../../../src/routes/admin-biblioteca.routes');
 
 describe('admin-biblioteca.routes', () => {
   it('debe tener ruta GET /biblioteca configurada', () => {

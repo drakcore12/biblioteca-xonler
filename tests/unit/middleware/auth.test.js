@@ -1,15 +1,15 @@
 // Mock simple-jwt
-jest.mock('../../src/utils/simple-jwt', () => ({
+jest.mock('../../../src/utils/simple-jwt', () => ({
   verifyToken: jest.fn()
 }));
 
 // Mock http-response
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   unauthorized: jest.fn((res, message) => res.status(401).json({ error: message }))
 }));
 
 // Mock auth-middleware-helpers
-jest.mock('../../src/utils/auth-middleware-helpers', () => ({
+jest.mock('../../../src/utils/auth-middleware-helpers', () => ({
   extractTokenFromHeader: jest.fn(),
   setUserFromDecoded: jest.fn(),
   handleAuthError: jest.fn(),
@@ -20,15 +20,15 @@ jest.mock('../../src/utils/auth-middleware-helpers', () => ({
   checkPermission: jest.fn()
 }));
 
-const { auth, requireRole, requireAnyRole, requireOwnershipOrAdmin, checkPermission } = require('../../src/middleware/auth');
-const simpleJWT = require('../../src/utils/simple-jwt');
-const { unauthorized } = require('../../src/utils/http-response');
+const { auth, requireRole, requireAnyRole, requireOwnershipOrAdmin, checkPermission } = require('../../../src/middleware/auth');
+const simpleJWT = require('../../../src/utils/simple-jwt');
+const { unauthorized } = require('../../../src/utils/http-response');
 const {
   extractTokenFromHeader,
   setUserFromDecoded,
   handleAuthError,
   handleAuthServerError
-} = require('../../src/utils/auth-middleware-helpers');
+} = require('../../../src/utils/auth-middleware-helpers');
 
 describe('middleware/auth', () => {
   let mockReq, mockRes, mockNext;

@@ -1,5 +1,5 @@
 // Mock dependencies
-jest.mock('../../src/db/usuarios.db', () => ({
+jest.mock('../../../src/db/usuarios.db', () => ({
   getById: jest.fn(),
   saveTwoFASecret: jest.fn(),
   enableTwoFA: jest.fn(),
@@ -23,7 +23,7 @@ jest.mock('jsonwebtoken', () => ({
   verify: jest.fn()
 }));
 
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -36,12 +36,12 @@ const {
   disable2FA,
   verify2FALogin,
   generatePending2FAToken
-} = require('../../src/controllers/twofa.controller');
-const db = require('../../src/db/usuarios.db');
+} = require('../../../src/controllers/twofa.controller');
+const db = require('../../../src/db/usuarios.db');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../../src/config/database');
+const { pool } = require('../../../src/config/database');
 
 describe('twofa.controller', () => {
   let mockReq, mockRes;

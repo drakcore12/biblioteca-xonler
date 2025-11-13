@@ -5,7 +5,7 @@ jest.mock('jsonwebtoken', () => ({
   decode: jest.fn()
 }));
 
-const simpleJWT = require('../../src/utils/simple-jwt');
+const simpleJWT = require('../../../src/utils/simple-jwt');
 const jwt = require('jsonwebtoken');
 
 describe('simple-jwt - casos adicionales', () => {

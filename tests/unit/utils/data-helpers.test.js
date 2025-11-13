@@ -9,7 +9,7 @@ const {
   cleanObject,
   getValue,
   indexBy
-} = require('../../src/utils/data-helpers');
+} = require('../../../src/utils/data-helpers');
 
 describe('data-helpers', () => {
   describe('isFiniteNumber', () => {

@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn(),
     connect: jest.fn()
@@ -14,8 +14,8 @@ jest.mock('bcrypt', () => ({
 
 const {
   eliminarUsuarioCompleto
-} = require('../../src/controllers/usuarios.controller');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/controllers/usuarios.controller');
+const { pool } = require('../../../src/config/database');
 
 describe('usuarios.controller - casos completos', () => {
   let mockReq, mockRes;

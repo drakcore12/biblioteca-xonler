@@ -19,7 +19,7 @@ jest.mock('jsonwebtoken', () => ({
 }));
 
 // Mock database
-jest.mock('../../src/db/usuarios.db', () => ({
+jest.mock('../../../src/db/usuarios.db', () => ({
   getById: jest.fn(),
   getByEmail: jest.fn(),
   saveTwoFASecret: jest.fn(),
@@ -28,7 +28,7 @@ jest.mock('../../src/db/usuarios.db', () => ({
 }));
 
 // Mock database pool
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -41,11 +41,11 @@ const {
   disable2FA,
   verify2FALogin,
   generatePending2FAToken
-} = require('../../src/controllers/twofa.controller');
+} = require('../../../src/controllers/twofa.controller');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const jwt = require('jsonwebtoken');
-const db = require('../../src/db/usuarios.db');
+const db = require('../../../src/db/usuarios.db');
 
 describe('twofa.controller - cobertura completa', () => {
   let mockReq, mockRes;
@@ -182,7 +182,7 @@ describe('twofa.controller - cobertura completa', () => {
       speakeasy.totp.verify.mockReturnValueOnce(true);
       
       // Mock pool.query para que falle al obtener rol
-      const { pool } = require('../../src/config/database');
+      const { pool } = require('../../../src/config/database');
       pool.query.mockRejectedValueOnce(new Error('Role query error'));
 
       await verify2FALogin(mockReq, mockRes);

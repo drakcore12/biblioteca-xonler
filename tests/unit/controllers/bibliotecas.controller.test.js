@@ -1,12 +1,12 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
-const { obtenerBibliotecas } = require('../../src/controllers/bibliotecas.controller');
-const { pool } = require('../../src/config/database');
+const { obtenerBibliotecas } = require('../../../src/controllers/bibliotecas.controller');
+const { pool } = require('../../../src/config/database');
 
 describe('bibliotecas.controller', () => {
   let mockReq, mockRes;

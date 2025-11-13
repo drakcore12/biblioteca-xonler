@@ -44,7 +44,7 @@ global.console = {
 // ============================================================================
 
 jest.resetModules();
-const apiClient = require('../../../../public/services/common/api-client.js');
+const apiClient = require('../../../../../public/services/common/api-client.js');
 
 // ============================================================================
 // TESTS

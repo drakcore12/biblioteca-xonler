@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/colegios.controller', () => ({
+jest.mock('../../../src/controllers/colegios.controller', () => ({
   obtenerColegios: jest.fn((req, res) => res.json({ message: 'obtenerColegios' })),
   obtenerColegioPorId: jest.fn((req, res) => res.json({ message: 'obtenerColegioPorId' })),
   crearColegio: jest.fn((req, res) => res.json({ message: 'crearColegio' })),
@@ -9,7 +9,7 @@ jest.mock('../../src/controllers/colegios.controller', () => ({
   eliminarColegio: jest.fn((req, res) => res.json({ message: 'eliminarColegio' }))
 }));
 
-const colegiosRoutes = require('../../src/routes/colegios.routes');
+const colegiosRoutes = require('../../../src/routes/colegios.routes');
 
 describe('colegios.routes', () => {
   it('debe tener ruta GET / configurada', () => {

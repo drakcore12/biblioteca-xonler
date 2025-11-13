@@ -2,14 +2,14 @@ const request = require('supertest');
 const express = require('express');
 
 // Mock prom-client
-jest.mock('../../src/utils/metrics', () => ({
+jest.mock('../../../src/utils/metrics', () => ({
   register: {
     contentType: 'text/plain',
     metrics: jest.fn(() => Promise.resolve('# metrics data'))
   }
 }));
 
-const metricsRoutes = require('../../src/routes/metrics');
+const metricsRoutes = require('../../../src/routes/metrics');
 
 describe('metrics.routes', () => {
   let app;
@@ -29,7 +29,7 @@ describe('metrics.routes', () => {
     });
 
     it('debe manejar errores', async () => {
-      const { register } = require('../../src/utils/metrics');
+      const { register } = require('../../../src/utils/metrics');
       register.metrics.mockRejectedValueOnce(new Error('Metrics error'));
       
       const res = await request(app).get('/metrics');

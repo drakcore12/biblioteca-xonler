@@ -1,5 +1,5 @@
 // Mock logger antes de cargar cualquier módulo que lo use
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logError: jest.fn(),
   logInfo: jest.fn(),
   logAudit: jest.fn(),
@@ -15,7 +15,7 @@ jest.mock('../../src/config/logger', () => ({
 }));
 
 // Mock simple-encryption que también usa logger
-jest.mock('../../src/utils/simple-encryption', () => {
+jest.mock('../../../src/utils/simple-encryption', () => {
   const SimpleEncryption = jest.fn().mockImplementation(() => ({
     encrypt: jest.fn((data) => data),
     decrypt: jest.fn((data) => data)
@@ -23,7 +23,7 @@ jest.mock('../../src/utils/simple-encryption', () => {
   return SimpleEncryption;
 });
 
-const { registerRoutes } = require('../../src/bootstrap/register-routes');
+const { registerRoutes } = require('../../../src/bootstrap/register-routes');
 
 describe('register-routes', () => {
   let mockApp;

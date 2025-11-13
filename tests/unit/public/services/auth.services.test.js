@@ -74,7 +74,7 @@ global.console = {
 // Babel transformará el ES module a CommonJS
 // Usar jest.resetModules() para asegurar que el módulo se carga limpio
 jest.resetModules();
-require('../../../public/services/auth.services.js');
+require('../../../../public/services/auth.services.js');
 
 // La clase AuthService está definida en el módulo pero no exportada
 // El módulo crea una instancia en globalThis.authService

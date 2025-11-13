@@ -1,11 +1,11 @@
 // Mock controller-helpers
-jest.mock('../../src/utils/controller-helpers', () => ({
+jest.mock('../../../src/utils/controller-helpers', () => ({
   getAllRecords: jest.fn(() => jest.fn()),
   getRecordById: jest.fn(() => jest.fn())
 }));
 
-const { obtenerRoles, obtenerRolPorId } = require('../../src/controllers/roles.controller');
-const { getAllRecords, getRecordById } = require('../../src/utils/controller-helpers');
+const { obtenerRoles, obtenerRolPorId } = require('../../../src/controllers/roles.controller');
+const { getAllRecords, getRecordById } = require('../../../src/utils/controller-helpers');
 
 describe('roles.controller', () => {
   let mockReq, mockRes;

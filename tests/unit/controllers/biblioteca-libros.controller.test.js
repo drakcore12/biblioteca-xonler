@@ -1,17 +1,17 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock helpers
-jest.mock('../../src/utils/query-builder', () => ({
+jest.mock('../../../src/utils/query-builder', () => ({
   QueryBuilder: jest.fn(),
   getDisponibilidadSQL: jest.fn(() => 'CASE WHEN EXISTS(...) THEN false ELSE true END as disponible')
 }));
 
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   success: jest.fn((res, data) => res.json({ data })),
   notFound: jest.fn((res, message) => res.status(404).json({ error: message })),
   badRequest: jest.fn((res, message) => res.status(400).json({ error: message })),
@@ -21,7 +21,7 @@ jest.mock('../../src/utils/http-response', () => ({
   paginated: jest.fn((res, data, total, limit, offset) => res.json({ data, paginacion: { total, limit, offset } }))
 }));
 
-jest.mock('../../src/utils/error-handler', () => ({
+jest.mock('../../../src/utils/error-handler', () => ({
   asyncHandler: jest.fn((fn) => async (req, res) => {
     try {
       return await fn(req, res);
@@ -36,9 +36,9 @@ const {
   obtenerBibliotecaLibros,
   obtenerBibliotecaLibroPorId,
   crearBibliotecaLibro
-} = require('../../src/controllers/biblioteca-libros.controller');
-const { pool } = require('../../src/config/database');
-const { QueryBuilder } = require('../../src/utils/query-builder');
+} = require('../../../src/controllers/biblioteca-libros.controller');
+const { pool } = require('../../../src/config/database');
+const { QueryBuilder } = require('../../../src/utils/query-builder');
 
 describe('biblioteca-libros.controller', () => {
   let mockReq, mockRes;

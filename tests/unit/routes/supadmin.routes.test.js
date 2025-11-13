@@ -1,19 +1,19 @@
 const express = require('express');
 
 // Mock controller
-jest.mock('../../src/controllers/supadmin.controller', () => ({
+jest.mock('../../../src/controllers/supadmin.controller', () => ({
   obtenerEstadisticasGlobales: jest.fn((req, res) => res.json({ message: 'obtenerEstadisticasGlobales' })),
   obtenerActividadReciente: jest.fn((req, res) => res.json({ message: 'obtenerActividadReciente' })),
   obtenerLogs: jest.fn((req, res) => res.json({ message: 'obtenerLogs' }))
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/auth', () => ({
+jest.mock('../../../src/middleware/auth', () => ({
   auth: jest.fn((req, res, next) => next()),
   requireRole: jest.fn(() => (req, res, next) => next())
 }));
 
-const supadminRoutes = require('../../src/routes/supadmin.routes');
+const supadminRoutes = require('../../../src/routes/supadmin.routes');
 
 describe('supadmin.routes', () => {
   it('debe tener ruta GET /estadisticas configurada', () => {

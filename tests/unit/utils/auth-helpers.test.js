@@ -1,5 +1,5 @@
 // Mock http-response antes de importar el módulo
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   unauthorized: jest.fn((res, message) => res.status(401).json({ error: message })),
   forbidden: jest.fn((res, message) => res.status(403).json({ error: message }))
 }));
@@ -14,8 +14,8 @@ const {
   requireRole,
   canAccessResource,
   requireResourceAccess
-} = require('../../src/utils/auth-helpers');
-const { unauthorized, forbidden } = require('../../src/utils/http-response');
+} = require('../../../src/utils/auth-helpers');
+const { unauthorized, forbidden } = require('../../../src/utils/http-response');
 
 describe('auth-helpers', () => {
   let mockReq, mockRes, mockNext;

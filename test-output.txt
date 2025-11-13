@@ -1,0 +1,1966 @@
+
+> biblioteca-xonler-main@1.0.0 test
+> jest --ci --reporters=default --reporters=jest-junit
+
+PASS Biblioteca Xonler tests/unit/routes/usuarios.routes.test.js (5.22 s)
+  usuarios.routes
+    ÔêÜ debe tener ruta GET / configurada (41 ms)
+    ÔêÜ debe tener ruta GET /me configurada (3 ms)
+    ÔêÜ debe tener ruta PUT /me configurada (1 ms)
+    ÔêÜ debe tener ruta GET /:id configurada (1 ms)
+    ÔêÜ debe tener ruta POST / configurada (1 ms)
+    ÔêÜ debe tener ruta PUT /:id configurada (1 ms)
+    ÔêÜ debe tener ruta DELETE /:id configurada
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+  console.log
+    [dotenv@17.2.3] injecting env (58) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.refresh.test.js (5.821 s)
+  auth.controller - refresh y logout
+    refresh - casos edge
+      ÔêÜ debe retornar 401 si no hay token (24 ms)
+      ÔêÜ debe usar token de cookie si est├í disponible (2 ms)
+      ÔêÜ debe usar token de header si no hay cookie (2 ms)
+      ÔêÜ debe retornar 401 si el token es inv├ílido (3 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (4 ms)
+    logout - casos edge
+      ÔêÜ debe limpiar cookies de autenticaci├│n (5 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/preferencias-helpers.complete.test.js (5.763 s)
+  preferencias-helpers - cobertura completa
+    validatePreferences - casos edge
+      ÔêÜ debe validar todos los campos opcionales (102 ms)
+      ÔêÜ debe retornar error para valores inv├ílidos (3 ms)
+    upsertPreferences - casos edge
+      ÔêÜ debe usar nullish coalescing para booleanos correctamente (3 ms)
+      ÔêÜ debe actualizar preferencias existentes con valores parciales (3 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.password.test.js (5.788 s)
+  auth.controller - password recovery
+    forgotPassword - casos edge
+      ÔêÜ debe retornar mensaje gen├®rico si el email no existe (28 ms)
+      ÔêÜ debe retornar token en desarrollo (4 ms)
+      ÔêÜ debe retornar mensaje gen├®rico en producci├│n (3 ms)
+    verifyResetToken - casos edge
+      ÔêÜ debe retornar error si el token no tiene type correcto (1 ms)
+      ÔêÜ debe retornar error si el token no existe en BD (2 ms)
+      ÔêÜ debe retornar error si el token expir├│ (2 ms)
+      ÔêÜ debe retornar error si el token ya fue usado (1 ms)
+      ÔêÜ debe manejar JsonWebTokenError (5 ms)
+      ÔêÜ debe manejar TokenExpiredError (1 ms)
+    resetPassword - casos edge
+      ÔêÜ debe retornar error si la contrase├▒a es muy corta (3 ms)
+      ÔêÜ debe actualizar contrase├▒a y marcar token como usado (5 ms)
+      ÔêÜ debe usar BCRYPT_ROUNDS de env si est├í configurado (2 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/index.routes.test.js (6.254 s)
+  index.routes
+    GET /api/health
+      ÔêÜ debe retornar estado de salud (385 ms)
+    GET /api/
+      ÔêÜ debe retornar informaci├│n de la API (75 ms)
+    Rutas registradas
+      ÔêÜ debe tener ruta /api/auth (2 ms)
+      ÔêÜ debe tener ruta /api/usuarios (3 ms)
+      ÔêÜ debe tener ruta /api/libros (3 ms)
+
+PASS Biblioteca Xonler tests/unit/src/utils/metrics.test.js
+  src/utils/metrics.js
+    ÔêÜ debe exportar register (69 ms)
+    ÔêÜ debe exportar httpRequestDuration (6 ms)
+    ÔêÜ debe exportar httpRequestTotal (2 ms)
+    ÔêÜ debe exportar dbQueryDuration (2 ms)
+    ÔêÜ debe exportar dbQueryTotal (5 ms)
+    ÔêÜ debe exportar activeConnections (7 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/helpers.test.js
+  Funciones Helper
+    ÔêÜ suma de dos n├║meros (35 ms)
+    ÔêÜ validaci├│n de email (2 ms)
+    ÔêÜ formateo de fecha (2 ms)
+    ÔêÜ normalizaci├│n de string a objeto (2 ms)
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+PASS Biblioteca Xonler tests/unit/config/database.direct.test.js
+  database.js - test directo
+    ÔêÜ debe crear pool y exportar funciones (13 ms)
+    ÔêÜ debe probar conexi├│n exitosamente (2 ms)
+    ÔêÜ debe manejar error en testConnection (1 ms)
+    ÔêÜ debe cerrar pool correctamente (1 ms)
+
+  console.log
+    ­ƒöæ [JWT] Nueva clave generada: 71d483c9-a46e-4b4b-8ea5-ef8db2314aff
+
+      at JWTRotation.log [as generateNewKey] (src/utils/jwt-rotation.js:34:13)
+
+  console.log
+    ÔÅ░ [JWT] Rotaci├│n autom├ítica configurada cada 1440 minutos
+
+      at JWTRotation.log [as startKeyRotation] (src/utils/jwt-rotation.js:78:13)
+
+  console.log
+    ­ƒôè [MONITORING] Monitoreo en tiempo real iniciado (intervalo: 30000ms)
+
+      at RealtimeMonitoring.log [as startMonitoring] (src/utils/realtime-monitoring.js:58:13)
+
+  console.log
+    [dotenv@17.2.3] injecting env (58) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+PASS Biblioteca Xonler tests/unit/routes/usuarios.routes.inline.test.js
+  usuarios.routes - rutas inline
+    GET /test
+      ÔêÜ debe tener ruta configurada (1 ms)
+    GET /check/:id
+      ÔêÜ debe tener ruta configurada (3 ms)
+    DELETE /test-delete/:id
+      ÔêÜ debe tener ruta configurada (1 ms)
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+PASS Biblioteca Xonler tests/unit/controllers/supadmin.controller.additional.test.js
+  supadmin.controller - casos adicionales
+    obtenerLogs - casos edge
+      ÔêÜ debe procesar logs de tipo application (4 ms)
+      ÔêÜ debe procesar logs de tipo security (3 ms)
+      ÔêÜ debe procesar logs de tipo audit (1 ms)
+      ÔêÜ debe procesar logs de tipo error (1 ms)
+      ÔêÜ debe filtrar por nivel (1 ms)
+      ÔêÜ debe filtrar por fecha_desde (1 ms)
+      ÔêÜ debe filtrar por fecha_hasta (2 ms)
+      ÔêÜ debe aplicar paginaci├│n (3 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-base-middleware.test.js (7.067 s)
+  register-base-middleware
+    registerBaseMiddleware
+      ÔêÜ debe registrar middleware base (38 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/metrics.test.js
+  metrics.routes
+    GET /metrics
+      ÔêÜ debe retornar m├®tricas en formato Prometheus (25 ms)
+      ÔêÜ debe manejar errores (15 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/supadmin.routes.test.js
+  supadmin.routes
+    ÔêÜ debe tener ruta GET /estadisticas configurada (1 ms)
+    ÔêÜ debe tener ruta GET /actividad configurada
+    ÔêÜ debe tener ruta GET /logs configurada (1 ms)
+
+  console.log
+    ­ƒôè [MONITORING] Monitoreo en tiempo real iniciado (intervalo: 30000ms)
+
+      at RealtimeMonitoring.log [as startMonitoring] (src/utils/realtime-monitoring.js:58:13)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-routes.test.js (7.641 s)
+  register-routes
+    registerRoutes
+      ÔêÜ debe registrar rutas (70 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/colegios.routes.test.js
+  colegios.routes
+    ÔêÜ debe tener ruta GET / configurada (2 ms)
+    ÔêÜ debe tener ruta GET /:id configurada
+    ÔêÜ debe tener ruta POST / configurada (5 ms)
+    ÔêÜ debe tener ruta PUT /:id configurada (1 ms)
+    ÔêÜ debe tener ruta DELETE /:id configurada (2 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/prestamos.routes.test.js
+  prestamos.routes
+    ÔêÜ debe tener ruta GET /test configurada (1 ms)
+    ÔêÜ debe tener ruta GET /test-db configurada (1 ms)
+    ÔêÜ debe tener ruta GET /usuario/actual configurada
+    ÔêÜ debe tener ruta GET / configurada
+    ÔêÜ debe tener ruta GET /:id configurada
+    ÔêÜ debe tener ruta POST / configurada (1 ms)
+    ÔêÜ debe tener ruta POST /:id/devolucion configurada (1 ms)
+    ÔêÜ debe tener ruta POST /:id/renovar configurada (1 ms)
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+PASS Biblioteca Xonler tests/unit/routes/biblioteca-libros.routes.test.js
+  biblioteca-libros.routes
+    ÔêÜ debe tener ruta GET / configurada (2 ms)
+    ÔêÜ debe tener ruta GET /:id configurada
+    ÔêÜ debe tener ruta POST / configurada
+    ÔêÜ debe tener ruta DELETE /:id configurada (35 ms)
+    ÔêÜ debe tener ruta GET /:id/disponibilidad configurada (1 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/metrics.direct.test.js
+  metrics.js - test directo
+    ÔêÜ debe tener ruta GET /metrics (93 ms)
+    ÔêÜ debe manejar errores en /metrics (25 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.additional.test.js
+  auth.controller - funciones adicionales
+    forgotPassword
+      ÔêÜ debe generar token de reset si el usuario existe (6 ms)
+      ÔêÜ debe retornar 400 si falta el email (4 ms)
+      ÔêÜ debe retornar mensaje gen├®rico si el usuario no existe (2 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    verifyResetToken
+      ÔêÜ debe verificar token v├ílido (5 ms)
+      ÔêÜ debe retornar 400 si falta el token (1 ms)
+      ÔêÜ debe retornar 400 si el token es inv├ílido
+      ÔêÜ debe retornar 400 si el token no existe en DB
+      ÔêÜ debe retornar 400 si el token expir├│ (2 ms)
+      ÔêÜ debe retornar 400 si el token ya fue usado (1 ms)
+      ÔêÜ debe manejar errores de JWT (1 ms)
+    resetPassword
+      ÔêÜ debe restablecer contrase├▒a exitosamente (2 ms)
+      ÔêÜ debe retornar 400 si faltan datos (1 ms)
+      ÔêÜ debe retornar 400 si la contrase├▒a es muy corta
+      ÔêÜ debe retornar 400 si el token es inv├ílido
+      ÔêÜ debe manejar errores (5 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.test.js
+  auth.controller
+    register
+      ÔêÜ debe retornar error 400 si faltan campos obligatorios (2 ms)
+      ÔêÜ debe retornar error 409 si el email ya existe (1 ms)
+      ÔêÜ debe registrar un usuario exitosamente (2 ms)
+      ÔêÜ debe manejar errores internos (2 ms)
+    login
+      ÔêÜ debe retornar error 400 si faltan email o password (1 ms)
+      ÔêÜ debe retornar error 401 si el usuario no existe (1 ms)
+      ÔêÜ debe retornar error 401 si la contrase├▒a es incorrecta (2 ms)
+      ÔêÜ debe hacer login exitoso sin 2FA (2 ms)
+      ÔêÜ debe requerir 2FA si est├í habilitado (2 ms)
+      ÔêÜ debe manejar errores internos (2 ms)
+    me
+      ÔêÜ debe retornar informaci├│n del usuario autenticado (2 ms)
+      ÔêÜ debe manejar errores internos (1 ms)
+    refresh
+      ÔêÜ debe refrescar el token si es v├ílido (1 ms)
+      ÔêÜ debe retornar error 404 si el usuario no existe (9 ms)
+    logout
+      ÔêÜ debe limpiar las cookies y retornar ├®xito (30 ms)
+
+PASS Biblioteca Xonler tests/unit/services/libros.service.test.js
+  libros.service
+    searchLibros
+      ÔêÜ debe buscar libros sin filtros (4 ms)
+      ÔêÜ debe buscar libros con t├®rmino de b├║squeda (2 ms)
+      ÔêÜ debe filtrar por categor├¡as (4 ms)
+      ÔêÜ debe filtrar por disponibilidad (1 ms)
+      ÔêÜ debe filtrar por biblioteca_id (incluyendo 0 como valor v├ílido) (2 ms)
+      ÔêÜ debe filtrar por biblioteca_id como string "0" (19 ms)
+      ÔêÜ debe ignorar biblioteca_id cuando es "todas"
+      ÔêÜ debe manejar paginaci├│n (2 ms)
+      ÔêÜ debe manejar errores (33 ms)
+    findLibroById
+      ÔêÜ debe encontrar un libro por ID (25 ms)
+      ÔêÜ debe retornar null si el libro no existe (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    createLibro
+      ÔêÜ debe crear un libro exitosamente (3 ms)
+      ÔêÜ debe lanzar error si falta t├¡tulo o autor (17 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    updateLibro
+      ÔêÜ debe actualizar un libro exitosamente (1 ms)
+      ÔêÜ debe lanzar AppError si el libro no existe (4 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    deleteLibro
+      ÔêÜ debe eliminar un libro exitosamente (2 ms)
+      ÔêÜ debe lanzar AppError si el libro no existe (1 ms)
+      ÔêÜ debe lanzar AppError si tiene pr├®stamos asociados (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    updateLibroImage
+      ÔêÜ debe actualizar la imagen de un libro (1 ms)
+      ÔêÜ debe lanzar AppError si el libro no existe (1 ms)
+    obtenerRecomendaciones
+      ÔêÜ debe obtener recomendaciones para usuario (26 ms)
+      ÔêÜ debe manejar usuario sin preferencias (4 ms)
+      ÔêÜ debe filtrar categor├¡as inv├ílidas (1 ms)
+      ÔêÜ debe lanzar error si no hay usuario (2 ms)
+      ÔêÜ debe lanzar error si el usuario no existe
+      ÔêÜ debe manejar errores (3 ms)
+    normalizeLibroFilters - casos edge
+      ÔêÜ searchLibros debe normalizar l├¡mite m├íximo (1 ms)
+      ÔêÜ searchLibros debe normalizar offset negativo
+      ÔêÜ searchLibros debe parsear categor├¡as como string (1 ms)
+      ÔêÜ searchLibros debe filtrar por biblioteca_id (1 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/colegios.controller.test.js
+  colegios.controller
+    obtenerColegios
+      ÔêÜ debe obtener colegios sin filtros (4 ms)
+      ÔêÜ debe filtrar por nombre (1 ms)
+    obtenerColegioPorId
+      ÔêÜ debe obtener colegio por ID (1 ms)
+      ÔêÜ debe retornar 404 si no existe (4 ms)
+    crearColegio
+      ÔêÜ debe exportar la funci├│n crearColegio (4 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/prestamos.routes.inline.test.js
+  prestamos.routes - rutas inline
+    GET /test
+      ÔêÜ debe tener ruta configurada (4 ms)
+    GET /test-db
+      ÔêÜ debe tener ruta configurada (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/admin-biblioteca.controller.additional.test.js
+  admin-biblioteca.controller - casos adicionales
+    obtenerPrestamosBiblioteca - casos edge
+      ÔêÜ debe filtrar por estado=activos (3 ms)
+      ÔêÜ debe filtrar por estado=devueltos (1 ms)
+      ÔêÜ debe filtrar por estado=vencidos (1 ms)
+      ÔêÜ debe manejar estado desconocido (1 ms)
+    marcarPrestamoDevuelto - casos edge
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (1 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo ya fue devuelto (1 ms)
+    crearLibro - casos edge
+      ÔêÜ debe crear libro sin agregar a biblioteca si agregar_a_biblioteca=false (2 ms)
+      ÔêÜ debe usar valores por defecto para campos opcionales (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.me.test.js
+  auth.controller - me
+    me - casos edge
+      ÔêÜ debe retornar usuario si existe (7 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (3 ms)
+      ÔêÜ debe retornar 500 si hay error en la base de datos (1 ms)
+      ÔêÜ debe retornar 500 si req.user no existe (1 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/auth.routes.test.js
+  auth.routes
+    ÔêÜ debe tener ruta POST /register configurada (4 ms)
+    ÔêÜ debe tener ruta POST /login configurada (1 ms)
+    ÔêÜ debe tener ruta GET /me configurada (1 ms)
+    ÔêÜ debe tener ruta POST /refresh configurada (1 ms)
+    ÔêÜ debe tener ruta POST /logout configurada (1 ms)
+    ÔêÜ debe tener ruta POST /forgot-password configurada (2 ms)
+    ÔêÜ debe tener ruta POST /verify-reset-token configurada (1 ms)
+    ÔêÜ debe tener ruta POST /reset-password configurada (1 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/auth.controller.complete.test.js
+  auth.controller - cobertura completa
+    register - casos edge
+      ÔêÜ debe manejar error al obtener rol (3 ms)
+      ÔêÜ debe manejar error en inserci├│n (2 ms)
+    login - casos edge
+      ÔêÜ debe manejar error al verificar contrase├▒a (2 ms)
+      ÔêÜ debe manejar error al generar token (1 ms)
+    me - casos edge
+      ÔêÜ debe manejar error al obtener usuario (1 ms)
+    refresh - casos edge
+      ÔêÜ debe manejar error al obtener usuario (1 ms)
+    logout - casos edge
+      ÔêÜ debe manejar errores (1 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/libros.routes.test.js
+  libros.routes
+    ÔêÜ debe tener ruta GET /test-db configurada (2 ms)
+    ÔêÜ debe tener ruta GET /test-table configurada (1 ms)
+    ÔêÜ debe tener ruta GET /recomendaciones configurada (1 ms)
+    ÔêÜ debe tener ruta GET / configurada
+    ÔêÜ debe tener ruta GET /:id configurada (1 ms)
+
+  console.error
+    Error al obtener ID del recurso: Error: Extractor error
+        at extractor (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\unit\utils\auth-helpers.test.js:263:39)
+        at resourceIdExtractor (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\src\utils\auth-helpers.js:200:20)
+        at Object.middleware (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\unit\utils\auth-helpers.test.js:265:7)
+        at Promise.then.completed (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\runTest.js:444:34)
+        at Object.worker (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\testWorker.js:106:12)
+
+    [0m [90m 200 |[39m       resourceId [33m=[39m resourceIdExtractor(req)[33m;[39m
+     [90m 201 |[39m     } [36mcatch[39m (err) {
+    [31m[1m>[22m[39m[90m 202 |[39m       console[33m.[39merror([32m'Error al obtener ID del recurso:'[39m[33m,[39m err)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 203 |[39m       [36mreturn[39m forbidden(res[33m,[39m [32m'Error al obtener ID del recurso'[39m)[33m;[39m
+     [90m 204 |[39m     }
+     [90m 205 |[39m     [0m
+
+      at error (src/utils/auth-helpers.js:202:15)
+      at Object.middleware (tests/unit/utils/auth-helpers.test.js:265:7)
+
+PASS Biblioteca Xonler tests/unit/utils/auth-helpers.test.js
+  auth-helpers
+    getUserId
+      ÔêÜ debe retornar null si req no es v├ílido (25 ms)
+      ÔêÜ debe obtener ID de req.user (1 ms)
+      ÔêÜ debe obtener ID de req.auth.sub (1 ms)
+      ÔêÜ debe obtener ID de req.userId (4 ms)
+      ÔêÜ debe priorizar req.user sobre req.auth (5 ms)
+    getUserRole
+      ÔêÜ debe retornar null si req no es v├ílido (1 ms)
+      ÔêÜ debe obtener rol de req.user.role (1 ms)
+      ÔêÜ debe obtener rol de req.user.rol (alternativo) (1 ms)
+      ÔêÜ debe retornar null si no hay rol (1 ms)
+    isAuthenticated
+      ÔêÜ debe retornar false si no hay usuario (1 ms)
+      ÔêÜ debe retornar true si hay usuario (1 ms)
+    hasRole
+      ÔêÜ debe retornar false si role no es string v├ílido (1 ms)
+      ÔêÜ debe retornar true si el usuario tiene el rol (1 ms)
+      ÔêÜ debe retornar false si el usuario no tiene el rol (1 ms)
+      ÔêÜ debe hacer trim del rol
+    isAdmin
+      ÔêÜ debe retornar true para admin (1 ms)
+      ÔêÜ debe retornar true para supadmin
+      ÔêÜ debe retornar false para otros roles (1 ms)
+    requireAuth
+      ÔêÜ debe llamar unauthorized si req no es v├ílido (2 ms)
+      ÔêÜ debe llamar unauthorized si no est├í autenticado (1 ms)
+      ÔêÜ debe llamar next si est├í autenticado (1 ms)
+    requireRole
+      ÔêÜ debe lanzar error si role no es string v├ílido (89 ms)
+      ÔêÜ debe llamar unauthorized si no est├í autenticado (1 ms)
+      ÔêÜ debe llamar forbidden si no tiene el rol requerido (2 ms)
+      ÔêÜ debe permitir acceso a admin aunque no tenga el rol espec├¡fico (1 ms)
+      ÔêÜ debe llamar next si tiene el rol requerido
+    canAccessResource
+      ÔêÜ debe retornar false si req no es v├ílido
+      ÔêÜ debe retornar false si no est├í autenticado (1 ms)
+      ÔêÜ debe retornar true si es admin
+      ÔêÜ debe retornar true si es propietario (1 ms)
+      ÔêÜ debe retornar false si no es propietario ni admin
+      ÔêÜ debe manejar resourceUserId como string
+      ÔêÜ debe retornar false para string inv├ílido (1 ms)
+    requireResourceAccess
+      ÔêÜ debe lanzar error si extractor no es funci├│n (2 ms)
+      ÔêÜ debe llamar unauthorized si no est├í autenticado (2 ms)
+      ÔêÜ debe llamar forbidden si no puede acceder al recurso (1 ms)
+      ÔêÜ debe llamar next si puede acceder al recurso (11 ms)
+      ÔêÜ debe manejar errores del extractor (45 ms)
+
+  console.log
+    ­ƒöÆ Acceso autorizado para usuario 1 con rol admin
+
+      at log (src/utils/auth-middleware-helpers.js:58:13)
+
+  console.log
+    ­ƒöÆ Acceso autorizado para usuario 1 con rol admin
+
+      at log (src/utils/auth-middleware-helpers.js:78:13)
+
+  console.log
+    ­ƒöÆ admin 1 accediendo a recurso 999
+
+      at log (src/utils/auth-middleware-helpers.js:98:15)
+
+PASS Biblioteca Xonler tests/unit/config/database-ssl.test.js
+  database-ssl
+    createSecurePool
+      ÔêÜ debe crear pool con SSL en producci├│n (5 ms)
+      ÔêÜ debe crear pool sin SSL en desarrollo (3 ms)
+    getSSLConfig
+      ÔêÜ debe retornar configuraci├│n para development (1 ms)
+      ÔêÜ debe retornar configuraci├│n para production (5 ms)
+    validateSSLConfig
+      ÔêÜ debe validar configuraci├│n SSL (10 ms)
+      ÔêÜ debe retornar false si faltan variables SSL en producci├│n (1 ms)
+
+  console.log
+    ­ƒöÆ supadmin 1 accediendo a recurso 999
+
+      at log (src/utils/auth-middleware-helpers.js:98:15)
+
+  console.log
+    ­ƒöÆ Usuario 1 accediendo a su propio recurso 1
+
+      at log (src/utils/auth-middleware-helpers.js:110:13)
+
+  console.log
+    ­ƒöÆ Usuario 1 accediendo a su propio recurso 1
+
+      at log (src/utils/auth-middleware-helpers.js:110:13)
+
+  console.log
+    ­ƒöÆ Permiso manage_users concedido para usuario 1
+
+      at log (src/utils/auth-middleware-helpers.js:247:13)
+
+PASS Biblioteca Xonler tests/unit/utils/auth-middleware-helpers.test.js
+  auth-middleware-helpers
+    checkAuthentication
+      ÔêÜ debe retornar false y llamar unauthorized si no hay usuario (2 ms)
+      ÔêÜ debe retornar true si hay usuario (1 ms)
+    hasRoleAccess
+      ÔêÜ debe retornar true si el usuario es admin (1 ms)
+      ÔêÜ debe retornar true si el usuario es supadmin
+      ÔêÜ debe retornar true si el rol coincide con string requerido (1 ms)
+      ÔêÜ debe retornar false si el rol no coincide (1 ms)
+      ÔêÜ debe retornar true si el rol est├í en el array requerido (2 ms)
+      ÔêÜ debe retornar false si el rol no est├í en el array requerido (1 ms)
+    requireRole
+      ÔêÜ debe llamar unauthorized si no hay usuario (21 ms)
+      ÔêÜ debe llamar forbidden si el usuario no tiene el rol requerido (4 ms)
+      ÔêÜ debe llamar next si el usuario tiene el rol requerido (17 ms)
+    requireAnyRole
+      ÔêÜ debe llamar unauthorized si no hay usuario (1 ms)
+      ÔêÜ debe llamar forbidden si el usuario no tiene ninguno de los roles (1 ms)
+      ÔêÜ debe llamar next si el usuario tiene uno de los roles (4 ms)
+    requireOwnershipOrAdmin
+      ÔêÜ debe llamar unauthorized si no hay usuario (1 ms)
+      ÔêÜ debe permitir acceso a admin (7 ms)
+      ÔêÜ debe permitir acceso a supadmin (38 ms)
+      ÔêÜ debe permitir acceso si el usuario es propietario (3 ms)
+      ÔêÜ debe llamar forbidden si el usuario no es propietario ni admin (1 ms)
+      ÔêÜ debe usar el par├ímetro personalizado (5 ms)
+    extractTokenFromHeader
+      ÔêÜ debe retornar null si no hay header authorization
+      ÔêÜ debe retornar null si el header no empieza con Bearer (1 ms)
+      ÔêÜ debe extraer el token correctamente (1 ms)
+      ÔêÜ debe retornar null si el token est├í vac├¡o (1 ms)
+    setUserFromDecoded
+      ÔêÜ debe configurar req.user con informaci├│n del token (1 ms)
+      ÔêÜ debe usar id si user_id no existe (1 ms)
+      ÔêÜ debe agregar authSource si se proporciona (1 ms)
+    handleAuthError
+      ÔêÜ debe manejar JsonWebTokenError (31 ms)
+      ÔêÜ debe manejar TokenExpiredError (2 ms)
+      ÔêÜ debe retornar false para errores no reconocidos (2 ms)
+      ÔêÜ debe agregar authSource a la respuesta si se proporciona (3 ms)
+    handleAuthServerError
+      ÔêÜ debe retornar respuesta 500 (3 ms)
+      ÔêÜ debe incluir authSource si se proporciona (4 ms)
+    checkPermission
+      ÔêÜ debe llamar unauthorized si no hay usuario (5 ms)
+      ÔêÜ debe llamar forbidden si el usuario no tiene el permiso (3 ms)
+      ÔêÜ debe llamar next si el usuario tiene el permiso (7 ms)
+
+  console.warn
+    Error en conversi├│n de tipo, usando valor por defecto: Error
+
+    [0m [90m 23 |[39m       [36mreturn[39m converterFn(value[33m,[39m customDefault)[33m;[39m
+     [90m 24 |[39m     } [36mcatch[39m (err) {
+    [31m[1m>[22m[39m[90m 25 |[39m       console[33m.[39mwarn([32m'Error en conversi├│n de tipo, usando valor por defecto:'[39m[33m,[39m err[33m.[39mmessage)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 26 |[39m       [36mif[39m (customDefault [33m===[39m undefined) {
+     [90m 27 |[39m         [36mreturn[39m defaultValue[33m;[39m
+     [90m 28 |[39m       }[0m
+
+      at warn (src/utils/data-helpers.js:25:15)
+      at Object.converter (tests/unit/utils/data-helpers.test.js:47:14)
+
+PASS Biblioteca Xonler tests/unit/routes/bibliotecas.routes.test.js
+  bibliotecas.routes
+    ÔêÜ debe tener ruta GET / configurada (1 ms)
+    ÔêÜ debe tener ruta GET /:id configurada
+    ÔêÜ debe tener ruta GET /:id/libros configurada (1 ms)
+    ÔêÜ debe tener ruta POST / configurada (1 ms)
+    ÔêÜ debe tener ruta PUT /:id configurada
+    ÔêÜ debe tener ruta DELETE /:id configurada
+
+  console.warn
+    Error en conversi├│n de tipo, usando valor por defecto: Error
+
+    [0m [90m 23 |[39m       [36mreturn[39m converterFn(value[33m,[39m customDefault)[33m;[39m
+     [90m 24 |[39m     } [36mcatch[39m (err) {
+    [31m[1m>[22m[39m[90m 25 |[39m       console[33m.[39mwarn([32m'Error en conversi├│n de tipo, usando valor por defecto:'[39m[33m,[39m err[33m.[39mmessage)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 26 |[39m       [36mif[39m (customDefault [33m===[39m undefined) {
+     [90m 27 |[39m         [36mreturn[39m defaultValue[33m;[39m
+     [90m 28 |[39m       }[0m
+
+      at warn (src/utils/data-helpers.js:25:15)
+      at Object.converter (tests/unit/utils/data-helpers.test.js:54:14)
+
+PASS Biblioteca Xonler tests/unit/controllers/preferencias.controller.test.js
+  preferencias.controller
+    getPreferenciasMe
+      ÔêÜ debe obtener preferencias del usuario actual (5 ms)
+      ÔêÜ debe crear preferencias por defecto si no existen (1 ms)
+    putPreferenciasMe
+      ÔêÜ debe actualizar preferencias del usuario actual (1 ms)
+      ÔêÜ debe retornar error si la validaci├│n falla (2 ms)
+    getPreferenciasById
+      ÔêÜ debe obtener preferencias por ID si es admin (3 ms)
+      ÔêÜ debe permitir al usuario ver sus propias preferencias (1 ms)
+      ÔêÜ debe retornar 403 si no tiene permisos (1 ms)
+      ÔêÜ debe retornar 404 si las preferencias no existen (1 ms)
+    putPreferenciasById
+      ÔêÜ debe actualizar preferencias por ID si es admin (1 ms)
+      ÔêÜ debe retornar 403 si no tiene permisos
+
+  console.warn
+    Error parseando JSON, retornando objeto vac├¡o: Unexpected token 'i', "invalid json" is not valid JSON
+
+    [0m [90m 64 |[39m     } [36mcatch[39m (error) {
+     [90m 65 |[39m       [90m// Error de parsing JSON - retornar objeto vac├¡o[39m
+    [31m[1m>[22m[39m[90m 66 |[39m       console[33m.[39mwarn([32m'Error parseando JSON, retornando objeto vac├¡o:'[39m[33m,[39m error[33m.[39mmessage)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 67 |[39m       [36mreturn[39m {}[33m;[39m
+     [90m 68 |[39m     }
+     [90m 69 |[39m   }[0m
+
+      at warn (src/utils/data-helpers.js:66:15)
+      at Object.asObject (tests/unit/utils/data-helpers.test.js:83:14)
+
+PASS Biblioteca Xonler tests/unit/routes/libros.routes.inline.test.js
+  libros.routes - rutas inline
+    GET /test-db
+      ÔêÜ debe tener ruta configurada (2 ms)
+    GET /test-table
+      ÔêÜ debe tener ruta configurada (2 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-base-middleware.complete.test.js
+  register-base-middleware - cobertura completa
+    ÔêÜ debe registrar todos los middlewares (4 ms)
+    ÔêÜ debe registrar helmetConfig (1 ms)
+    ÔêÜ debe registrar requestLogger (1 ms)
+    ÔêÜ debe registrar securityLogger (1 ms)
+    ÔêÜ debe adjuntar encryptedLogger (1 ms)
+    ÔêÜ debe registrar inputValidator (1 ms)
+    ÔêÜ debe registrar security monitoring middlewares (27 ms)
+    ÔêÜ debe registrar performance monitoring (6 ms)
+    ÔêÜ debe registrar express.json (3 ms)
+    ÔêÜ debe registrar cookieParser (3 ms)
+    ÔêÜ debe registrar CORS con configuraci├│n correcta (1 ms)
+    ÔêÜ debe registrar debug logging (3 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/data-helpers.test.js
+  data-helpers
+    isFiniteNumber
+      ÔêÜ debe retornar true para n├║meros finitos v├ílidos (2 ms)
+      ÔêÜ debe retornar false para valores no num├®ricos (17 ms)
+      ÔêÜ debe retornar false para NaN e Infinity (1 ms)
+    createTypeConverter
+      ÔêÜ debe crear un convertidor que ejecuta la funci├│n (1 ms)
+      ÔêÜ debe retornar valor por defecto cuando falla (39 ms)
+      ÔêÜ debe usar customDefault si se proporciona (34 ms)
+    asObject
+      ÔêÜ debe retornar objeto vac├¡o para null/undefined (3 ms)
+      ÔêÜ debe retornar el objeto si ya es un objeto (5 ms)
+      ÔêÜ debe parsear string JSON v├ílido (2 ms)
+      ÔêÜ debe retornar objeto vac├¡o para string vac├¡o (5 ms)
+      ÔêÜ debe retornar objeto vac├¡o para arrays (2 ms)
+      ÔêÜ debe retornar objeto vac├¡o para JSON inv├ílido (7 ms)
+    asBoolean
+      ÔêÜ debe retornar false para null/undefined
+      ÔêÜ debe retornar el valor para booleanos (1 ms)
+      ÔêÜ debe convertir strings a boolean (47 ms)
+      ÔêÜ debe convertir n├║meros a boolean (1 ms)
+    asNumber
+      ÔêÜ debe convertir strings num├®ricos (1 ms)
+      ÔêÜ debe retornar valor por defecto para valores inv├ílidos (1 ms)
+      ÔêÜ debe retornar el n├║mero si ya es un n├║mero
+      ÔêÜ debe retornar default para NaN
+    asInteger
+      ÔêÜ debe convertir strings a enteros (1 ms)
+      ÔêÜ debe retornar valor por defecto para valores inv├ílidos (1 ms)
+      ÔêÜ debe convertir n├║meros a enteros (2 ms)
+    sanitizeString
+      ÔêÜ debe eliminar tags HTML (1 ms)
+      ÔêÜ debe escapar caracteres especiales (1 ms)
+      ÔêÜ debe eliminar caracteres de control (1 ms)
+      ÔêÜ debe trim espacios
+      ÔêÜ debe retornar string vac├¡o para valores no string (1 ms)
+    cleanObject
+      ÔêÜ debe eliminar propiedades undefined/null/vac├¡as (2 ms)
+      ÔêÜ debe retornar objeto vac├¡o para objeto vac├¡o
+    getValue
+      ÔêÜ debe obtener valor de objeto (1 ms)
+      ÔêÜ debe retornar default si no existe
+      ÔêÜ debe retornar default para objeto inv├ílido (1 ms)
+    indexBy
+      ÔêÜ debe indexar array por clave (1 ms)
+      ÔêÜ debe retornar objeto vac├¡o para array vac├¡o
+      ÔêÜ debe retornar objeto vac├¡o para clave inv├ílida
+
+  console.log
+    ­ƒöæ [ENCRYPTION] Clave maestra cargada exitosamente
+
+      at SimpleEncryption.log [as initializeEncryption] (src/utils/simple-encryption.js:32:17)
+
+PASS Biblioteca Xonler tests/unit/utils/error-handler.test.js
+  error-handler
+    getPostgresErrorMessage
+      ÔêÜ debe retornar mensaje para c├│digo conocido (2 ms)
+      ÔêÜ debe retornar mensaje por defecto para c├│digo desconocido (1 ms)
+      ÔêÜ debe retornar mensaje por defecto para c├│digo inv├ílido
+    getPostgresErrorStatusCode
+      ÔêÜ debe retornar c├│digo HTTP para c├│digo conocido
+      ÔêÜ debe retornar 500 para c├│digo desconocido (1 ms)
+    validateResponse
+      ÔêÜ debe lanzar error si res no es v├ílido (45 ms)
+      ÔêÜ no debe lanzar error si res es v├ílido (2 ms)
+    validateError
+      ÔêÜ debe retornar el error si existe (1 ms)
+      ÔêÜ debe retornar nuevo error si no existe (1 ms)
+    handleError
+      ÔêÜ debe manejar errores de PostgreSQL (11 ms)
+      ÔêÜ debe manejar errores gen├®ricos (1 ms)
+      ÔêÜ debe usar mensaje por defecto si no hay mensaje (2 ms)
+    asyncHandler
+      ÔêÜ debe envolver funci├│n async y manejar errores (2 ms)
+      ÔêÜ debe ejecutar funci├│n exitosamente (1 ms)
+    promiseHandler
+      ÔêÜ debe manejar promesa exitosa (1 ms)
+      ÔêÜ debe manejar promesa rechazada (4 ms)
+      ÔêÜ debe lanzar error si no es promesa (20 ms)
+
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":1,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.294Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":1,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.356Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":2,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.357Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":3,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.358Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":4,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.359Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":5,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.360Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":5,"blockedUntil":"2025-11-13T20:38:37.357Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.361Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":6,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.362Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":6,"blockedUntil":"2025-11-13T20:38:37.356Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.364Z","type":"security"}
+[33mwarn[39m: Acceso bloqueado desde IP {"ip":"192.168.1.1","reason":"IP bloqueada por intentos fallidos","timestamp":"2025-11-13T19:38:37.366Z","type":"security","url":"/api/test"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":7,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.376Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":7,"blockedUntil":"2025-11-13T20:38:37.359Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.379Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":8,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.381Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":8,"blockedUntil":"2025-11-13T20:38:37.357Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.382Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":9,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.383Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":9,"blockedUntil":"2025-11-13T20:38:37.356Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.383Z","type":"security"}
+[33mwarn[39m: Acceso bloqueado desde IP {"ip":"192.168.1.1","reason":"IP bloqueada por intentos fallidos","timestamp":"2025-11-13T19:38:37.384Z","type":"security","url":"/api/test"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":10,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.384Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":10,"blockedUntil":"2025-11-13T20:38:37.359Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.385Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":11,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.385Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":11,"blockedUntil":"2025-11-13T20:38:37.357Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.386Z","type":"security"}
+[33mwarn[39m: Intento de autenticaci├│n fallido {"attempts":12,"body":{},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.386Z","type":"security"}
+[31merror[39m: IP bloqueada por intentos excesivos {"attempts":12,"blockedUntil":"2025-11-13T20:38:37.356Z","ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.388Z","type":"security"}
+[32minfo[39m: Audit Event {"action":"DATA_CHANGE","details":{"body":{},"ip":"192.168.1.1","method":"GET","query":{},"statusCode":201,"url":"/api/test"},"ip":"192.168.1.1","timestamp":"2025-11-13T19:38:37.395Z","type":"audit","userId":1}
+PASS Biblioteca Xonler tests/unit/middleware/security-monitoring.complete.test.js
+  security-monitoring - cobertura completa
+    monitorAuthAttempts - casos edge
+      ÔêÜ debe limpiar intentos antiguos (9 ms)
+      ÔêÜ debe registrar intento fallido en respuesta 401 (63 ms)
+      ÔêÜ debe bloquear IP despu├®s de maxAttempts (34 ms)
+    monitorSuspiciousActivity - casos edge
+      ÔêÜ debe detectar m├║ltiples patrones (3 ms)
+      ÔêÜ debe detectar headers sospechosos
+    monitorDataChanges - casos edge
+      ÔêÜ debe registrar cambios en endpoints sensibles (5 ms)
+      ÔêÜ no debe registrar si no es endpoint sensible
+
+PASS Biblioteca Xonler tests/unit/controllers/admin-biblioteca.controller.test.js
+  admin-biblioteca.controller
+    obtenerBibliotecaAsignada
+      ÔêÜ debe obtener la biblioteca asignada (7 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (5 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    obtenerEstadisticasBiblioteca
+      ÔêÜ debe obtener estad├¡sticas de la biblioteca (2 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    obtenerLibrosBiblioteca
+      ÔêÜ debe obtener libros de la biblioteca (3 ms)
+      ÔêÜ debe filtrar por t├®rmino de b├║squeda
+      ÔêÜ debe filtrar por categor├¡a (1 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada
+      ÔêÜ debe manejar errores (1 ms)
+    agregarLibroABiblioteca
+      ÔêÜ debe agregar libro a la biblioteca (4 ms)
+      ÔêÜ debe retornar 409 si el libro ya est├í en la biblioteca (1 ms)
+      ÔêÜ debe retornar 404 si el libro no existe
+      ÔêÜ debe retornar 400 si falta libro_id (1 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    removerLibroDeBiblioteca
+      ÔêÜ debe remover libro de la biblioteca (1 ms)
+      ÔêÜ debe retornar 400 si tiene pr├®stamos activos (1 ms)
+      ÔêÜ debe retornar 404 si el libro no est├í en la biblioteca (1 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada
+      ÔêÜ debe manejar errores
+    crearLibro
+      ÔêÜ debe crear un libro exitosamente (1 ms)
+      ÔêÜ debe retornar 400 si faltan campos requeridos (1 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada
+      ÔêÜ debe manejar errores (1 ms)
+    obtenerPrestamosBiblioteca
+      ÔêÜ debe obtener pr├®stamos de la biblioteca (2 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    marcarPrestamoDevuelto
+      ÔêÜ debe marcar pr├®stamo como devuelto (1 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo ya fue devuelto (1 ms)
+      ÔêÜ debe retornar 404 si no hay biblioteca asignada (2 ms)
+      ÔêÜ debe retornar 404 si el pr├®stamo no existe (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/http-response.test.js
+  http-response
+    validateResponse
+      ÔêÜ debe lanzar error si res no es v├ílido (69 ms)
+      ÔêÜ no debe lanzar error si res es v├ílido (1 ms)
+    validateStatusCode
+      ÔêÜ debe retornar el c├│digo si es v├ílido (2 ms)
+      ÔêÜ debe retornar 500 para c├│digos inv├ílidos (2 ms)
+    validateMessage
+      ÔêÜ debe retornar el mensaje si es v├ílido
+      ÔêÜ debe retornar valor por defecto para mensajes inv├ílidos (6 ms)
+    success
+      ÔêÜ debe retornar respuesta exitosa con datos (7 ms)
+      ÔêÜ debe retornar respuesta exitosa sin mensaje
+    error
+      ÔêÜ debe retornar respuesta de error (1 ms)
+      ÔêÜ debe usar c├│digo 500 por defecto (2 ms)
+    badRequest
+      ÔêÜ debe retornar 400
+    notFound
+      ÔêÜ debe retornar 404
+    unauthorized
+      ÔêÜ debe retornar 401 (1 ms)
+    forbidden
+      ÔêÜ debe retornar 403
+    conflict
+      ÔêÜ debe retornar 409 (1 ms)
+    created
+      ÔêÜ debe retornar 201
+    noContent
+      ÔêÜ debe retornar 204 (1 ms)
+    paginated
+      ÔêÜ debe retornar respuesta paginada (1 ms)
+    json
+      ÔêÜ debe retornar JSON directo (1 ms)
+    createResponse
+      ÔêÜ debe crear respuesta con statusCode y datos (1 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/error-handler.additional.test.js
+  error-handler - casos adicionales
+    handleError - casos edge
+      ÔêÜ debe manejar AppError con statusCode inv├ílido (5 ms)
+      ÔêÜ debe manejar AppError con details (1 ms)
+      ÔêÜ debe manejar AppError sin message (1 ms)
+      ÔêÜ debe manejar todos los c├│digos de error de PostgreSQL (5 ms)
+      ÔêÜ debe manejar error con c├│digo no string (1 ms)
+      ÔêÜ debe manejar fallbackMessage vac├¡o (1 ms)
+      ÔêÜ debe manejar context no string (1 ms)
+    asyncHandler - casos edge
+      ÔêÜ debe lanzar error si fn no es funci├│n (36 ms)
+      ÔêÜ debe manejar errorMessage vac├¡o (2 ms)
+      ÔêÜ debe usar nombre de funci├│n si est├í disponible (1 ms)
+    promiseHandler - casos edge
+      ÔêÜ debe manejar AppError en promesa (2 ms)
+      ÔêÜ debe manejar errorMessage vac├¡o (1 ms)
+      ÔêÜ debe lanzar error si promise es null (2 ms)
+      ÔêÜ debe lanzar error si promise es undefined (3 ms)
+      ÔêÜ debe lanzar error si no es promesa (1 ms)
+
+  console.error
+    Error verificando token JWT: JsonWebTokenError {
+      name: 'JsonWebTokenError',
+      message: 'invalid token'
+    }
+
+    [0m [90m 30 |[39m       })[33m;[39m
+     [90m 31 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 32 |[39m       console[33m.[39merror([32m'Error verificando token JWT:'[39m[33m,[39m error)[33m;[39m
+     [90m    |[39m               [31m[1m^[22m[39m
+     [90m 33 |[39m       [36mthrow[39m [36mnew[39m [33mError[39m([32m'Token inv├ílido'[39m)[33m;[39m
+     [90m 34 |[39m     }
+     [90m 35 |[39m   }[0m
+
+      at SimpleJWT.error [as verifyToken] (src/utils/simple-jwt.js:32:15)
+      at verifyToken (tests/unit/utils/simple-jwt.test.js:29:11)
+      at Object.<anonymous> (node_modules/expect/build/toThrowMatchers.js:74:11)
+      at Object.throwingMatcher [as toThrow] (node_modules/expect/build/index.js:320:21)
+      at Object.toThrow (tests/unit/utils/simple-jwt.test.js:30:8)
+
+PASS Biblioteca Xonler tests/unit/utils/simple-jwt.test.js
+  SimpleJWT
+    ÔêÜ debe generar un token JWT v├ílido (16 ms)
+    ÔêÜ debe verificar un token v├ílido correctamente (38 ms)
+    ÔêÜ debe lanzar error al verificar token inv├ílido (59 ms)
+    ÔêÜ debe generar token con expiraci├│n personalizada (5 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/supadmin.controller.test.js
+  supadmin.controller
+    obtenerEstadisticasGlobales
+      ÔêÜ debe obtener estad├¡sticas globales exitosamente (5 ms)
+      ÔêÜ debe manejar errores (19 ms)
+    obtenerLogs
+      ÔêÜ debe obtener logs de aplicaci├│n (4 ms)
+      ÔêÜ debe obtener logs de seguridad (1 ms)
+      ÔêÜ debe obtener logs de auditor├¡a (7 ms)
+      ÔêÜ debe obtener logs de error (2 ms)
+      ÔêÜ debe filtrar logs por nivel (3 ms)
+      ÔêÜ debe aplicar paginaci├│n (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    obtenerActividadReciente
+      ÔêÜ debe obtener actividad reciente exitosamente (4 ms)
+      ÔêÜ debe filtrar por tipo (4 ms)
+      ÔêÜ debe manejar errores (4 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/query-builder.test.js
+  QueryBuilder
+    constructor
+      ÔêÜ debe inicializar con query base (5 ms)
+    where
+      ÔêÜ debe agregar condici├│n WHERE simple (4 ms)
+      ÔêÜ debe ignorar valores null/undefined/vac├¡os
+      ÔêÜ debe soportar operador ILIKE (2 ms)
+      ÔêÜ debe soportar operador IN con array (3 ms)
+      ÔêÜ debe ignorar array vac├¡o en IN (2 ms)
+    whereRaw
+      ÔêÜ debe agregar condici├│n raw sin par├ímetros
+      ÔêÜ debe reemplazar placeholders ? con par├ímetros numerados (2 ms)
+    orderBy
+      ÔêÜ debe agregar ORDER BY (2 ms)
+      ÔêÜ debe usar ASC por defecto (2 ms)
+    paginate
+      ÔêÜ debe establecer limit y offset (1 ms)
+      ÔêÜ debe validar limit m├¡nimo
+      ÔêÜ debe validar offset m├¡nimo (1 ms)
+    build
+      ÔêÜ debe construir query completa (5 ms)
+      ÔêÜ debe construir query sin WHERE si no hay condiciones
+
+PASS Biblioteca Xonler tests/unit/utils/http-response.additional.test.js
+  http-response - casos adicionales
+    success - casos edge
+      ÔêÜ debe manejar data null (2 ms)
+      ÔêÜ debe manejar message vac├¡o (11 ms)
+      ÔêÜ debe manejar message con espacios
+      ÔêÜ debe manejar statusCode personalizado
+    error - casos edge
+      ÔêÜ debe manejar details null (1 ms)
+      ÔêÜ debe manejar details undefined
+    notFound - casos edge
+      ÔêÜ debe manejar resource vac├¡o (1 ms)
+      ÔêÜ debe manejar resource con espacios (3 ms)
+    paginated - casos edge
+      ÔêÜ debe manejar data no array
+      ÔêÜ debe manejar total negativo (3 ms)
+      ÔêÜ debe manejar limit negativo (1 ms)
+      ÔêÜ debe manejar offset negativo (1 ms)
+      ÔêÜ debe manejar valores decimales (10 ms)
+      ÔêÜ debe manejar statusCode personalizado (2 ms)
+    validateMessage - casos edge
+      ÔêÜ debe manejar mensaje con solo espacios
+      ÔêÜ debe manejar mensaje undefined (1 ms)
+    validateStatusCode - casos edge
+      ÔêÜ debe manejar c├│digos en l├¡mites (1 ms)
+      ÔêÜ debe manejar c├│digos fuera de l├¡mites (1 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/admin-biblioteca.routes.test.js
+  admin-biblioteca.routes
+    ÔêÜ debe tener ruta GET /biblioteca configurada (1 ms)
+    ÔêÜ debe tener ruta GET /estadisticas configurada
+    ÔêÜ debe tener ruta GET /libros configurada (1 ms)
+    ÔêÜ debe tener ruta POST /libros configurada
+    ÔêÜ debe tener ruta POST /libros/crear configurada (1 ms)
+    ÔêÜ debe tener ruta DELETE /libros/:biblioteca_libro_id configurada
+    ÔêÜ debe tener ruta GET /prestamos configurada (1 ms)
+    ÔêÜ debe tener ruta PATCH /prestamos/:prestamo_id/devolver configurada
+
+PASS Biblioteca Xonler tests/unit/controllers/prestamos.controller.complete.test.js
+  prestamos.controller - cobertura completa
+    buildPrestamosFilters
+      ÔêÜ debe construir filtros con todos los par├ímetros (13 ms)
+      ÔêÜ debe manejar activo=false (3 ms)
+    crearPrestamo - casos edge
+      ÔêÜ debe manejar error en transacci├│n (23 ms)
+    marcarDevolucion - casos edge
+      ÔêÜ debe manejar error al actualizar (10 ms)
+    renovarPrestamo - casos edge
+      ÔêÜ debe manejar error al actualizar (1 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/cookie-utils.test.js
+  cookie-utils
+    setSecureCookie
+      ÔêÜ debe establecer cookie con opciones por defecto (31 ms)
+      ÔêÜ debe establecer cookie en producci├│n con secure=true (2 ms)
+      ÔêÜ debe usar dominio si est├í configurado (5 ms)
+      ÔêÜ debe sobrescribir opciones por defecto (1 ms)
+      ÔêÜ debe truncar valores muy largos (3 ms)
+      ÔêÜ debe manejar valores null o undefined
+    clearSecureCookie
+      ÔêÜ debe limpiar cookie con opciones correctas (3 ms)
+      ÔêÜ debe usar dominio si est├í configurado
+    setAuthCookies
+      ÔêÜ debe establecer cookies de autenticaci├│n (1 ms)
+      ÔêÜ debe retornar false si no hay token
+      ÔêÜ debe usar remember para extender duraci├│n
+      ÔêÜ debe manejar user con rol o role (1 ms)
+      ÔêÜ debe manejar user con nombre o name (1 ms)
+      ÔêÜ debe establecer solo token si no hay user (2 ms)
+    clearAuthCookies
+      ÔêÜ debe limpiar todas las cookies de autenticaci├│n (2 ms)
+    checkCookieStatus
+      ÔêÜ debe verificar estado de cookies cuando existen (1 ms)
+      ÔêÜ debe verificar estado cuando no hay cookies (1 ms)
+      ÔêÜ debe manejar req sin cookies (1 ms)
+      ÔêÜ debe verificar estado parcial (1 ms)
+
+PASS Biblioteca Xonler tests/unit/middleware/hybrid-auth.test.js
+  hybrid-auth middleware
+    hybridAuth
+      ÔêÜ debe usar token de cookie si est├í disponible (2 ms)
+      ÔêÜ debe usar token de header Authorization como fallback (6 ms)
+      ÔêÜ debe retornar 401 si no hay token (1 ms)
+      ÔêÜ debe manejar errores de autenticaci├│n (1 ms)
+    debugAuth
+      ÔêÜ debe ejecutar next sin modificar request (1 ms)
+      ÔêÜ debe mostrar informaci├│n de usuario si est├í presente (50 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/usuarios.controller.test.js
+  usuarios.controller
+    obtenerUsuarios
+      ÔêÜ debe obtener todos los usuarios sin filtros (5 ms)
+      ÔêÜ debe filtrar por rol (3 ms)
+      ÔêÜ debe buscar por texto (1 ms)
+      ÔêÜ debe manejar paginaci├│n (2 ms)
+      ÔêÜ debe manejar errores (5 ms)
+    obtenerUsuarioActual
+      ÔêÜ debe retornar error 401 si no hay usuario autenticado (1 ms)
+      ÔêÜ debe obtener el usuario actual desde req.user (5 ms)
+      ÔêÜ debe obtener el usuario actual desde req.userId (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    obtenerUsuarioPorId
+      ÔêÜ debe obtener un usuario por ID (2 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (4 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    crearUsuario
+      ÔêÜ debe retornar error 400 si faltan campos obligatorios (1 ms)
+      ÔêÜ debe retornar error 400 si el email ya existe (1 ms)
+      ÔêÜ debe crear un usuario exitosamente (2 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    loginUsuario
+      ÔêÜ debe retornar error 400 si faltan datos (1 ms)
+      ÔêÜ debe retornar error 401 si las credenciales son incorrectas (1 ms)
+      ÔêÜ debe retornar error 401 si la contrase├▒a es incorrecta (1 ms)
+      ÔêÜ debe hacer login exitoso y generar token (2 ms)
+      ÔêÜ debe manejar errores (1 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/bibliotecas.controller.test.js
+  bibliotecas.controller
+    obtenerBibliotecas
+      ÔêÜ debe obtener todas las bibliotecas sin filtros (3 ms)
+      ÔêÜ debe filtrar por t├®rmino de b├║squeda (1 ms)
+      ÔêÜ debe filtrar por colegio_id
+      ÔêÜ debe manejar paginaci├│n (24 ms)
+      ÔêÜ debe limitar el l├¡mite m├íximo a 100 (2 ms)
+      ÔêÜ debe manejar errores (14 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/supadmin.controller.complete.test.js
+  supadmin.controller - cobertura completa
+    obtenerEstadisticasGlobales - casos edge
+      ÔêÜ debe procesar datos vac├¡os correctamente (3 ms)
+      ÔêÜ debe manejar error en consultas (1 ms)
+      ÔêÜ debe procesar categor├¡as null como "Sin categor├¡a" (1 ms)
+    obtenerActividadReciente - casos edge
+      ÔêÜ debe filtrar por tipo si se proporciona (1 ms)
+      ÔêÜ debe manejar error de base de datos
+    obtenerLogs - casos edge
+      ÔêÜ debe manejar error en processApplicationLogs
+
+PASS Biblioteca Xonler tests/unit/controllers/prestamos.controller.additional.test.js
+  prestamos.controller - casos adicionales
+    buildPrestamosFilters - casos edge
+      ÔêÜ debe filtrar por activo=false (5 ms)
+      ÔêÜ debe filtrar por fecha_desde (1 ms)
+      ÔêÜ debe filtrar por fecha_hasta (1 ms)
+      ÔêÜ debe filtrar por m├║ltiples filtros
+      ÔêÜ debe manejar errores
+
+PASS Biblioteca Xonler tests/unit/controllers/prestamos.controller.test.js
+  prestamos.controller
+    obtenerPrestamos
+      ÔêÜ debe obtener todos los pr├®stamos sin filtros (10 ms)
+      ÔêÜ debe filtrar por usuario_id (2 ms)
+      ÔêÜ debe filtrar por biblioteca_id (1 ms)
+      ÔêÜ debe filtrar por activo=true (1 ms)
+      ÔêÜ debe filtrar por activo=false (1 ms)
+      ÔêÜ debe manejar paginaci├│n (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    obtenerPrestamoPorId
+      ÔêÜ debe obtener un pr├®stamo por ID (1 ms)
+      ÔêÜ debe retornar 404 si el pr├®stamo no existe (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    crearPrestamo
+      ÔêÜ debe retornar 401 si no hay usuario autenticado (2 ms)
+      ÔêÜ debe retornar 400 si falta libro_id (1 ms)
+      ÔêÜ debe retornar 404 si el libro no existe (1 ms)
+      ÔêÜ debe retornar 409 si el libro no est├í disponible (1 ms)
+      ÔêÜ debe retornar 404 si no hay copias disponibles
+      ÔêÜ debe retornar 409 si el usuario ya tiene un pr├®stamo activo (1 ms)
+      ÔêÜ debe crear un pr├®stamo exitosamente (2 ms)
+      ÔêÜ debe manejar errores en transacci├│n (2 ms)
+    marcarDevolucion
+      ÔêÜ debe retornar 404 si el pr├®stamo no existe (1 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo ya fue devuelto (1 ms)
+      ÔêÜ debe retornar 403 si no tiene permisos (1 ms)
+      ÔêÜ debe permitir a admin devolver cualquier pr├®stamo (1 ms)
+      ÔêÜ debe marcar devoluci├│n exitosamente (3 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    renovarPrestamo
+      ÔêÜ debe retornar 404 si el pr├®stamo no existe (1 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo ya fue devuelto (1 ms)
+      ÔêÜ debe retornar 403 si no tiene permisos (1 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo est├í vencido (1 ms)
+      ÔêÜ debe renovar pr├®stamo exitosamente (2 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    obtenerPrestamosUsuarioActual
+      ÔêÜ debe manejar error si no hay usuario autenticado (1 ms)
+      ÔêÜ debe obtener pr├®stamos del usuario actual (1 ms)
+      ÔêÜ debe manejar errores
+
+PASS Biblioteca Xonler tests/unit/routes/twofa.routes.test.js
+  twofa.routes
+    ÔêÜ debe tener ruta POST /login/2fa configurada (2 ms)
+    ÔêÜ debe tener ruta POST /2fa/setup configurada (1 ms)
+    ÔêÜ debe tener ruta POST /2fa/verify configurada (1 ms)
+    ÔêÜ debe tener ruta POST /2fa/disable configurada
+    ÔêÜ debe tener ruta GET /2fa/status configurada (1 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/prestamos.controller.additional2.test.js
+  prestamos.controller - casos adicionales 2
+    crearPrestamo - casos edge
+      ÔêÜ debe retornar 401 si no est├í autenticado (2 ms)
+      ÔêÜ debe retornar 404 si el libro no existe (6 ms)
+      ÔêÜ debe retornar 409 si el libro no est├í disponible (1 ms)
+      ÔêÜ debe retornar 409 si ya tiene pr├®stamo activo del mismo libro (1 ms)
+      ÔêÜ debe usar fecha_prestamo del body si se proporciona (2 ms)
+      ÔêÜ debe hacer rollback en caso de error (5 ms)
+    marcarDevolucion - casos edge
+      ÔêÜ debe retornar 403 si no es el propietario ni admin (2 ms)
+      ÔêÜ debe permitir a admin devolver cualquier pr├®stamo (1 ms)
+    renovarPrestamo - casos edge
+      ÔêÜ debe retornar 403 si no es el propietario (4 ms)
+      ÔêÜ debe retornar 400 si el pr├®stamo est├í vencido (1 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/preferencias-helpers.additional.test.js
+  preferencias-helpers - casos adicionales
+    validatePreferences - casos edge
+      ÔêÜ debe validar todos los idiomas permitidos (2 ms)
+      ÔêÜ debe validar todos los temas permitidos (1 ms)
+      ÔêÜ debe validar todos los tama├▒os de fuente permitidos (1 ms)
+      ÔêÜ debe validar todos los maxResultados permitidos (6 ms)
+      ÔêÜ debe retornar valid: true si no hay preferencias (1 ms)
+    getPreferencesByUserId
+      ÔêÜ debe retornar null si no hay preferencias (2 ms)
+      ÔêÜ debe retornar preferencias si existen (1 ms)
+    createDefaultPreferences
+      ÔêÜ debe crear preferencias con valores por defecto (2 ms)
+    upsertPreferences - casos edge
+      ÔêÜ debe crear preferencias si no existen (1 ms)
+      ÔêÜ debe actualizar preferencias si existen (1 ms)
+      ÔêÜ debe usar valores por defecto para campos faltantes en insert (1 ms)
+      ÔêÜ debe usar nullish coalescing para booleanos
+
+PASS Biblioteca Xonler tests/unit/controllers/twofa.controller.complete.test.js
+  twofa.controller - cobertura completa
+    get2FAStatus - casos edge
+      ÔêÜ debe usar req.auth.sub si est├í disponible (2 ms)
+      ÔêÜ debe usar req.user.id si req.auth no est├í disponible (2 ms)
+    setup2FA - casos edge
+      ÔêÜ debe manejar error al generar QR (1 ms)
+      ÔêÜ debe usar nombre si email no est├í disponible (5 ms)
+    verify2FA - casos edge
+      ÔêÜ debe manejar error al verificar c├│digo (1 ms)
+    disable2FA - casos edge
+      ÔêÜ debe manejar error al desactivar (1 ms)
+    verify2FALogin - casos edge
+      ÔêÜ debe manejar error al obtener rol (2 ms)
+    generatePending2FAToken
+      ÔêÜ debe generar token con sub y twofa (3 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/validation-helpers.test.js
+  validation-helpers
+    createValidator
+      ÔêÜ debe crear un validador que retorna valid: true cuando la funci├│n retorna true (2 ms)
+      ÔêÜ debe crear un validador que retorna valid: false cuando la funci├│n retorna false (1 ms)
+      ÔêÜ debe manejar errores en la funci├│n validadora (2 ms)
+      ÔêÜ debe aceptar un objeto con valid como resultado (1 ms)
+    validateRequired
+      ÔêÜ debe retornar valid: true cuando todos los campos est├ín presentes (1 ms)
+      ÔêÜ debe retornar valid: false cuando faltan campos (1 ms)
+      ÔêÜ debe retornar error cuando fields no es un array (1 ms)
+      ÔêÜ debe retornar error cuando data no es un objeto (1 ms)
+      ÔêÜ debe ignorar campos vac├¡os en la lista de campos
+    requireFields
+      ÔêÜ debe llamar next() cuando todos los campos est├ín presentes (1 ms)
+      ÔêÜ debe retornar badRequest cuando faltan campos (1 ms)
+      ÔêÜ debe retornar error cuando req.body no existe (1 ms)
+    isValidEmail
+      ÔêÜ debe validar emails correctos (1 ms)
+      ÔêÜ debe rechazar emails inv├ílidos (3 ms)
+      ÔêÜ debe rechazar valores no string (2 ms)
+    validateEmail
+      ÔêÜ debe validar email y retornar null si es v├ílido (1 ms)
+      ÔêÜ debe retornar badRequest si email es inv├ílido (1 ms)
+      ÔêÜ debe lanzar error si res no es v├ílido (28 ms)
+    validateEnum
+      ÔêÜ debe validar valores en enum (2 ms)
+      ÔêÜ debe rechazar valores fuera del enum
+      ÔêÜ debe retornar error si allowedValues no es array (1 ms)
+    validateRange
+      ÔêÜ debe validar n├║meros en rango (1 ms)
+      ÔêÜ debe rechazar n├║meros fuera de rango
+      ÔêÜ debe retornar error si rango es inv├ílido (1 ms)
+      ÔêÜ debe validar strings num├®ricos
+    validateId
+      ÔêÜ debe validar IDs num├®ricos v├ílidos (1 ms)
+      ÔêÜ debe retornar badRequest para IDs inv├ílidos (1 ms)
+      ÔêÜ debe rechazar IDs negativos o cero
+
+PASS Biblioteca Xonler tests/unit/controllers/libros.controller.test.js
+  libros.controller
+    obtenerLibros
+      ÔêÜ debe obtener lista de libros (33 ms)
+      ÔêÜ debe manejar errores de AppError (2 ms)
+      ÔêÜ debe manejar errores de PostgreSQL 42P01 (4 ms)
+      ÔêÜ debe manejar errores de PostgreSQL 42703 (5 ms)
+      ÔêÜ debe manejar errores gen├®ricos (1 ms)
+    obtenerLibroPorId
+      ÔêÜ debe obtener un libro por ID (1 ms)
+      ÔêÜ debe retornar 404 si el libro no existe (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    crearLibro
+      ÔêÜ debe crear un libro exitosamente (5 ms)
+      ÔêÜ debe manejar errores de AppError (1 ms)
+      ÔêÜ debe manejar errores gen├®ricos (1 ms)
+    actualizarLibro
+      ÔêÜ debe actualizar un libro exitosamente (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    eliminarLibro
+      ÔêÜ debe eliminar un libro exitosamente (1 ms)
+      ÔêÜ debe manejar errores
+    subirImagenLibro
+      ÔêÜ debe retornar 400 si no hay archivo (1 ms)
+      ÔêÜ debe subir imagen exitosamente (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    obtenerRecomendaciones
+      ÔêÜ debe obtener recomendaciones para usuario autenticado (4 ms)
+      ÔêÜ debe obtener recomendaciones sin usuario (2 ms)
+      ÔêÜ debe manejar errores (2 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-error-handlers.test.js
+  register-error-handlers
+    registerErrorHandlers
+      ÔêÜ debe registrar manejadores de error (2 ms)
+
+PASS Biblioteca Xonler tests/unit/middleware/jwt-compatibility.test.js
+  jwt-compatibility middleware
+    ÔêÜ debe continuar si no hay header Authorization (2 ms)
+    ÔêÜ debe continuar si el header no empieza con Bearer (1 ms)
+    ÔêÜ debe verificar token con jwt-rotation exitosamente (3 ms)
+    ÔêÜ debe usar verificaci├│n directa si jwt-rotation falla (1 ms)
+    ÔêÜ debe retornar 401 si ambas verificaciones fallan (2 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/preferencias-helpers.test.js
+  preferencias-helpers
+    DEFAULT_PREFERENCES
+      ÔêÜ debe tener valores por defecto correctos (2 ms)
+    validatePreferences
+      ÔêÜ debe validar preferencias v├ílidas
+      ÔêÜ debe rechazar idioma inv├ílido (1 ms)
+      ÔêÜ debe rechazar tema inv├ílido (1 ms)
+      ÔêÜ debe rechazar tama├▒o de fuente inv├ílido
+      ÔêÜ debe rechazar m├íximo de resultados inv├ílido (1 ms)
+      ÔêÜ debe aceptar preferencias parciales (1 ms)
+    getPreferencesByUserId
+      ÔêÜ debe retornar preferencias si existen (1 ms)
+      ÔêÜ debe retornar null si no existen preferencias
+    createDefaultPreferences
+      ÔêÜ debe crear preferencias por defecto (1 ms)
+    upsertPreferences
+      ÔêÜ debe crear nuevas preferencias si no existen (1 ms)
+      ÔêÜ debe actualizar preferencias existentes (1 ms)
+      ÔêÜ debe usar valores por defecto con nullish coalescing (1 ms)
+
+PASS Biblioteca Xonler tests/unit/middleware/security.test.js
+  middleware/security
+    authRateLimit
+      ÔêÜ debe crear un rate limiter para autenticaci├│n (13 ms)
+    apiRateLimit
+      ÔêÜ debe crear un rate limiter para API general (1 ms)
+    sensitiveRateLimit
+      ÔêÜ debe crear un rate limiter para endpoints sensibles (2 ms)
+    helmetConfig
+      ÔêÜ debe configurar helmet con opciones de seguridad (4 ms)
+    securityLogger
+      ÔêÜ debe continuar sin problemas para requests normales (3 ms)
+      ÔêÜ debe detectar path traversal (1 ms)
+      ÔêÜ debe detectar intentos de XSS (1 ms)
+      ÔêÜ debe detectar SQL injection (1 ms)
+      ÔêÜ debe detectar JavaScript injection (1 ms)
+      ÔêÜ debe loggear requests de autenticaci├│n (1 ms)
+    inputValidator
+      ÔêÜ debe sanitizar strings en el body (4 ms)
+      ÔêÜ debe sanitizar strings en el query (1 ms)
+      ÔêÜ debe manejar valores no string sin modificar (1 ms)
+      ÔêÜ debe hacer trim de espacios (2 ms)
+      ÔêÜ debe manejar body y query vac├¡os (1 ms)
+
+PASS Biblioteca Xonler tests/unit/db/usuarios.db.test.js
+  usuarios.db
+    getById
+      ÔêÜ debe obtener usuario por ID (2 ms)
+      ÔêÜ debe retornar null si usuario no existe
+      ÔêÜ debe inicializar preferencias como objeto vac├¡o si es null (2 ms)
+      ÔêÜ debe manejar errores (13 ms)
+    getByEmail
+      ÔêÜ debe obtener usuario por email (1 ms)
+      ÔêÜ debe retornar null si usuario no existe (1 ms)
+    saveTwoFASecret
+      ÔêÜ debe guardar secreto 2FA (1 ms)
+    enableTwoFA
+      ÔêÜ debe activar 2FA para usuario (1 ms)
+    disableTwoFA
+      ÔêÜ debe desactivar 2FA para usuario (1 ms)
+
+  console.log
+    [dotenv@17.2.3] injecting env (58) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-rate-limiters.test.js
+  register-rate-limiters
+    registerRateLimiters
+      ÔêÜ debe registrar rate limiters (15 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/libros.controller.complete.test.js
+  libros.controller - cobertura completa
+    handleControllerError
+      ÔêÜ debe manejar AppError con details (2 ms)
+      ÔêÜ debe manejar error 42P01 (tabla no encontrada) (2 ms)
+      ÔêÜ debe manejar error 42703 (columna no encontrada) (1 ms)
+    obtenerLibros
+      ÔêÜ debe retornar resultado exitoso
+    obtenerLibroPorId
+      ÔêÜ debe retornar 404 si libro no existe (1 ms)
+    subirImagenLibro
+      ÔêÜ debe retornar 400 si no hay archivo (1 ms)
+      ÔêÜ debe actualizar imagen si hay archivo (1 ms)
+    obtenerRecomendaciones
+      ÔêÜ debe retornar recomendaciones exitosamente (1 ms)
+      ÔêÜ debe manejar errores del servicio (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/bibliotecas.controller.additional.test.js
+  bibliotecas.controller - casos adicionales
+    actualizarBiblioteca - casos edge
+      ÔêÜ debe manejar error de foreign key (31 ms)
+      ÔêÜ debe manejar colegio_id null (1 ms)
+    eliminarBiblioteca - casos edge
+      ÔêÜ debe retornar 409 si tiene libros asociados (2 ms)
+      ÔêÜ debe retornar 404 si la biblioteca no existe (2 ms)
+      ÔêÜ debe manejar errores en transacci├│n (1 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/roles.controller.test.js
+  roles.controller
+    ÔêÜ debe exportar obtenerRoles (3 ms)
+    ÔêÜ debe exportar obtenerRolPorId (2 ms)
+    ÔêÜ debe usar getAllRecords para obtenerRoles (1 ms)
+    ÔêÜ debe usar getRecordById para obtenerRolPorId (1 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-error-handlers.complete.test.js
+  register-error-handlers - cobertura completa
+    ÔêÜ debe registrar middleware de errores (1 ms)
+    Error handler middleware
+      ÔêÜ debe manejar SyntaxError de JSON (1 ms)
+      ÔêÜ debe manejar error 23505 (unique constraint) (2 ms)
+      ÔêÜ debe manejar error 23503 (foreign key) (1 ms)
+      ÔêÜ debe manejar error gen├®rico (1 ms)
+      ÔêÜ debe llamar next si headers ya fueron enviados (1 ms)
+    404 handler middleware
+      ÔêÜ debe retornar 404 para rutas no encontradas (1 ms)
+
+PASS Biblioteca Xonler tests/unit/routes/libros.routes.complete.test.js
+  libros.routes - cobertura completa
+    GET /test-db
+      ÔêÜ debe retornar timestamp de base de datos (4 ms)
+      ÔêÜ debe manejar error de conexi├│n (1 ms)
+    GET /test-table
+      ÔêÜ debe retornar informaci├│n de tabla (1 ms)
+      ÔêÜ debe manejar error al verificar tabla (1 ms)
+    GET /
+      ÔêÜ debe retornar lista de libros (23 ms)
+      ÔêÜ debe manejar error al obtener libros (1 ms)
+    GET /:id
+      ÔêÜ debe retornar libro por ID (2 ms)
+      ÔêÜ debe retornar 400 si ID es inv├ílido (4 ms)
+      ÔêÜ debe retornar 400 si ID es negativo (1 ms)
+      ÔêÜ debe retornar 404 si libro no existe (1 ms)
+      ÔêÜ debe manejar error al obtener libro (1 ms)
+
+  console.log
+    ­ƒôè [MONITORING] Monitoreo en tiempo real iniciado (intervalo: 30000ms)
+
+      at RealtimeMonitoring.log [as startMonitoring] (src/utils/realtime-monitoring.js:58:13)
+
+PASS Biblioteca Xonler tests/unit/config/database-ssl.complete.test.js
+  database-ssl - cobertura completa
+    createSecurePool
+      ÔêÜ debe crear pool sin SSL en desarrollo (3 ms)
+      ÔêÜ debe crear pool con SSL en producci├│n (3 ms)
+      ÔêÜ debe crear pool con SSL opcional en desarrollo (4 ms)
+      ÔêÜ debe registrar event handlers (1 ms)
+      ÔêÜ debe probar conexi├│n exitosamente (1 ms)
+      ÔêÜ debe manejar error en testConnection (1 ms)
+      ÔêÜ debe retornar estad├¡sticas del pool (2 ms)
+      ÔêÜ debe cerrar pool correctamente (1 ms)
+      ÔêÜ debe manejar error al cerrar pool (1 ms)
+    getSSLConfig
+      ÔêÜ debe retornar configuraci├│n para development (4 ms)
+      ÔêÜ debe retornar configuraci├│n para staging (4 ms)
+      ÔêÜ debe retornar configuraci├│n para production (1 ms)
+      ÔêÜ debe usar development como default (1 ms)
+    validateSSLConfig
+      ÔêÜ debe validar configuraci├│n b├ísica (1 ms)
+      ÔêÜ debe advertir sobre variables faltantes (4 ms)
+      ÔêÜ debe requerir SSL vars en producci├│n (1 ms)
+      ÔêÜ debe validar SSL vars en producci├│n (1 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/controller-helpers.test.js
+  controller-helpers
+    getAllRecords
+      ÔêÜ debe obtener todos los registros de una tabla (2 ms)
+      ÔêÜ debe usar campos personalizados (1 ms)
+    getRecordById
+      ÔêÜ debe obtener un registro por ID (1 ms)
+      ÔêÜ debe retornar notFound si no existe el registro (13 ms)
+      ÔêÜ debe usar campo ID personalizado (2 ms)
+    createCrudController
+      ÔêÜ debe crear un controlador CRUD con opciones por defecto (5 ms)
+      ÔêÜ debe usar opciones personalizadas (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/biblioteca-libros.controller.test.js
+  biblioteca-libros.controller
+    obtenerBibliotecaLibros
+      ÔêÜ debe obtener biblioteca-libros sin filtros (3 ms)
+      ÔêÜ debe filtrar por biblioteca_id (1 ms)
+      ÔêÜ debe filtrar por libro_id (1 ms)
+    obtenerBibliotecaLibroPorId
+      ÔêÜ debe obtener biblioteca-libro por ID (2 ms)
+      ÔêÜ debe retornar 404 si no existe
+    crearBibliotecaLibro
+      ÔêÜ debe crear biblioteca-libro exitosamente (1 ms)
+      ÔêÜ debe retornar 400 si faltan campos
+
+PASS Biblioteca Xonler tests/unit/controllers/usuarios.controller.edge.test.js
+  usuarios.controller - casos edge
+    obtenerUsuarios
+      ÔêÜ debe filtrar por rol (3 ms)
+      ÔêÜ debe filtrar por b├║squeda (1 ms)
+      ÔêÜ debe filtrar por rol y b├║squeda (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+    obtenerUsuarioActual
+      ÔêÜ debe obtener usuario actual exitosamente (1 ms)
+      ÔêÜ debe retornar 401 si no est├í autenticado (38 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (1 ms)
+      ÔêÜ debe manejar errores (2 ms)
+
+  console.error
+    Error obteniendo uso de disco: Error: Stat error
+        at Object.<anonymous> (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\unit\utils\realtime-monitoring.complete.test.js:56:15)
+        at C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-mock\build\index.js:397:39
+        at Object.<anonymous> (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-mock\build\index.js:404:13)
+        at Object.mockConstructor [as statSync] (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-mock\build\index.js:148:19)
+        at RealtimeMonitoring.statSync [as getDiskUsage] (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\src\utils\realtime-monitoring.js:164:10)
+        at Object.getDiskUsage (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\unit\utils\realtime-monitoring.complete.test.js:59:44)
+        at Promise.then.completed (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\utils.js:298:28)
+        at new Promise (<anonymous>)
+        at callAsyncCircusFn (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\utils.js:231:10)
+        at _callCircusTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:316:40)
+        at processTicksAndRejections (node:internal/process/task_queues:105:5)
+        at _runTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:252:3)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:126:9)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:121:9)
+        at _runTestsForDescribeBlock (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:121:9)
+        at run (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\run.js:71:3)
+        at runAndTransformResultsToJestFormat (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapterInit.js:122:21)
+        at jestAdapter (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-circus\build\legacy-code-todo-rewrite\jestAdapter.js:79:19)
+        at runTestInternal (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\runTest.js:367:16)
+        at runTest (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\runTest.js:444:34)
+        at Object.worker (C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\node_modules\jest-runner\build\testWorker.js:106:12)
+
+    [0m [90m 172 |[39m       }[33m;[39m
+     [90m 173 |[39m     } [36mcatch[39m (error) {
+    [31m[1m>[22m[39m[90m 174 |[39m       console[33m.[39merror([32m'Error obteniendo uso de disco:'[39m[33m,[39m error)[33m;[39m
+     [90m     |[39m               [31m[1m^[22m[39m
+     [90m 175 |[39m       [36mreturn[39m {
+     [90m 176 |[39m         total[33m:[39m [35m0[39m[33m,[39m
+     [90m 177 |[39m         used[33m:[39m [35m0[39m[33m,[39m[0m
+
+      at RealtimeMonitoring.error [as getDiskUsage] (src/utils/realtime-monitoring.js:174:15)
+      at Object.getDiskUsage (tests/unit/utils/realtime-monitoring.complete.test.js:59:44)
+
+PASS Biblioteca Xonler tests/unit/controllers/admin-biblioteca.controller.complete.test.js
+  admin-biblioteca.controller - cobertura completa
+    obtenerBibliotecaAsignada - casos edge
+      ÔêÜ debe manejar error de base de datos (5 ms)
+    obtenerEstadisticasBiblioteca - casos edge
+      ÔêÜ debe manejar error de base de datos (3 ms)
+    obtenerLibrosBiblioteca - casos edge
+      ÔêÜ debe manejar error de base de datos (2 ms)
+    agregarLibroABiblioteca - casos edge
+      ÔêÜ debe manejar error de base de datos (4 ms)
+    removerLibroDeBiblioteca - casos edge
+      ÔêÜ debe manejar error de base de datos (3 ms)
+    crearLibro - casos edge
+      ÔêÜ debe manejar error de base de datos (2 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/realtime-monitoring.complete.test.js
+  realtime-monitoring - cobertura completa
+    getDiskUsage - casos edge
+      ÔêÜ debe retornar valores por defecto si hay error (156 ms)
+    calculateAverageResponseTime
+      ÔêÜ debe retornar 0 si no hay tiempos (2 ms)
+      ÔêÜ debe calcular promedio correctamente (8 ms)
+    recordRequest - casos edge
+      ÔêÜ debe limitar tama├▒o de responseTimes (3 ms)
+    checkThresholds - casos edge
+      ÔêÜ debe manejar error en alertas (7 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/app-error.test.js
+  app-error
+    constructor
+      ÔêÜ debe crear instancia con mensaje y statusCode (2 ms)
+      ÔêÜ debe crear instancia con details (1 ms)
+      ÔêÜ debe crear instancia sin details
+      ÔêÜ debe tener stack trace (9 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/twofa.controller.test.js
+  twofa.controller
+    get2FAStatus
+      ÔêÜ debe obtener estado 2FA del usuario (4 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (1 ms)
+      ÔêÜ debe manejar errores (1 ms)
+    setup2FA
+      ÔêÜ debe configurar 2FA exitosamente (4 ms)
+      ÔêÜ debe retornar 401 si no hay usuario autenticado
+      ÔêÜ debe retornar 404 si el usuario no existe
+      ÔêÜ debe retornar 500 si no se puede guardar el secreto (1 ms)
+    verify2FA
+      ÔêÜ debe verificar y activar 2FA exitosamente (6 ms)
+      ÔêÜ debe retornar 400 si falta el c├│digo (1 ms)
+      ÔêÜ debe retornar 400 si el c├│digo es inv├ílido (2 ms)
+    disable2FA
+      ÔêÜ debe desactivar 2FA exitosamente (5 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (2 ms)
+    verify2FALogin
+      ÔêÜ debe verificar c├│digo 2FA en login exitosamente (4 ms)
+      ÔêÜ debe retornar 400 si faltan par├ímetros
+      ÔêÜ debe retornar 401 si el token es inv├ílido
+    generatePending2FAToken
+      ÔêÜ debe generar token pendiente de 2FA (1 ms)
+
+PASS Biblioteca Xonler tests/unit/middleware/auth.test.js
+  middleware/auth
+    auth
+      ÔêÜ debe retornar 401 si no hay token (3 ms)
+      ÔêÜ debe autenticar correctamente con token v├ílido (1 ms)
+      ÔêÜ debe manejar errores de token expirado (1 ms)
+      ÔêÜ debe manejar errores de token inv├ílido (1 ms)
+      ÔêÜ debe manejar errores del servidor (2 ms)
+    requireRole
+      ÔêÜ debe re-exportar requireRole de auth-middleware-helpers (1 ms)
+    requireAnyRole
+      ÔêÜ debe re-exportar requireAnyRole de auth-middleware-helpers (1 ms)
+    requireOwnershipOrAdmin
+      ÔêÜ debe re-exportar requireOwnershipOrAdmin de auth-middleware-helpers (1 ms)
+    checkPermission
+      ÔêÜ debe re-exportar checkPermission de auth-middleware-helpers (1 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-security-headers.complete.test.js
+  register-security-headers - cobertura completa
+    ÔêÜ debe registrar middleware de security headers (2 ms)
+    Security headers middleware
+      ÔêÜ debe establecer X-Content-Type-Options (1 ms)
+      ÔêÜ debe establecer X-Frame-Options (1 ms)
+      ÔêÜ debe establecer X-XSS-Protection (1 ms)
+      ÔêÜ debe establecer Referrer-Policy (2 ms)
+      ÔêÜ debe establecer Permissions-Policy (1 ms)
+      ÔêÜ debe establecer Content-Security-Policy
+      ÔêÜ debe llamar next
+    buildContentSecurityPolicy
+      ÔêÜ debe construir CSP con todas las directivas (2 ms)
+
+PASS Biblioteca Xonler tests/unit/utils/simple-jwt.additional.test.js
+  simple-jwt - casos adicionales
+    generateToken - casos edge
+      ÔêÜ debe usar variables de entorno si est├ín configuradas (3 ms)
+      ÔêÜ debe sobrescribir opciones por defecto (1 ms)
+    verifyToken - casos edge
+      ÔêÜ debe usar variables de entorno para verificaci├│n (1 ms)
+      ÔêÜ debe lanzar error gen├®rico si la verificaci├│n falla (16 ms)
+    decodeToken
+      ÔêÜ debe decodificar token sin verificar (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/usuarios.controller.complete.test.js
+  usuarios.controller - casos completos
+    eliminarUsuarioCompleto - casos de error
+      ÔêÜ debe manejar error de foreign key constraint (3 ms)
+      ÔêÜ debe manejar error de not null constraint (41 ms)
+      ÔêÜ debe manejar error de unique constraint (11 ms)
+      ÔêÜ debe manejar error general (2 ms)
+
+PASS Biblioteca Xonler tests/unit/bootstrap/register-security-headers.test.js
+  register-security-headers
+    registerSecurityHeaders
+      ÔêÜ debe registrar headers de seguridad (7 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/libros.controller.additional.test.js
+  libros.controller - casos adicionales
+    handleControllerError - casos edge
+      ÔêÜ debe manejar AppError con details (2 ms)
+      ÔêÜ debe manejar error gen├®rico en obtenerLibroPorId (1 ms)
+      ÔêÜ debe manejar error 42P01 en crearLibro (1 ms)
+      ÔêÜ debe manejar error 42703 en actualizarLibro (1 ms)
+      ÔêÜ debe manejar error gen├®rico en eliminarLibro (2 ms)
+
+PASS Biblioteca Xonler tests/unit/controllers/usuarios.controller.more.test.js
+  usuarios.controller - funciones adicionales 2
+    actualizarUsuario
+      ÔêÜ debe actualizar usuario exitosamente (3 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe (1 ms)
+    eliminarUsuario
+      ÔêÜ debe eliminar usuario exitosamente (1 ms)
+      ÔêÜ debe retornar 404 si el usuario no existe
+      ÔêÜ debe retornar 400 si tiene pr├®stamos activos
+
+PASS Biblioteca Xonler tests/unit/routes/prestamos.routes.complete.test.js
+  prestamos.routes - cobertura completa
+    GET /test
+      ÔêÜ debe retornar mensaje de test (2 ms)
+    GET /test-db
+      ÔêÜ debe retornar informaci├│n de base de datos (2 ms)
+      ÔêÜ debe manejar error en test-db (2 ms)
+
+FAIL Biblioteca Xonler tests/unit/public/services/component-loader.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/component-loader.services.js' from 'tests/unit/public/services/component-loader.services.test.js'
+
+      21 |
+      22 | jest.resetModules();
+    > 23 | const componentLoaderModule = require('../../../public/services/component-loader.services.js');
+         |                               ^
+      24 | // El m├│dulo exporta componentLoader como propiedad nombrada
+      25 | // Babel transforma: export { componentLoader } -> module.exports.componentLoader
+      26 | const componentLoader = componentLoaderModule.componentLoader;
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/component-loader.services.test.js:23:31)
+
+FAIL Biblioteca Xonler tests/unit/public/services/contacto.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/common/form-handler.js' from 'tests/unit/public/services/contacto.services.test.js'
+
+      41 |
+      42 | // Mock de form-handler y api-client
+    > 43 | jest.mock('../../../public/services/common/form-handler.js', () => ({
+         |      ^
+      44 |   handleFormSubmit: jest.fn((form, handler, options) => handler({})),
+      45 |   showError: jest.fn(),
+      46 |   showSuccess: jest.fn(),
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.mock (tests/unit/public/services/contacto.services.test.js:43:6)
+
+FAIL Biblioteca Xonler tests/unit/public/js/admin-functions.test.js
+  ÔùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\public\js\admin-functions.js'
+
+      91 | const path = require('path');
+      92 |
+    > 93 | const adminFunctionsCode = fs.readFileSync(
+         |                               ^
+      94 |   path.join(__dirname, '../../../public/js/admin-functions.js'),
+      95 |   'utf8'
+      96 | );
+
+      at Object.readFileSync (tests/unit/public/js/admin-functions.test.js:93:31)
+
+FAIL Biblioteca Xonler tests/unit/public/services/common/api-client.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../../public/services/common/api-client.js' from 'tests/unit/public/services/common/api-client.test.js'
+
+      45 |
+      46 | jest.resetModules();
+    > 47 | const apiClient = require('../../../../public/services/common/api-client.js');
+         |                   ^
+      48 |
+      49 | // ============================================================================
+      50 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/common/api-client.test.js:47:19)
+
+FAIL Biblioteca Xonler tests/unit/public/services/bibliotecas.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/bibliotecas.services.js' from 'tests/unit/public/services/bibliotecas.services.test.js'
+
+      21 |
+      22 | jest.resetModules();
+    > 23 | const bibliotecasService = require('../../../public/services/bibliotecas.services.js');
+         |                            ^
+      24 |
+      25 | // ============================================================================
+      26 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/bibliotecas.services.test.js:23:28)
+
+FAIL Biblioteca Xonler tests/unit/public/services/libros.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/libros.services.js' from 'tests/unit/public/services/libros.services.test.js'
+
+      127 | const loadLibrosService = () => {
+      128 |   jest.resetModules(); // Limpia el cache de m├│dulos
+    > 129 |   const mod = require('../../../public/services/libros.services.js');
+          |               ^
+      130 |   librosService = {
+      131 |     default: mod.default || mod,
+      132 |     authHeaders: mod.authHeaders,
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at require (tests/unit/public/services/libros.services.test.js:129:15)
+      at Object.loadLibrosService (tests/unit/public/services/libros.services.test.js:145:1)
+
+FAIL Biblioteca Xonler tests/unit/app.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../src/bootstrap/register-base-middleware' from 'tests/unit/app.test.js'
+
+      1 | // Mock de todas las dependencias (estas se pueden hacer con jest.mock normal)
+    > 2 | jest.mock('../src/bootstrap/register-base-middleware', () => ({
+        |      ^
+      3 |   registerBaseMiddleware: jest.fn()
+      4 | }));
+      5 |
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.mock (tests/unit/app.test.js:2:6)
+
+FAIL Biblioteca Xonler tests/unit/public/services/admin-biblioteca.services.test.js
+  ÔùÅ Test suite failed to run
+
+    TypeError: Cannot assign to read only property 'replace' of object '[object Location]'
+
+      at node_modules/@jest/environment-jsdom-abstract/node_modules/jest-mock/build/index.js:622:31
+
+FAIL Biblioteca Xonler tests/unit/public/services/auth.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/auth.services.js' from 'tests/unit/public/services/auth.services.test.js'
+
+      75 | // Usar jest.resetModules() para asegurar que el m├│dulo se carga limpio
+      76 | jest.resetModules();
+    > 77 | require('../../../public/services/auth.services.js');
+         | ^
+      78 |
+      79 | // La clase AuthService est├í definida en el m├│dulo pero no exportada
+      80 | // El m├│dulo crea una instancia en globalThis.authService
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/auth.services.test.js:77:1)
+
+FAIL Biblioteca Xonler tests/unit/public/services/common/form-handler.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../../public/services/common/form-handler.js' from 'tests/unit/public/services/common/form-handler.test.js'
+
+      19 |
+      20 | jest.resetModules();
+    > 21 | const formHandler = require('../../../../public/services/common/form-handler.js');
+         |                     ^
+      22 |
+      23 | // ============================================================================
+      24 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/common/form-handler.test.js:21:21)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Summary of all failing tests
+FAIL tests/unit/public/services/component-loader.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/component-loader.services.js' from 'tests/unit/public/services/component-loader.services.test.js'
+
+      21 |
+      22 | jest.resetModules();
+    > 23 | const componentLoaderModule = require('../../../public/services/component-loader.services.js');
+         |                               ^
+      24 | // El m├│dulo exporta componentLoader como propiedad nombrada
+      25 | // Babel transforma: export { componentLoader } -> module.exports.componentLoader
+      26 | const componentLoader = componentLoaderModule.componentLoader;
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/component-loader.services.test.js:23:31)
+
+FAIL tests/unit/public/services/contacto.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/common/form-handler.js' from 'tests/unit/public/services/contacto.services.test.js'
+
+      41 |
+      42 | // Mock de form-handler y api-client
+    > 43 | jest.mock('../../../public/services/common/form-handler.js', () => ({
+         |      ^
+      44 |   handleFormSubmit: jest.fn((form, handler, options) => handler({})),
+      45 |   showError: jest.fn(),
+      46 |   showSuccess: jest.fn(),
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.mock (tests/unit/public/services/contacto.services.test.js:43:6)
+
+FAIL tests/unit/public/js/admin-functions.test.js
+  ÔùÅ Test suite failed to run
+
+    ENOENT: no such file or directory, open 'C:\Users\MIGUEL\Documents\Proyectos-Cursor\biblioteca-xonler-main\tests\public\js\admin-functions.js'
+
+      91 | const path = require('path');
+      92 |
+    > 93 | const adminFunctionsCode = fs.readFileSync(
+         |                               ^
+      94 |   path.join(__dirname, '../../../public/js/admin-functions.js'),
+      95 |   'utf8'
+      96 | );
+
+      at Object.readFileSync (tests/unit/public/js/admin-functions.test.js:93:31)
+
+FAIL tests/unit/public/services/common/api-client.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../../public/services/common/api-client.js' from 'tests/unit/public/services/common/api-client.test.js'
+
+      45 |
+      46 | jest.resetModules();
+    > 47 | const apiClient = require('../../../../public/services/common/api-client.js');
+         |                   ^
+      48 |
+      49 | // ============================================================================
+      50 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/common/api-client.test.js:47:19)
+
+FAIL tests/unit/public/services/bibliotecas.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/bibliotecas.services.js' from 'tests/unit/public/services/bibliotecas.services.test.js'
+
+      21 |
+      22 | jest.resetModules();
+    > 23 | const bibliotecasService = require('../../../public/services/bibliotecas.services.js');
+         |                            ^
+      24 |
+      25 | // ============================================================================
+      26 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/bibliotecas.services.test.js:23:28)
+
+FAIL tests/unit/public/services/libros.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/libros.services.js' from 'tests/unit/public/services/libros.services.test.js'
+
+      127 | const loadLibrosService = () => {
+      128 |   jest.resetModules(); // Limpia el cache de m├│dulos
+    > 129 |   const mod = require('../../../public/services/libros.services.js');
+          |               ^
+      130 |   librosService = {
+      131 |     default: mod.default || mod,
+      132 |     authHeaders: mod.authHeaders,
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at require (tests/unit/public/services/libros.services.test.js:129:15)
+      at Object.loadLibrosService (tests/unit/public/services/libros.services.test.js:145:1)
+
+FAIL tests/unit/app.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../src/bootstrap/register-base-middleware' from 'tests/unit/app.test.js'
+
+      1 | // Mock de todas las dependencias (estas se pueden hacer con jest.mock normal)
+    > 2 | jest.mock('../src/bootstrap/register-base-middleware', () => ({
+        |      ^
+      3 |   registerBaseMiddleware: jest.fn()
+      4 | }));
+      5 |
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.mock (tests/unit/app.test.js:2:6)
+
+FAIL tests/unit/public/services/admin-biblioteca.services.test.js
+  ÔùÅ Test suite failed to run
+
+    TypeError: Cannot assign to read only property 'replace' of object '[object Location]'
+
+      at node_modules/@jest/environment-jsdom-abstract/node_modules/jest-mock/build/index.js:622:31
+
+FAIL tests/unit/public/services/auth.services.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../public/services/auth.services.js' from 'tests/unit/public/services/auth.services.test.js'
+
+      75 | // Usar jest.resetModules() para asegurar que el m├│dulo se carga limpio
+      76 | jest.resetModules();
+    > 77 | require('../../../public/services/auth.services.js');
+         | ^
+      78 |
+      79 | // La clase AuthService est├í definida en el m├│dulo pero no exportada
+      80 | // El m├│dulo crea una instancia en globalThis.authService
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/auth.services.test.js:77:1)
+
+FAIL tests/unit/public/services/common/form-handler.test.js
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../../../../public/services/common/form-handler.js' from 'tests/unit/public/services/common/form-handler.test.js'
+
+      19 |
+      20 | jest.resetModules();
+    > 21 | const formHandler = require('../../../../public/services/common/form-handler.js');
+         |                     ^
+      22 |
+      23 | // ============================================================================
+      24 | // TESTS
+
+      at Resolver._throwModNotFoundError (node_modules/jest-resolve/build/resolver.js:427:11)
+      at Object.require (tests/unit/public/services/common/form-handler.test.js:21:21)
+
+
+Test Suites: 10 failed, 87 passed, 97 total
+Tests:       862 passed, 862 total
+Snapshots:   0 total
+Time:        17.82 s
+Ran all test suites.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

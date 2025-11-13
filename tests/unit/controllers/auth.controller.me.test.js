@@ -1,12 +1,12 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock logger para evitar dependencia circular con simple-encryption
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logError: jest.fn(),
   logInfo: jest.fn(),
   logWarning: jest.fn(),
@@ -18,15 +18,15 @@ jest.mock('../../src/config/logger', () => ({
 }));
 
 // Mock simple-jwt
-jest.mock('../../src/utils/simple-jwt', () => ({
+jest.mock('../../../src/utils/simple-jwt', () => ({
   verifyToken: jest.fn()
 }));
 
 const {
   me
-} = require('../../src/controllers/auth.controller');
-const { pool } = require('../../src/config/database');
-const simpleJWT = require('../../src/utils/simple-jwt');
+} = require('../../../src/controllers/auth.controller');
+const { pool } = require('../../../src/config/database');
+const simpleJWT = require('../../../src/utils/simple-jwt');
 
 describe('auth.controller - me', () => {
   let mockReq, mockRes;

@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -12,30 +12,30 @@ jest.mock('bcrypt', () => ({
 }));
 
 // Mock twofa.controller
-jest.mock('../../src/controllers/twofa.controller', () => ({
+jest.mock('../../../src/controllers/twofa.controller', () => ({
   generatePending2FAToken: jest.fn()
 }));
 
 // Mock cookie-utils
-jest.mock('../../src/utils/cookie-utils', () => ({
+jest.mock('../../../src/utils/cookie-utils', () => ({
   setAuthCookies: jest.fn(),
   clearAuthCookies: jest.fn()
 }));
 
 // Mock simple-jwt
-jest.mock('../../src/utils/simple-jwt', () => ({
+jest.mock('../../../src/utils/simple-jwt', () => ({
   generateToken: jest.fn(),
   verifyToken: jest.fn()
 }));
 
 // Mock logger
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logAudit: jest.fn(),
   logSecurity: jest.fn()
 }));
 
 // Mock data-helpers
-jest.mock('../../src/utils/data-helpers', () => ({
+jest.mock('../../../src/utils/data-helpers', () => ({
   asObject: jest.fn((val) => val)
 }));
 
@@ -45,10 +45,10 @@ const {
   me,
   refresh,
   logout
-} = require('../../src/controllers/auth.controller');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/controllers/auth.controller');
+const { pool } = require('../../../src/config/database');
 const bcrypt = require('bcrypt');
-const simpleJWT = require('../../src/utils/simple-jwt');
+const simpleJWT = require('../../../src/utils/simple-jwt');
 
 describe('auth.controller - cobertura completa', () => {
   let mockReq, mockRes;
@@ -184,7 +184,7 @@ describe('auth.controller - cobertura completa', () => {
 
   describe('logout - casos edge', () => {
     it('debe manejar errores', async () => {
-      const { clearAuthCookies } = require('../../src/utils/cookie-utils');
+      const { clearAuthCookies } = require('../../../src/utils/cookie-utils');
       clearAuthCookies.mockImplementationOnce(() => {
         throw new Error('Cookie error');
       });

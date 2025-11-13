@@ -1,5 +1,5 @@
 // Mock helpers
-jest.mock('../../src/utils/preferencias-helpers', () => ({
+jest.mock('../../../src/utils/preferencias-helpers', () => ({
   getPreferencesByUserId: jest.fn(),
   createDefaultPreferences: jest.fn(),
   upsertPreferences: jest.fn(),
@@ -7,7 +7,7 @@ jest.mock('../../src/utils/preferencias-helpers', () => ({
 }));
 
 // Mock http-response
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   success: jest.fn((res, data, message) => {
     res.json({ data, message });
     return res;
@@ -27,7 +27,7 @@ jest.mock('../../src/utils/http-response', () => ({
 }));
 
 // Mock error-handler
-jest.mock('../../src/utils/error-handler', () => ({
+jest.mock('../../../src/utils/error-handler', () => ({
   asyncHandler: jest.fn((fn) => async (req, res) => {
     try {
       return await fn(req, res);
@@ -42,13 +42,13 @@ const {
   putPreferenciasMe,
   getPreferenciasById,
   putPreferenciasById
-} = require('../../src/controllers/preferencias.controller');
+} = require('../../../src/controllers/preferencias.controller');
 const {
   getPreferencesByUserId,
   createDefaultPreferences,
   upsertPreferences,
   validatePreferences
-} = require('../../src/utils/preferencias-helpers');
+} = require('../../../src/utils/preferencias-helpers');
 
 describe('preferencias.controller', () => {
   let mockReq, mockRes;
@@ -70,7 +70,7 @@ describe('preferencias.controller', () => {
     it('debe obtener preferencias del usuario actual', async () => {
       const mockPreferencias = { idioma: 'es', tamanoFuente: 'medium' };
       getPreferencesByUserId.mockResolvedValueOnce(mockPreferencias);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await getPreferenciasMe(mockReq, mockRes);
 
@@ -82,7 +82,7 @@ describe('preferencias.controller', () => {
       const mockDefaultPrefs = { idioma: 'es', tamanoFuente: 'medium' };
       getPreferencesByUserId.mockResolvedValueOnce(null);
       createDefaultPreferences.mockResolvedValueOnce(mockDefaultPrefs);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await getPreferenciasMe(mockReq, mockRes);
 
@@ -96,7 +96,7 @@ describe('preferencias.controller', () => {
       mockReq.body = { idioma: 'en', tamanoFuente: 'large' };
       validatePreferences.mockReturnValueOnce({ valid: true });
       upsertPreferences.mockResolvedValueOnce(mockReq.body);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await putPreferenciasMe(mockReq, mockRes);
 
@@ -108,7 +108,7 @@ describe('preferencias.controller', () => {
     it('debe retornar error si la validación falla', async () => {
       mockReq.body = { invalid: 'data' };
       validatePreferences.mockReturnValueOnce({ valid: false, error: 'Datos inválidos' });
-      const { badRequest } = require('../../src/utils/http-response');
+      const { badRequest } = require('../../../src/utils/http-response');
 
       await putPreferenciasMe(mockReq, mockRes);
 
@@ -122,7 +122,7 @@ describe('preferencias.controller', () => {
       mockReq.params.id = '2';
       const mockPreferencias = { idioma: 'en' };
       getPreferencesByUserId.mockResolvedValueOnce(mockPreferencias);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await getPreferenciasById(mockReq, mockRes);
 
@@ -135,7 +135,7 @@ describe('preferencias.controller', () => {
       mockReq.params.id = '1';
       const mockPreferencias = { idioma: 'es' };
       getPreferencesByUserId.mockResolvedValueOnce(mockPreferencias);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await getPreferenciasById(mockReq, mockRes);
 
@@ -146,7 +146,7 @@ describe('preferencias.controller', () => {
     it('debe retornar 403 si no tiene permisos', async () => {
       mockReq.user.role = 'usuario';
       mockReq.params.id = '2';
-      const { forbidden } = require('../../src/utils/http-response');
+      const { forbidden } = require('../../../src/utils/http-response');
 
       await getPreferenciasById(mockReq, mockRes);
 
@@ -157,7 +157,7 @@ describe('preferencias.controller', () => {
       mockReq.user.role = 'admin';
       mockReq.params.id = '999';
       getPreferencesByUserId.mockResolvedValueOnce(null);
-      const { notFound } = require('../../src/utils/http-response');
+      const { notFound } = require('../../../src/utils/http-response');
 
       await getPreferenciasById(mockReq, mockRes);
 
@@ -172,7 +172,7 @@ describe('preferencias.controller', () => {
       mockReq.body = { idioma: 'en' };
       validatePreferences.mockReturnValueOnce({ valid: true });
       upsertPreferences.mockResolvedValueOnce(mockReq.body);
-      const { success } = require('../../src/utils/http-response');
+      const { success } = require('../../../src/utils/http-response');
 
       await putPreferenciasById(mockReq, mockRes);
 
@@ -184,7 +184,7 @@ describe('preferencias.controller', () => {
       mockReq.user.role = 'usuario';
       mockReq.params.id = '2';
       mockReq.body = { idioma: 'en' };
-      const { forbidden } = require('../../src/utils/http-response');
+      const { forbidden } = require('../../../src/utils/http-response');
 
       await putPreferenciasById(mockReq, mockRes);
 

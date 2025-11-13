@@ -20,7 +20,7 @@ global.console = {
 // ============================================================================
 
 jest.resetModules();
-const bibliotecasService = require('../../../public/services/bibliotecas.services.js');
+const bibliotecasService = require('../../../../public/services/bibliotecas.services.js');
 
 // ============================================================================
 // TESTS

@@ -1,19 +1,19 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock http-response
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   success: jest.fn((res, data) => res.status(200).json(data)),
   notFound: jest.fn((res, message) => res.status(404).json({ error: message })),
   error: jest.fn((res, message) => res.status(500).json({ error: message }))
 }));
 
 // Mock error-handler - debe devolver una función middleware
-jest.mock('../../src/utils/error-handler', () => ({
+jest.mock('../../../src/utils/error-handler', () => ({
   asyncHandler: (fn) => {
     // asyncHandler devuelve un middleware (req, res, next)
     // Para los tests, simplemente ejecutamos la función directamente
@@ -34,9 +34,9 @@ const {
   getAllRecords,
   getRecordById,
   createCrudController
-} = require('../../src/utils/controller-helpers');
-const { pool } = require('../../src/config/database');
-const { success, notFound } = require('../../src/utils/http-response');
+} = require('../../../src/utils/controller-helpers');
+const { pool } = require('../../../src/config/database');
+const { success, notFound } = require('../../../src/utils/http-response');
 
 describe('controller-helpers', () => {
   let mockReq, mockRes;

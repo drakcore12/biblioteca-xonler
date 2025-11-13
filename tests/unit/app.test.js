@@ -1,25 +1,25 @@
 // Mock de todas las dependencias (estas se pueden hacer con jest.mock normal)
-jest.mock('../src/bootstrap/register-base-middleware', () => ({
+jest.mock('../../src/bootstrap/register-base-middleware', () => ({
   registerBaseMiddleware: jest.fn()
 }));
 
-jest.mock('../src/bootstrap/register-rate-limiters', () => ({
+jest.mock('../../src/bootstrap/register-rate-limiters', () => ({
   registerRateLimiters: jest.fn()
 }));
 
-jest.mock('../src/bootstrap/register-security-headers', () => ({
+jest.mock('../../src/bootstrap/register-security-headers', () => ({
   registerSecurityHeaders: jest.fn()
 }));
 
-jest.mock('../src/bootstrap/register-routes', () => ({
+jest.mock('../../src/bootstrap/register-routes', () => ({
   registerRoutes: jest.fn()
 }));
 
-jest.mock('../src/bootstrap/register-error-handlers', () => ({
+jest.mock('../../src/bootstrap/register-error-handlers', () => ({
   registerErrorHandlers: jest.fn()
 }));
 
-jest.mock('../src/middleware/metrics', () => ({
+jest.mock('../../src/middleware/metrics', () => ({
   metricsMiddleware: jest.fn((req, res, next) => next())
 }));
 
@@ -32,10 +32,10 @@ const mockRouter = {
   delete: jest.fn()
 };
 
-jest.mock('../src/routes/metrics', () => mockRouter);
+jest.mock('../../src/routes/metrics', () => mockRouter);
 
 // Mock de logger para evitar errores
-jest.mock('../src/config/logger', () => ({
+jest.mock('../../src/config/logger', () => ({
   requestLogger: jest.fn((req, res, next) => next()),
   encryptedLogger: {
     getLogger: jest.fn(() => ({
@@ -82,16 +82,16 @@ describe('app.js', () => {
     });
 
     // Cargar el módulo DENTRO del beforeEach después del mock
-    ({ createApp } = require('../src/app'));
+    ({ createApp } = require('../../src/app'));
     express = require('express');
 
     // Obtener referencias a los mocks
-    registerBaseMiddleware = require('../src/bootstrap/register-base-middleware').registerBaseMiddleware;
-    registerRateLimiters = require('../src/bootstrap/register-rate-limiters').registerRateLimiters;
-    registerSecurityHeaders = require('../src/bootstrap/register-security-headers').registerSecurityHeaders;
-    registerRoutes = require('../src/bootstrap/register-routes').registerRoutes;
-    registerErrorHandlers = require('../src/bootstrap/register-error-handlers').registerErrorHandlers;
-    metricsMiddleware = require('../src/middleware/metrics').metricsMiddleware;
+    registerBaseMiddleware = require('../../src/bootstrap/register-base-middleware').registerBaseMiddleware;
+    registerRateLimiters = require('../../src/bootstrap/register-rate-limiters').registerRateLimiters;
+    registerSecurityHeaders = require('../../src/bootstrap/register-security-headers').registerSecurityHeaders;
+    registerRoutes = require('../../src/bootstrap/register-routes').registerRoutes;
+    registerErrorHandlers = require('../../src/bootstrap/register-error-handlers').registerErrorHandlers;
+    metricsMiddleware = require('../../src/middleware/metrics').metricsMiddleware;
 
     jest.clearAllMocks();
   });

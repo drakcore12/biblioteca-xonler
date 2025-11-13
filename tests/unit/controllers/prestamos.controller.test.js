@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn(),
     connect: jest.fn()
@@ -13,8 +13,8 @@ const {
   marcarDevolucion,
   renovarPrestamo,
   obtenerPrestamosUsuarioActual
-} = require('../../src/controllers/prestamos.controller');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/controllers/prestamos.controller');
+const { pool } = require('../../../src/config/database');
 
 describe('prestamos.controller', () => {
   let mockReq, mockRes;

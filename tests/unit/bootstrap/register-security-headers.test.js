@@ -1,4 +1,4 @@
-const { registerSecurityHeaders } = require('../../src/bootstrap/register-security-headers');
+const { registerSecurityHeaders } = require('../../../src/bootstrap/register-security-headers');
 
 describe('register-security-headers', () => {
   let mockApp;

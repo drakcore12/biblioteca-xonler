@@ -1,4 +1,4 @@
-const { registerErrorHandlers } = require('../../src/bootstrap/register-error-handlers');
+const { registerErrorHandlers } = require('../../../src/bootstrap/register-error-handlers');
 
 describe('register-error-handlers', () => {
   let mockApp;

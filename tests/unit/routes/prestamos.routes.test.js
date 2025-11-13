@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/prestamos.controller', () => ({
+jest.mock('../../../src/controllers/prestamos.controller', () => ({
   obtenerPrestamos: jest.fn((req, res) => res.json({ message: 'obtenerPrestamos' })),
   obtenerPrestamoPorId: jest.fn((req, res) => res.json({ message: 'obtenerPrestamoPorId' })),
   crearPrestamo: jest.fn((req, res) => res.json({ message: 'crearPrestamo' })),
@@ -11,19 +11,19 @@ jest.mock('../../src/controllers/prestamos.controller', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
-const prestamosRoutes = require('../../src/routes/prestamos.routes');
-const { pool } = require('../../src/config/database');
+const prestamosRoutes = require('../../../src/routes/prestamos.routes');
+const { pool } = require('../../../src/config/database');
 
 describe('prestamos.routes', () => {
   it('debe tener ruta GET /test configurada', () => {

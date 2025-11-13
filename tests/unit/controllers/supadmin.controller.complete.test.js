@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -11,15 +11,15 @@ jest.mock('node:crypto', () => ({
 }));
 
 // Mock logger
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logger: {
     info: jest.fn(),
     error: jest.fn()
   }
 }));
 
-const supAdminController = require('../../src/controllers/supadmin.controller');
-const { pool } = require('../../src/config/database');
+const supAdminController = require('../../../src/controllers/supadmin.controller');
+const { pool } = require('../../../src/config/database');
 const crypto = require('node:crypto');
 
 describe('supadmin.controller - cobertura completa', () => {

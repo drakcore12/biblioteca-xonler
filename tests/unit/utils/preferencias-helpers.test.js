@@ -1,12 +1,12 @@
 // Mock database ANTES de importar el módulo
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock logger para evitar dependencia circular con simple-encryption
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logError: jest.fn(),
   logInfo: jest.fn(),
   logWarning: jest.fn(),
@@ -23,8 +23,8 @@ const {
   getPreferencesByUserId,
   createDefaultPreferences,
   upsertPreferences
-} = require('../../src/utils/preferencias-helpers');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/utils/preferencias-helpers');
+const { pool } = require('../../../src/config/database');
 
 describe('preferencias-helpers', () => {
   beforeEach(() => {

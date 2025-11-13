@@ -1,4 +1,4 @@
-const { registerRateLimiters } = require('../../src/bootstrap/register-rate-limiters');
+const { registerRateLimiters } = require('../../../src/bootstrap/register-rate-limiters');
 
 describe('register-rate-limiters', () => {
   let mockApp;

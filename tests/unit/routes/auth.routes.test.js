@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/auth.controller', () => ({
+jest.mock('../../../src/controllers/auth.controller', () => ({
   register: jest.fn((req, res) => res.json({ message: 'register' })),
   login: jest.fn((req, res) => res.json({ message: 'login' })),
   me: jest.fn((req, res) => res.json({ message: 'me' })),
@@ -13,11 +13,11 @@ jest.mock('../../src/controllers/auth.controller', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-const authRoutes = require('../../src/routes/auth.routes');
+const authRoutes = require('../../../src/routes/auth.routes');
 
 describe('auth.routes', () => {
   let app;

@@ -1,24 +1,24 @@
 // Mock dependencies
-jest.mock('../../src/utils/cookie-utils', () => ({
+jest.mock('../../../src/utils/cookie-utils', () => ({
   checkCookieStatus: jest.fn(() => ({ hasCookie: true, cookieName: 'authToken' }))
 }));
 
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logSecurity: jest.fn()
 }));
 
-jest.mock('../../src/middleware/jwt-compatibility', () => ({
+jest.mock('../../../src/middleware/jwt-compatibility', () => ({
   jwtCompatibility: jest.fn((req, res, next) => {
     req.user = { id: 1, email: 'test@test.com', role: 'usuario' };
     next();
   })
 }));
 
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   unauthorized: jest.fn((res, message) => res.status(401).json({ error: message }))
 }));
 
-jest.mock('../../src/utils/auth-middleware-helpers', () => ({
+jest.mock('../../../src/utils/auth-middleware-helpers', () => ({
   requireRole: jest.fn(),
   requireAnyRole: jest.fn(),
   requireOwnershipOrAdmin: jest.fn(),
@@ -27,9 +27,9 @@ jest.mock('../../src/utils/auth-middleware-helpers', () => ({
   extractTokenFromHeader: jest.fn(() => null)
 }));
 
-const { hybridAuth, debugAuth } = require('../../src/middleware/hybrid-auth');
-const { extractTokenFromHeader } = require('../../src/utils/auth-middleware-helpers');
-const { jwtCompatibility } = require('../../src/middleware/jwt-compatibility');
+const { hybridAuth, debugAuth } = require('../../../src/middleware/hybrid-auth');
+const { extractTokenFromHeader } = require('../../../src/utils/auth-middleware-helpers');
+const { jwtCompatibility } = require('../../../src/middleware/jwt-compatibility');
 
 describe('hybrid-auth middleware', () => {
   let mockReq, mockRes, mockNext;
@@ -93,7 +93,7 @@ describe('hybrid-auth middleware', () => {
     });
 
     it('debe manejar errores de autenticación', () => {
-      const { handleAuthError } = require('../../src/utils/auth-middleware-helpers');
+      const { handleAuthError } = require('../../../src/utils/auth-middleware-helpers');
       handleAuthError.mockReturnValueOnce(true);
       jwtCompatibility.mockImplementationOnce(() => {
         throw new Error('Token inválido');

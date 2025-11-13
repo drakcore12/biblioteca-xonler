@@ -1,17 +1,17 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-const prestamosRoutes = require('../../src/routes/prestamos.routes');
-const { pool } = require('../../src/config/database');
+const prestamosRoutes = require('../../../src/routes/prestamos.routes');
+const { pool } = require('../../../src/config/database');
 
 describe('prestamos.routes - rutas inline', () => {
   beforeEach(() => {

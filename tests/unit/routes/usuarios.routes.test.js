@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/usuarios.controller', () => ({
+jest.mock('../../../src/controllers/usuarios.controller', () => ({
   obtenerUsuarios: jest.fn((req, res) => res.json({ message: 'obtenerUsuarios' })),
   obtenerUsuarioActual: jest.fn((req, res) => res.json({ message: 'obtenerUsuarioActual' })),
   obtenerUsuarioPorId: jest.fn((req, res) => res.json({ message: 'obtenerUsuarioPorId' })),
@@ -17,11 +17,11 @@ jest.mock('../../src/controllers/usuarios.controller', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-const usuariosRoutes = require('../../src/routes/usuarios.routes');
+const usuariosRoutes = require('../../../src/routes/usuarios.routes');
 
 describe('usuarios.routes', () => {
   it('debe tener ruta GET / configurada', () => {

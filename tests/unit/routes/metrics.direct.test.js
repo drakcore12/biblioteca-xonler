@@ -6,7 +6,7 @@ const request = require('supertest');
 
 // Mock solo lo necesario
 const mockMetrics = jest.fn(() => Promise.resolve('# metrics data'));
-jest.mock('../../src/utils/metrics', () => ({
+jest.mock('../../../src/utils/metrics', () => ({
   register: {
     contentType: 'text/plain',
     metrics: mockMetrics
@@ -19,7 +19,7 @@ describe('metrics.js - test directo', () => {
   beforeEach(() => {
     app = express();
     // Cargar el router real
-    const metricsRouter = require('../../src/routes/metrics');
+    const metricsRouter = require('../../../src/routes/metrics');
     app.use(metricsRouter);
     jest.clearAllMocks();
   });

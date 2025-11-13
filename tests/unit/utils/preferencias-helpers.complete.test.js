@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -11,8 +11,8 @@ const {
   getPreferencesByUserId,
   createDefaultPreferences,
   upsertPreferences
-} = require('../../src/utils/preferencias-helpers');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/utils/preferencias-helpers');
+const { pool } = require('../../../src/config/database');
 
 describe('preferencias-helpers - cobertura completa', () => {
   beforeEach(() => {

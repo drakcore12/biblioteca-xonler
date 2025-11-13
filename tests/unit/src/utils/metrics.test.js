@@ -37,7 +37,7 @@ describe('src/utils/metrics.js', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
-    metricsModule = require('../../../src/utils/metrics');
+    metricsModule = require('../../../../src/utils/metrics');
   });
 
   test('debe exportar register', () => {

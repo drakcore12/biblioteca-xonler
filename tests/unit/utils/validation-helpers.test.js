@@ -7,7 +7,7 @@ const {
   validateEnum,
   validateRange,
   validateId
-} = require('../../src/utils/validation-helpers');
+} = require('../../../src/utils/validation-helpers');
 
 describe('validation-helpers', () => {
 

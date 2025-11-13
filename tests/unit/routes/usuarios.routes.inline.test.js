@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn(),
     connect: jest.fn()
@@ -7,14 +7,14 @@ jest.mock('../../src/config/database', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => {
     req.user = { id: 1 };
     next();
   })
 }));
 
-const usuariosRoutes = require('../../src/routes/usuarios.routes');
+const usuariosRoutes = require('../../../src/routes/usuarios.routes');
 
 describe('usuarios.routes - rutas inline', () => {
   beforeEach(() => {

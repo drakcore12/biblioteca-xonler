@@ -25,7 +25,7 @@ const {
   helmetConfig,
   securityLogger,
   inputValidator
-} = require('../../src/middleware/security');
+} = require('../../../src/middleware/security');
 
 describe('middleware/security', () => {
   let mockReq, mockRes, mockNext;

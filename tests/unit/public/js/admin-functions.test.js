@@ -91,7 +91,7 @@ const fs = require('fs');
 const path = require('path');
 
 const adminFunctionsCode = fs.readFileSync(
-  path.join(__dirname, '../../../public/js/admin-functions.js'),
+  path.join(__dirname, '../../../../public/js/admin-functions.js'),
   'utf8'
 );
 

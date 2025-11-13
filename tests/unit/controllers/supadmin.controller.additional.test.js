@@ -1,12 +1,12 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
-const supAdminController = require('../../src/controllers/supadmin.controller');
-const { pool } = require('../../src/config/database');
+const supAdminController = require('../../../src/controllers/supadmin.controller');
+const { pool } = require('../../../src/config/database');
 
 describe('supadmin.controller - casos adicionales', () => {
   let mockReq, mockRes;

@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/twofa.controller', () => ({
+jest.mock('../../../src/controllers/twofa.controller', () => ({
   verify2FALogin: jest.fn((req, res) => res.json({ message: 'verify2FALogin' })),
   setup2FA: jest.fn((req, res) => res.json({ message: 'setup2FA' })),
   verify2FA: jest.fn((req, res) => res.json({ message: 'verify2FA' })),
@@ -10,11 +10,11 @@ jest.mock('../../src/controllers/twofa.controller', () => ({
 }));
 
 // Mock middleware
-jest.mock('../../src/middleware/hybrid-auth', () => ({
+jest.mock('../../../src/middleware/hybrid-auth', () => ({
   hybridAuth: jest.fn((req, res, next) => next())
 }));
 
-const twofaRoutes = require('../../src/routes/twofa.routes');
+const twofaRoutes = require('../../../src/routes/twofa.routes');
 
 describe('twofa.routes', () => {
   it('debe tener ruta POST /login/2fa configurada', () => {

@@ -1,5 +1,5 @@
 // Mock logger antes de importar error-handler
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logError: jest.fn()
 }));
 
@@ -11,9 +11,9 @@ const {
   handleError,
   asyncHandler,
   promiseHandler
-} = require('../../src/utils/error-handler');
+} = require('../../../src/utils/error-handler');
 
-const AppError = require('../../src/utils/app-error');
+const AppError = require('../../../src/utils/app-error');
 
 describe('error-handler', () => {
   let mockRes;

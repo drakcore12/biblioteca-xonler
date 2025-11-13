@@ -15,21 +15,21 @@ jest.mock('node:fs', () => ({
 }));
 
 // Mock logger
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logInfo: jest.fn(),
   logError: jest.fn()
 }));
 
 // Mock security-alerts
-jest.mock('../../src/utils/security-alerts', () => ({
+jest.mock('../../../src/utils/security-alerts', () => ({
   alertResourceUsage: jest.fn(),
   alertHighErrorRate: jest.fn(),
   sendSecurityAlert: jest.fn()
 }));
 
-const realtimeMonitoring = require('../../src/utils/realtime-monitoring');
+const realtimeMonitoring = require('../../../src/utils/realtime-monitoring');
 const os = require('node:os');
-const securityAlerts = require('../../src/utils/security-alerts');
+const securityAlerts = require('../../../src/utils/security-alerts');
 
 describe('realtime-monitoring - cobertura completa', () => {
   beforeEach(() => {

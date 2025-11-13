@@ -1,18 +1,18 @@
 // Mock middleware
-jest.mock('../../src/middleware/security', () => ({
+jest.mock('../../../src/middleware/security', () => ({
   helmetConfig: jest.fn((req, res, next) => next()),
   securityLogger: jest.fn((req, res, next) => next()),
   inputValidator: jest.fn((req, res, next) => next())
 }));
 
-jest.mock('../../src/middleware/security-monitoring', () => ({
+jest.mock('../../../src/middleware/security-monitoring', () => ({
   monitorSuspiciousActivity: jest.fn((req, res, next) => next()),
   monitorAuthAttempts: jest.fn((req, res, next) => next()),
   monitorDataChanges: jest.fn((req, res, next) => next()),
   monitorUnauthorizedAccess: jest.fn((req, res, next) => next())
 }));
 
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   requestLogger: jest.fn((req, res, next) => next()),
   encryptedLogger: {
     getLogger: jest.fn(() => ({
@@ -22,17 +22,17 @@ jest.mock('../../src/config/logger', () => ({
   }
 }));
 
-jest.mock('../../src/utils/realtime-monitoring', () => ({
+jest.mock('../../../src/utils/realtime-monitoring', () => ({
   recordRequest: jest.fn()
 }));
 
-jest.mock('../../src/config/env', () => ({
+jest.mock('../../../src/config/env', () => ({
   env: {
     frontendUrl: 'http://localhost:3000'
   }
 }));
 
-const { registerBaseMiddleware } = require('../../src/bootstrap/register-base-middleware');
+const { registerBaseMiddleware } = require('../../../src/bootstrap/register-base-middleware');
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -55,21 +55,21 @@ describe('register-base-middleware - cobertura completa', () => {
   });
 
   it('debe registrar helmetConfig', () => {
-    const { helmetConfig } = require('../../src/middleware/security');
+    const { helmetConfig } = require('../../../src/middleware/security');
     registerBaseMiddleware(mockApp);
     
     expect(mockApp.use).toHaveBeenCalledWith(helmetConfig);
   });
 
   it('debe registrar requestLogger', () => {
-    const { requestLogger } = require('../../src/config/logger');
+    const { requestLogger } = require('../../../src/config/logger');
     registerBaseMiddleware(mockApp);
     
     expect(mockApp.use).toHaveBeenCalledWith(requestLogger);
   });
 
   it('debe registrar securityLogger', () => {
-    const { securityLogger } = require('../../src/middleware/security');
+    const { securityLogger } = require('../../../src/middleware/security');
     registerBaseMiddleware(mockApp);
     
     expect(mockApp.use).toHaveBeenCalledWith(securityLogger);
@@ -86,14 +86,14 @@ describe('register-base-middleware - cobertura completa', () => {
   });
 
   it('debe registrar inputValidator', () => {
-    const { inputValidator } = require('../../src/middleware/security');
+    const { inputValidator } = require('../../../src/middleware/security');
     registerBaseMiddleware(mockApp);
     
     expect(mockApp.use).toHaveBeenCalledWith(inputValidator);
   });
 
   it('debe registrar security monitoring middlewares', () => {
-    const securityMonitoring = require('../../src/middleware/security-monitoring');
+    const securityMonitoring = require('../../../src/middleware/security-monitoring');
     registerBaseMiddleware(mockApp);
     
     // Verificar que se llamó use con las funciones de security monitoring
@@ -163,7 +163,7 @@ describe('register-base-middleware - cobertura completa', () => {
   });
 
   it('debe registrar CORS con configuración correcta', () => {
-    const { env } = require('../../src/config/env');
+    const { env } = require('../../../src/config/env');
     registerBaseMiddleware(mockApp);
     
     const corsCall = mockApp.use.mock.calls.find(call => {

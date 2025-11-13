@@ -1,16 +1,16 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
 // Mock helpers
-jest.mock('../../src/utils/query-builder', () => ({
+jest.mock('../../../src/utils/query-builder', () => ({
   QueryBuilder: jest.fn()
 }));
 
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   success: jest.fn((res, data) => res.json({ data })),
   notFound: jest.fn((res, message) => res.status(404).json({ error: message })),
   badRequest: jest.fn((res, message) => res.status(400).json({ error: message })),
@@ -19,7 +19,7 @@ jest.mock('../../src/utils/http-response', () => ({
   paginated: jest.fn((res, data, total, limit, offset) => res.json({ data, paginacion: { total, limit, offset } }))
 }));
 
-jest.mock('../../src/utils/error-handler', () => ({
+jest.mock('../../../src/utils/error-handler', () => ({
   asyncHandler: jest.fn((fn, errorMessage) => async (req, res) => {
     try {
       return await fn(req, res);
@@ -30,9 +30,9 @@ jest.mock('../../src/utils/error-handler', () => ({
   handleError: jest.fn()
 }));
 
-const validationHelpers = require('../../src/utils/validation-helpers');
-jest.mock('../../src/utils/validation-helpers', () => {
-  const actual = jest.requireActual('../../src/utils/validation-helpers');
+const validationHelpers = require('../../../src/utils/validation-helpers');
+jest.mock('../../../src/utils/validation-helpers', () => {
+  const actual = jest.requireActual('../../../src/utils/validation-helpers');
   return {
     ...actual,
     validateRequired: jest.fn((fields, body) => {
@@ -44,7 +44,7 @@ jest.mock('../../src/utils/validation-helpers', () => {
   };
 });
 
-jest.mock('../../src/utils/data-helpers', () => ({
+jest.mock('../../../src/utils/data-helpers', () => ({
   asInteger: jest.fn((val, def) => Number.parseInt(val, 10) || def)
 }));
 
@@ -52,9 +52,9 @@ const {
   obtenerColegios,
   obtenerColegioPorId,
   crearColegio
-} = require('../../src/controllers/colegios.controller');
-const { pool } = require('../../src/config/database');
-const { QueryBuilder } = require('../../src/utils/query-builder');
+} = require('../../../src/controllers/colegios.controller');
+const { pool } = require('../../../src/config/database');
+const { QueryBuilder } = require('../../../src/utils/query-builder');
 
 describe('colegios.controller', () => {
   let mockReq, mockRes;

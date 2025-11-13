@@ -1,5 +1,5 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
@@ -21,8 +21,8 @@ const {
   forgotPassword,
   verifyResetToken,
   resetPassword
-} = require('../../src/controllers/auth.controller');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/controllers/auth.controller');
+const { pool } = require('../../../src/config/database');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 

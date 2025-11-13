@@ -14,7 +14,7 @@ const {
   validateResponse,
   validateStatusCode,
   validateMessage
-} = require('../../src/utils/http-response');
+} = require('../../../src/utils/http-response');
 
 describe('http-response', () => {
   let mockRes;

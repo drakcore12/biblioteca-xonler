@@ -1,12 +1,12 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
-const usuariosDb = require('../../src/db/usuarios.db');
-const { pool } = require('../../src/config/database');
+const usuariosDb = require('../../../src/db/usuarios.db');
+const { pool } = require('../../../src/config/database');
 
 describe('usuarios.db', () => {
   beforeEach(() => {

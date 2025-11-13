@@ -3,7 +3,7 @@ jest.mock('pg', () => ({
   Pool: jest.fn()
 }));
 
-const { createSecurePool, getSSLConfig, validateSSLConfig } = require('../../src/config/database-ssl');
+const { createSecurePool, getSSLConfig, validateSSLConfig } = require('../../../src/config/database-ssl');
 const { Pool } = require('pg');
 
 describe('database-ssl - cobertura completa', () => {

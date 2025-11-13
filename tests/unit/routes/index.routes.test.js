@@ -3,84 +3,84 @@ const mockExpress = require('express');
 
 // Mock todas las rutas
 // IMPORTANTE: Usar require dentro del mock o prefijar con 'mock' para que Jest pueda acceder
-jest.mock('../../src/routes/auth.routes', () => {
+jest.mock('../../../src/routes/auth.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'auth' }));
   return router;
 });
 
-jest.mock('../../src/routes/usuarios.routes', () => {
+jest.mock('../../../src/routes/usuarios.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'usuarios' }));
   return router;
 });
 
-jest.mock('../../src/routes/roles.routes', () => {
+jest.mock('../../../src/routes/roles.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'roles' }));
   return router;
 });
 
-jest.mock('../../src/routes/colegios.routes', () => {
+jest.mock('../../../src/routes/colegios.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'colegios' }));
   return router;
 });
 
-jest.mock('../../src/routes/bibliotecas.routes', () => {
+jest.mock('../../../src/routes/bibliotecas.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'bibliotecas' }));
   return router;
 });
 
-jest.mock('../../src/routes/libros.routes', () => {
+jest.mock('../../../src/routes/libros.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'libros' }));
   return router;
 });
 
-jest.mock('../../src/routes/biblioteca-libros.routes', () => {
+jest.mock('../../../src/routes/biblioteca-libros.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'biblioteca-libros' }));
   return router;
 });
 
-jest.mock('../../src/routes/prestamos.routes', () => {
+jest.mock('../../../src/routes/prestamos.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'prestamos' }));
   return router;
 });
 
-jest.mock('../../src/routes/twofa.routes', () => {
+jest.mock('../../../src/routes/twofa.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'twofa' }));
   return router;
 });
 
-jest.mock('../../src/routes/admin-biblioteca.routes', () => {
+jest.mock('../../../src/routes/admin-biblioteca.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'admin-biblioteca' }));
   return router;
 });
 
-jest.mock('../../src/routes/supadmin.routes', () => {
+jest.mock('../../../src/routes/supadmin.routes', () => {
   const mockExpress = require('express');
   const router = mockExpress.Router();
   router.get('/test', (req, res) => res.json({ test: 'supadmin' }));
   return router;
 });
 
-const indexRoutes = require('../../src/routes/index.routes');
+const indexRoutes = require('../../../src/routes/index.routes');
 
 describe('index.routes', () => {
   let app;

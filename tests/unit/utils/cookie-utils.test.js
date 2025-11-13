@@ -11,7 +11,7 @@ const {
   setAuthCookies,
   clearAuthCookies,
   checkCookieStatus
-} = require('../../src/utils/cookie-utils');
+} = require('../../../src/utils/cookie-utils');
 
 describe('cookie-utils', () => {
   let mockRes;

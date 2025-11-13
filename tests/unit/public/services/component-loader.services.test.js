@@ -20,7 +20,7 @@ global.console = {
 // ============================================================================
 
 jest.resetModules();
-const componentLoaderModule = require('../../../public/services/component-loader.services.js');
+const componentLoaderModule = require('../../../../public/services/component-loader.services.js');
 // El módulo exporta componentLoader como propiedad nombrada
 // Babel transforma: export { componentLoader } -> module.exports.componentLoader
 const componentLoader = componentLoaderModule.componentLoader;

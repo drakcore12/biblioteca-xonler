@@ -25,9 +25,9 @@ describe('database.js - test directo', () => {
 
   it('debe crear pool y exportar funciones', () => {
     // Limpiar cache para forzar re-carga
-    delete require.cache[require.resolve('../../src/config/database')];
+    delete require.cache[require.resolve('../../../src/config/database')];
     
-    const { pool, testConnection, closePool } = require('../../src/config/database');
+    const { pool, testConnection, closePool } = require('../../../src/config/database');
     
     expect(pool).toBeDefined();
     expect(typeof testConnection).toBe('function');
@@ -38,8 +38,8 @@ describe('database.js - test directo', () => {
   });
 
   it('debe probar conexión exitosamente', async () => {
-    delete require.cache[require.resolve('../../src/config/database')];
-    const { testConnection } = require('../../src/config/database');
+    delete require.cache[require.resolve('../../../src/config/database')];
+    const { testConnection } = require('../../../src/config/database');
     
     const mockClient = {
       release: jest.fn()
@@ -53,8 +53,8 @@ describe('database.js - test directo', () => {
   });
 
   it('debe manejar error en testConnection', async () => {
-    delete require.cache[require.resolve('../../src/config/database')];
-    const { testConnection } = require('../../src/config/database');
+    delete require.cache[require.resolve('../../../src/config/database')];
+    const { testConnection } = require('../../../src/config/database');
     
     mockPoolInstance.connect.mockRejectedValueOnce(new Error('Connection failed'));
     
@@ -65,8 +65,8 @@ describe('database.js - test directo', () => {
   });
 
   it('debe cerrar pool correctamente', async () => {
-    delete require.cache[require.resolve('../../src/config/database')];
-    const { closePool } = require('../../src/config/database');
+    delete require.cache[require.resolve('../../../src/config/database')];
+    const { closePool } = require('../../../src/config/database');
     
     mockPoolInstance.end.mockResolvedValueOnce();
     

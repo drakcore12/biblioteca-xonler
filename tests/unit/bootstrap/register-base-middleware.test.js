@@ -1,4 +1,4 @@
-const { registerBaseMiddleware } = require('../../src/bootstrap/register-base-middleware');
+const { registerBaseMiddleware } = require('../../../src/bootstrap/register-base-middleware');
 
 describe('register-base-middleware', () => {
   let mockApp;

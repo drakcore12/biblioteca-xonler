@@ -1,18 +1,18 @@
 // Mock database
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: {
     query: jest.fn()
   }
 }));
 
-jest.mock('../../src/utils/http-response', () => ({
+jest.mock('../../../src/utils/http-response', () => ({
   badRequest: jest.fn((res, message) => res.status(400).json({ error: message })),
   success: jest.fn((res, data) => res.json({ data })),
   notFound: jest.fn((res, message) => res.status(404).json({ error: message })),
   error: jest.fn((res, message) => res.status(500).json({ error: message }))
 }));
 
-jest.mock('../../src/utils/error-handler', () => ({
+jest.mock('../../../src/utils/error-handler', () => ({
   asyncHandler: jest.fn((fn) => fn)
 }));
 
@@ -22,8 +22,8 @@ const {
   getPreferencesByUserId,
   createDefaultPreferences,
   upsertPreferences
-} = require('../../src/utils/preferencias-helpers');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/utils/preferencias-helpers');
+const { pool } = require('../../../src/config/database');
 
 describe('preferencias-helpers - casos adicionales', () => {
   beforeEach(() => {

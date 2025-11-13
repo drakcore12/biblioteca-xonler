@@ -1,5 +1,5 @@
 // Mock libros.service
-jest.mock('../../src/services/libros.service', () => ({
+jest.mock('../../../src/services/libros.service', () => ({
   searchLibros: jest.fn(),
   findLibroById: jest.fn(),
   createLibro: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock('../../src/services/libros.service', () => ({
 }));
 
 // Mock AppError
-jest.mock('../../src/utils/app-error', () => {
+jest.mock('../../../src/utils/app-error', () => {
   return class AppError extends Error {
     constructor(message, statusCode, details) {
       super(message);
@@ -26,9 +26,9 @@ const {
   crearLibro,
   actualizarLibro,
   eliminarLibro
-} = require('../../src/controllers/libros.controller');
-const librosService = require('../../src/services/libros.service');
-const AppError = require('../../src/utils/app-error');
+} = require('../../../src/controllers/libros.controller');
+const librosService = require('../../../src/services/libros.service');
+const AppError = require('../../../src/utils/app-error');
 
 describe('libros.controller - casos adicionales', () => {
   let mockReq, mockRes;

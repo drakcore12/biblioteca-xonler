@@ -1,7 +1,7 @@
 const express = require('express');
 
 // Mock controllers
-jest.mock('../../src/controllers/biblioteca-libros.controller', () => ({
+jest.mock('../../../src/controllers/biblioteca-libros.controller', () => ({
   obtenerBibliotecaLibros: jest.fn((req, res) => res.json({ message: 'obtenerBibliotecaLibros' })),
   obtenerBibliotecaLibroPorId: jest.fn((req, res) => res.json({ message: 'obtenerBibliotecaLibroPorId' })),
   crearBibliotecaLibro: jest.fn((req, res) => res.json({ message: 'crearBibliotecaLibro' })),
@@ -9,7 +9,7 @@ jest.mock('../../src/controllers/biblioteca-libros.controller', () => ({
   verificarDisponibilidad: jest.fn((req, res) => res.json({ message: 'verificarDisponibilidad' }))
 }));
 
-const bibliotecaLibrosRoutes = require('../../src/routes/biblioteca-libros.routes');
+const bibliotecaLibrosRoutes = require('../../../src/routes/biblioteca-libros.routes');
 
 describe('biblioteca-libros.routes', () => {
   it('debe tener ruta GET / configurada', () => {

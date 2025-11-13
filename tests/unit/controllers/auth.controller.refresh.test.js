@@ -3,7 +3,7 @@ const mockPool = {
   query: jest.fn()
 };
 
-jest.mock('../../src/config/database', () => ({
+jest.mock('../../../src/config/database', () => ({
   pool: mockPool
 }));
 
@@ -15,13 +15,13 @@ jest.mock('jsonwebtoken', () => ({
 }));
 
 // Mock simple-jwt
-jest.mock('../../src/utils/simple-jwt', () => ({
+jest.mock('../../../src/utils/simple-jwt', () => ({
   generateToken: jest.fn(),
   verifyToken: jest.fn()
 }));
 
 // Mock cookie-utils
-jest.mock('../../src/utils/cookie-utils', () => ({
+jest.mock('../../../src/utils/cookie-utils', () => ({
   setAuthCookies: jest.fn(),
   clearAuthCookies: jest.fn()
 }));
@@ -29,10 +29,10 @@ jest.mock('../../src/utils/cookie-utils', () => ({
 const {
   refresh,
   logout
-} = require('../../src/controllers/auth.controller');
-const { pool } = require('../../src/config/database');
+} = require('../../../src/controllers/auth.controller');
+const { pool } = require('../../../src/config/database');
 const jwt = require('jsonwebtoken');
-const simpleJWT = require('../../src/utils/simple-jwt');
+const simpleJWT = require('../../../src/utils/simple-jwt');
 
 describe('auth.controller - refresh y logout', () => {
   let mockReq, mockRes;
@@ -141,7 +141,7 @@ describe('auth.controller - refresh y logout', () => {
 
   describe('logout - casos edge', () => {
     it('debe limpiar cookies de autenticación', async () => {
-      const { clearAuthCookies } = require('../../src/utils/cookie-utils');
+      const { clearAuthCookies } = require('../../../src/utils/cookie-utils');
       
       await logout(mockReq, mockRes);
 

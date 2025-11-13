@@ -40,7 +40,7 @@ global.console = {
 };
 
 // Mock de form-handler y api-client
-jest.mock('../../../public/services/common/form-handler.js', () => ({
+jest.mock('../../../../public/services/common/form-handler.js', () => ({
   handleFormSubmit: jest.fn((form, handler, options) => handler({})),
   showError: jest.fn(),
   showSuccess: jest.fn(),
@@ -53,7 +53,7 @@ jest.mock('../../../public/services/common/form-handler.js', () => ({
   })
 }));
 
-jest.mock('../../../public/services/common/api-client.js', () => ({
+jest.mock('../../../../public/services/common/api-client.js', () => ({
   post: jest.fn().mockResolvedValue({ success: true })
 }));
 
@@ -62,7 +62,7 @@ jest.mock('../../../public/services/common/api-client.js', () => ({
 // ============================================================================
 
 jest.resetModules();
-const contactoService = require('../../../public/services/contacto.services.js');
+const contactoService = require('../../../../public/services/contacto.services.js');
 
 // ============================================================================
 // TESTS

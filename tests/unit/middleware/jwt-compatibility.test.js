@@ -3,17 +3,17 @@ jest.mock('jsonwebtoken', () => ({
   verify: jest.fn()
 }));
 
-jest.mock('../../src/utils/jwt-rotation', () => ({
+jest.mock('../../../src/utils/jwt-rotation', () => ({
   verifyToken: jest.fn()
 }));
 
-jest.mock('../../src/config/logger', () => ({
+jest.mock('../../../src/config/logger', () => ({
   logSecurity: jest.fn()
 }));
 
-const { jwtCompatibility } = require('../../src/middleware/jwt-compatibility');
+const { jwtCompatibility } = require('../../../src/middleware/jwt-compatibility');
 const jwt = require('jsonwebtoken');
-const jwtRotation = require('../../src/utils/jwt-rotation');
+const jwtRotation = require('../../../src/utils/jwt-rotation');
 
 describe('jwt-compatibility middleware', () => {
   let mockReq, mockRes, mockNext;
@@ -35,7 +35,7 @@ describe('jwt-compatibility middleware', () => {
   afterAll(() => {
     // Limpiar intervalos de jwt-rotation si existe
     try {
-      const jwtRotation = require('../../src/utils/jwt-rotation');
+      const jwtRotation = require('../../../src/utils/jwt-rotation');
       if (jwtRotation && typeof jwtRotation.stopKeyRotation === 'function') {
         jwtRotation.stopKeyRotation();
       }

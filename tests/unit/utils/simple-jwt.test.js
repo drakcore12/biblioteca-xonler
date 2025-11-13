@@ -1,4 +1,4 @@
-const jwt = require('../../src/utils/simple-jwt');
+const jwt = require('../../../src/utils/simple-jwt');
 
 describe('SimpleJWT', () => {
   // jwt ya es una instancia exportada del módulo
