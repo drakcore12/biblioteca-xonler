@@ -221,15 +221,22 @@ pipeline {
               echo OK: Navegadores de Playwright instalados
             )
             echo.
-            echo WARNING: Tests E2E requieren que el servidor este corriendo
-            echo En CI, el servidor debe iniciarse antes de ejecutar los tests E2E
-            echo Saltando tests E2E por ahora - configurar servidor antes si es necesario
+            echo Creando directorios necesarios...
+            if not exist "test-results" mkdir test-results
+            if not exist "playwright-report" mkdir playwright-report
             echo.
-            echo Para ejecutar tests E2E manualmente:
-            echo 1. Iniciar el servidor: npm start
-            echo 2. En otra terminal: npm run test:e2e
+            echo Ejecutando tests E2E...
+            echo NOTA: Asegurate de que el servidor este corriendo en http://localhost:3000
+            call npm run test:e2e
+            set E2E_EXIT=%ERRORLEVEL%
+            if %E2E_EXIT% NEQ 0 (
+              echo WARNING: Algunos tests E2E fallaron (codigo: %E2E_EXIT%)
+              echo Continuando para que Jenkins procese los resultados...
+            ) else (
+              echo OK: Tests E2E ejecutados exitosamente
+            )
             echo.
-            echo ✅ Tests E2E saltados (requiere servidor corriendo)
+            echo ✅ Tests E2E completados
             '''
           }
         }
