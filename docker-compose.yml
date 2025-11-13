@@ -234,9 +234,14 @@ services:
       - "${JENKINS_AGENT_PORT:-50000}:50000"
     volumes:
       - jenkins_home:/var/jenkins_home
+      # Acceso a Docker para ejecutar docker compose
+      # En Windows con Docker Desktop, el socket está disponible en /var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       JENKINS_OPTS: "--httpPort=8080"
     user: root
+    networks:
+      - default
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/login || exit 1"]
       interval: 30s
