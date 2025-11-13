@@ -55,6 +55,8 @@ COPY --from=build /app/node_modules ./node_modules
 # Seguridad básica: crear usuario no root
 RUN addgroup -S nodegrp && \
     adduser -S nodeusr -G nodegrp && \
+    # Crear directorio logs antes de cambiar usuario (para permisos)
+    mkdir -p /app/logs /app/logs/encrypted && \
     chown -R nodeusr:nodegrp /app
 
 USER nodeusr

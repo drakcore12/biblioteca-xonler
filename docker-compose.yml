@@ -132,6 +132,10 @@ services:
     command: >
       sh -c "
         echo '✅ Base de datos lista. Iniciando aplicación...' &&
+        # Asegurar que el directorio logs tiene permisos correctos
+        mkdir -p /app/logs/encrypted 2>/dev/null || true &&
+        # Intentar ajustar permisos si es posible (puede fallar con bind mount, pero no crítico)
+        chmod -R 755 /app/logs 2>/dev/null || true &&
         node --enable-source-maps src/server.js
       "
 

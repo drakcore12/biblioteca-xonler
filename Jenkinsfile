@@ -15,19 +15,21 @@ pipeline {
     stage('Preparación') {
       steps {
         script {
-          echo "🧹 Limpiando contenedores anteriores..."
+          echo "🧹 Limpiando solo contenedores app y db (dejando sonarqube, grafana, prometheus corriendo)..."
           sh '''
             # Asegurar que estamos en el directorio del workspace
             pwd
             ls -la docker-compose.yml || echo "⚠️ docker-compose.yml no encontrado en la raíz"
             
-            # Detener y eliminar contenedores existentes para evitar conflictos
-            docker compose -f docker-compose.yml down --remove-orphans || true
+            # Solo detener y eliminar contenedores app y db (no tocar otros servicios)
+            echo "🛑 Deteniendo contenedores web-app y pg-main..."
+            docker stop web-app pg-main 2>/dev/null || true
+            docker rm -f web-app pg-main 2>/dev/null || true
             
-            # Limpiar contenedores huérfanos por nombre
-            docker rm -f pg-main web-app sonarqube db-init-sonar 2>/dev/null || true
+            # También limpiar db-init-sonar si existe (es temporal)
+            docker rm -f db-init-sonar 2>/dev/null || true
             
-            echo "✅ Limpieza completada"
+            echo "✅ Limpieza completada (sonarqube, grafana, prometheus siguen corriendo)"
           '''
         }
       }
@@ -120,6 +122,12 @@ pipeline {
             fi
             echo "✅ Archivos encontrados"
             
+            # Crear directorio logs con permisos correctos para evitar errores de permisos
+            echo "📁 Creando directorio logs con permisos correctos..."
+            mkdir -p logs/encrypted
+            chmod -R 755 logs || true
+            echo "✅ Directorio logs preparado"
+            
             # Construir la imagen de la app explícitamente
             # Primero intentar con cache, si falla construir sin cache
             echo "🔨 Construyendo imagen biblioteca-xonler-main-app..."
@@ -183,15 +191,20 @@ pipeline {
             done
             echo "✅ Base de datos lista"
             
-            # Iniciar db-init-sonar y esperar a que termine
-            echo "🚀 Iniciando inicialización de SonarQube DB..."
-            docker compose -f docker-compose.yml up -d db-init-sonar
-            docker wait db-init-sonar || true
-            echo "✅ Inicialización de SonarQube DB completada"
+            # Iniciar db-init-sonar solo si sonarqube necesita inicialización
+            # Verificar si sonarqube ya está corriendo
+            if docker ps --format '{{.Names}}' | grep -q '^sonarqube$'; then
+              echo "✅ SonarQube ya está corriendo, saltando inicialización de DB"
+            else
+              echo "🚀 Iniciando inicialización de SonarQube DB..."
+              docker compose -f docker-compose.yml up -d db-init-sonar
+              docker wait db-init-sonar || true
+              echo "✅ Inicialización de SonarQube DB completada"
+            fi
             
-            # Iniciar el resto de servicios
-            echo "🚀 Iniciando servicios: app, sonarqube"
-            docker compose -f docker-compose.yml up -d app sonarqube
+            # Solo iniciar app (sonarqube, grafana, prometheus ya están corriendo)
+            echo "🚀 Iniciando servicio: app"
+            docker compose -f docker-compose.yml up -d app
             
             echo "⏳ Esperando a que los contenedores se inicien..."
             sleep 10
@@ -257,20 +270,18 @@ pipeline {
             done
             echo "✅ web-app está healthy"
             
-            # Verificar SonarQube
-            echo "🔍 Verificando SonarQube (sonarqube)..."
-            ELAPSED=0
-            while ! check_healthy sonarqube; do
-              if [ $ELAPSED -ge $MAX_WAIT ]; then
-                echo "❌ TIMEOUT: sonarqube no está healthy después de ${MAX_WAIT}s"
-                docker logs sonarqube --tail 50
-                exit 1
+            # Verificar SonarQube (solo si está corriendo, no es crítico)
+            if docker ps --format '{{.Names}}' | grep -q '^sonarqube$'; then
+              echo "🔍 Verificando SonarQube (sonarqube)..."
+              ELAPSED=0
+              if check_healthy sonarqube; then
+                echo "✅ sonarqube está healthy"
+              else
+                echo "⚠️ sonarqube no está healthy, pero continuando (no crítico para tests)"
               fi
-              echo "⏳ Esperando a que sonarqube esté healthy... (${ELAPSED}s/${MAX_WAIT}s)"
-              sleep $INTERVAL
-              ELAPSED=$((ELAPSED + INTERVAL))
-            done
-            echo "✅ sonarqube está healthy"
+            else
+              echo "⚠️ SonarQube no está corriendo, pero continuando (no crítico para tests)"
+            fi
             
             # Verificación adicional: endpoints responden
             echo "🔍 Verificación adicional de endpoints..."
@@ -283,13 +294,14 @@ pipeline {
             fi
             echo "✅ Aplicación responde en /api/health"
             
-            # Verificar SonarQube
-            if ! curl -f http://localhost:9000/api/system/status > /dev/null 2>&1; then
-              echo "❌ ERROR: El endpoint /api/system/status de SonarQube no responde"
-              docker logs sonarqube --tail 30
-              exit 1
+            # Verificar SonarQube (opcional, no crítico)
+            if docker ps --format '{{.Names}}' | grep -q '^sonarqube$'; then
+              if curl -f http://localhost:9000/api/system/status > /dev/null 2>&1; then
+                echo "✅ SonarQube responde en /api/system/status"
+              else
+                echo "⚠️ SonarQube no responde, pero continuando"
+              fi
             fi
-            echo "✅ SonarQube responde en /api/system/status"
             
             echo "✅ Todos los contenedores están sanos y respondiendo correctamente"
           '''
@@ -387,15 +399,19 @@ pipeline {
     stage('Limpiar') {
       steps {
         script {
-          echo "🧹 Limpiando contenedores y recursos..."
+          echo "🧹 Limpiando solo contenedores app y db (dejando sonarqube, grafana, prometheus corriendo)..."
           sh '''
-            # Detener contenedores de test usando el docker-compose.yml del workspace
-            docker compose -f docker-compose.yml down || true
+            # Solo detener contenedores app y db (no tocar otros servicios)
+            echo "🛑 Deteniendo contenedores web-app y pg-main..."
+            docker stop web-app pg-main 2>/dev/null || true
+            docker rm -f web-app pg-main 2>/dev/null || true
             
-            # Opcional: limpiar imágenes no utilizadas (comentado para evitar borrar imágenes en uso)
-            # docker image prune -f || true
+            # Limpiar db-init-sonar si existe (es temporal)
+            docker rm -f db-init-sonar 2>/dev/null || true
             
-            echo "✅ Limpieza completada"
+            echo "✅ Limpieza completada (sonarqube, grafana, prometheus siguen corriendo)"
+            echo "📊 Servicios que permanecen activos:"
+            docker ps --format "table {{.Names}}\t{{.Status}}" | grep -E "(sonarqube|grafana|prometheus|postgres-exporter|cadvisor|pgadmin)" || echo "   (ninguno encontrado)"
           '''
         }
       }
