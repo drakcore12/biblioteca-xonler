@@ -45,8 +45,6 @@ pipeline {
           echo "📦 Instalando dependencias..."
           bat '''
             @echo off
-            setlocal
-            
             echo ========================================
             echo INICIANDO INSTALACION DE DEPENDENCIAS
             echo ========================================
@@ -67,13 +65,13 @@ pipeline {
             echo.
             
             echo Verificando directorio actual...
-            cd
             echo Directorio: %CD%
             echo.
             
             echo Verificando package.json...
             if not exist "package.json" (
               echo ERROR: package.json no encontrado en %CD%
+              echo Listando archivos del directorio:
               dir /b
               exit /b 1
             )
@@ -92,6 +90,8 @@ pipeline {
                 if errorlevel 1 (
                   echo ERROR: npm install tambien fallo con codigo %ERRORLEVEL%
                   exit /b 1
+                ) else (
+                  echo OK: npm install ejecutado exitosamente
                 )
               ) else (
                 echo OK: npm ci ejecutado exitosamente
