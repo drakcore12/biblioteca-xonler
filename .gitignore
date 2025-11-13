@@ -79,3 +79,7 @@ sonar-project.properties.local
 # Artillery
 artillery-report.json
 artillery-*.json
+
+# Jenkins Agent
+jenkins-agent/
+*.jar

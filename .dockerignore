@@ -97,3 +97,7 @@ coverage/
 *.backup
 *.old
 
+# Jenkins Agent
+jenkins-agent/
+*.jar
+
