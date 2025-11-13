@@ -100,6 +100,48 @@ pipeline {
       }
     }
 
+    stage('Construir imagen de la app') {
+      steps {
+        script {
+          echo "🔨 Construyendo imagen de la aplicación..."
+          sh '''
+            # Asegurar que estamos en el directorio del workspace
+            pwd
+            echo "📁 Verificando docker-compose.yml y Dockerfile..."
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "❌ ERROR: docker-compose.yml no encontrado en ${WORKSPACE}"
+              ls -la
+              exit 1
+            fi
+            if [ ! -f "Dockerfile" ]; then
+              echo "❌ ERROR: Dockerfile no encontrado en ${WORKSPACE}"
+              ls -la
+              exit 1
+            fi
+            echo "✅ Archivos encontrados"
+            
+            # Construir la imagen de la app explícitamente
+            # Primero intentar con cache, si falla construir sin cache
+            echo "🔨 Construyendo imagen biblioteca-xonler-main-app..."
+            if ! docker compose -f docker-compose.yml build app; then
+              echo "⚠️ Construcción con cache falló, intentando sin cache..."
+              docker compose -f docker-compose.yml build --no-cache app || {
+                echo "❌ ERROR: Falló la construcción de la imagen de la app"
+                exit 1
+              }
+            fi
+            
+            # Verificar que la imagen se construyó correctamente
+            docker images | grep biblioteca-xonler-main-app || {
+              echo "❌ ERROR: La imagen no se construyó correctamente"
+              exit 1
+            }
+            echo "✅ Imagen de la app construida correctamente"
+          '''
+        }
+      }
+    }
+
     stage('Iniciar contenedores') {
       steps {
         script {
@@ -121,9 +163,35 @@ pipeline {
               exit 1
             }
             
-            # Iniciar contenedores necesarios para tests de integración
-            echo "🚀 Iniciando servicios: db, app, sonarqube, db-init-sonar"
-            docker compose -f docker-compose.yml up -d db app sonarqube db-init-sonar
+            # Iniciar primero la base de datos y esperar a que esté healthy
+            echo "🚀 Iniciando base de datos..."
+            docker compose -f docker-compose.yml up -d db
+            
+            # Esperar a que la base de datos esté lista
+            echo "⏳ Esperando a que la base de datos esté lista..."
+            MAX_WAIT=120
+            ELAPSED=0
+            while ! docker inspect --format='{{.State.Health.Status}}' pg-main 2>/dev/null | grep -q healthy; do
+              if [ $ELAPSED -ge $MAX_WAIT ]; then
+                echo "❌ TIMEOUT: Base de datos no está healthy"
+                docker logs pg-main --tail 50
+                exit 1
+              fi
+              echo "⏳ Esperando a que pg-main esté healthy... (${ELAPSED}s/${MAX_WAIT}s)"
+              sleep 5
+              ELAPSED=$((ELAPSED + 5))
+            done
+            echo "✅ Base de datos lista"
+            
+            # Iniciar db-init-sonar y esperar a que termine
+            echo "🚀 Iniciando inicialización de SonarQube DB..."
+            docker compose -f docker-compose.yml up -d db-init-sonar
+            docker wait db-init-sonar || true
+            echo "✅ Inicialización de SonarQube DB completada"
+            
+            # Iniciar el resto de servicios
+            echo "🚀 Iniciando servicios: app, sonarqube"
+            docker compose -f docker-compose.yml up -d app sonarqube
             
             echo "⏳ Esperando a que los contenedores se inicien..."
             sleep 10

@@ -119,7 +119,7 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN}
     ports:
-      - "${PORT}:${PORT}"
+      - "${PORT:-3000}:${PORT:-3000}"
     volumes:
       # Montar logs si quieres persistirlos
       - ./logs:/app/logs
