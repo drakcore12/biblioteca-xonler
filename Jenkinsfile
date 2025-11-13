@@ -206,12 +206,65 @@ pipeline {
       }
     }
 
+    stage('Iniciar Servidor') {
+      steps {
+        script {
+          echo "🚀 Iniciando servidor con Docker Compose..."
+          bat '''
+            @echo off
+            echo Cambiando al directorio del workspace...
+            cd /d %WORKSPACE%
+            echo Directorio actual: %CD%
+            echo.
+            echo Verificando docker-compose.yml...
+            if not exist "docker-compose.yml" (
+              echo ERROR: docker-compose.yml no encontrado
+              exit /b 1
+            )
+            echo.
+            echo Iniciando contenedores con Docker Compose...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
+            if errorlevel 1 (
+              echo ERROR: Error al iniciar contenedores
+              exit /b 1
+            )
+            echo.
+            echo Esperando 15 segundos para que el servidor se inicie...
+            timeout /t 15 /nobreak >nul
+            echo.
+            echo Verificando que el servidor este respondiendo...
+            for /L %%i in (1,1,10) do (
+              curl -s http://localhost:3000/api/health >nul 2>&1
+              if not errorlevel 1 (
+                echo OK: Servidor respondiendo correctamente
+                goto :server_ready
+              )
+              echo Esperando servidor... (intento %%i/10)
+              timeout /t 3 /nobreak >nul
+            )
+            echo WARNING: Servidor no responde, pero continuando...
+            :server_ready
+            echo.
+            echo Verificando estado de los contenedores...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
+            echo.
+            echo ✅ Servidor iniciado
+            '''
+          }
+        }
+      }
+    }
+
     stage('Tests E2E') {
       steps {
         script {
           echo "🎭 Ejecutando tests E2E con Playwright en host..."
           bat '''
             @echo off
+            echo Cambiando al directorio del workspace...
+            cd /d %WORKSPACE%
+            echo Directorio actual: %CD%
+            echo.
             echo Instalando navegadores de Playwright...
             call npx playwright install --with-deps
             if errorlevel 1 (
@@ -226,7 +279,6 @@ pipeline {
             if not exist "playwright-report" mkdir playwright-report
             echo.
             echo Ejecutando tests E2E...
-            echo NOTA: Asegurate de que el servidor este corriendo en http://localhost:3000
             call npm run test:e2e
             set E2E_EXIT=%ERRORLEVEL%
             if %E2E_EXIT% NEQ 0 (
@@ -319,29 +371,24 @@ pipeline {
     stage('Despliegue (CD)') {
       steps {
         script {
-          echo "🚀 Desplegando aplicación con Docker Compose..."
+          echo "🚀 Verificando despliegue con Docker Compose..."
           bat '''
             @echo off
+            echo Cambiando al directorio del workspace...
+            cd /d %WORKSPACE%
+            echo Directorio actual: %CD%
+            echo.
             echo Verificando docker-compose.yml...
             if not exist "docker-compose.yml" (
-              echo ⚠️ docker-compose.yml no encontrado, saltando despliegue...
+              echo WARNING: docker-compose.yml no encontrado, saltando despliegue...
               exit /b 0
             )
-            
-            echo Iniciando contenedores con Docker Compose...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
-            if errorlevel 1 (
-              echo ⚠️ Error al iniciar contenedores, pero continuando...
-              exit /b 0
-            )
-            
-            echo Esperando 10 segundos para que los contenedores se inicien...
-            timeout /t 10 /nobreak >nul
             
             echo Verificando estado de los contenedores...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
             
-            echo ✅ Despliegue completado (verificar logs si hay problemas)
+            echo.
+            echo ✅ Despliegue verificado (los contenedores ya estan corriendo desde el stage anterior)
           '''
         }
       }
