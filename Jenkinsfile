@@ -17,8 +17,12 @@ pipeline {
         script {
           echo "🧹 Limpiando contenedores anteriores..."
           sh '''
+            # Asegurar que estamos en el directorio del workspace
+            pwd
+            ls -la docker-compose.yml || echo "⚠️ docker-compose.yml no encontrado en la raíz"
+            
             # Detener y eliminar contenedores existentes para evitar conflictos
-            docker compose down --remove-orphans || true
+            docker compose -f docker-compose.yml down --remove-orphans || true
             
             # Limpiar contenedores huérfanos por nombre
             docker rm -f pg-main web-app sonarqube db-init-sonar 2>/dev/null || true
@@ -101,13 +105,31 @@ pipeline {
         script {
           echo "🚀 Iniciando contenedores..."
           sh '''
-            # Asegurar que estamos en el directorio correcto
-            cd ${WORKSPACE}
+            # Asegurar que estamos en el directorio del workspace
+            pwd
+            echo "📁 Verificando docker-compose.yml..."
+            if [ ! -f "docker-compose.yml" ]; then
+              echo "❌ ERROR: docker-compose.yml no encontrado en ${WORKSPACE}"
+              ls -la
+              exit 1
+            fi
+            echo "✅ docker-compose.yml encontrado"
+            
+            # Verificar que docker compose puede leer el archivo
+            docker compose -f docker-compose.yml config --services || {
+              echo "❌ ERROR: No se puede leer docker-compose.yml"
+              exit 1
+            }
             
             # Iniciar contenedores necesarios para tests de integración
-            docker compose up -d db app sonarqube db-init-sonar
+            echo "🚀 Iniciando servicios: db, app, sonarqube, db-init-sonar"
+            docker compose -f docker-compose.yml up -d db app sonarqube db-init-sonar
+            
             echo "⏳ Esperando a que los contenedores se inicien..."
             sleep 10
+            
+            # Verificar que los contenedores están corriendo
+            docker compose -f docker-compose.yml ps
           '''
         }
       }
@@ -299,8 +321,8 @@ pipeline {
         script {
           echo "🧹 Limpiando contenedores y recursos..."
           sh '''
-            # Detener contenedores de test (mantener volúmenes para debugging si es necesario)
-            docker compose down || true
+            # Detener contenedores de test usando el docker-compose.yml del workspace
+            docker compose -f docker-compose.yml down || true
             
             # Opcional: limpiar imágenes no utilizadas (comentado para evitar borrar imágenes en uso)
             # docker image prune -f || true
