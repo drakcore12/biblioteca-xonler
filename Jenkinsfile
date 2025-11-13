@@ -94,13 +94,9 @@ pipeline {
           bat '''
             @echo off
             cd /d %WORKSPACE%
-            echo Obteniendo codigo mas reciente del repositorio...
-            git pull
-            echo Commit actual:
+            echo Commit actual del repositorio:
             git log -1 --oneline
             echo.
-            echo Iniciando contenedores base si no existen...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
             echo Reconstruyendo imagen de app con codigo fresco...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build app
             echo Eliminando contenedores app y db para recrearlos...
