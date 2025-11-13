@@ -45,78 +45,64 @@ pipeline {
           echo "📦 Instalando dependencias..."
           bat '''
             @echo off
-            setlocal enabledelayedexpansion
-            
             echo Verificando Node.js...
             node --version
             npm --version
+            echo.
             
             echo Verificando package.json...
             if not exist "package.json" (
-              echo ❌ package.json no encontrado
+              echo ERROR: package.json no encontrado
               exit /b 1
             )
-            echo ✅ package.json encontrado
+            echo OK: package.json encontrado
+            echo.
             
             echo Instalando dependencias con npm ci...
-            call npm ci --verbose
-            set CI_EXIT=!ERRORLEVEL!
-            echo Código de salida de npm ci: !CI_EXIT!
-            
-            if !CI_EXIT! NEQ 0 (
-              echo ⚠️ npm ci falló (código: !CI_EXIT!), intentando npm install...
-              call npm install --verbose
-              set INSTALL_EXIT=!ERRORLEVEL!
-              echo Código de salida de npm install: !INSTALL_EXIT!
-              if !INSTALL_EXIT! NEQ 0 (
-                echo ❌ Error al instalar dependencias (código: !INSTALL_EXIT!)
+            call npm ci
+            if errorlevel 1 (
+              echo WARNING: npm ci fallo, intentando npm install...
+              call npm install
+              if errorlevel 1 (
+                echo ERROR: No se pudieron instalar las dependencias
                 exit /b 1
               )
             )
+            echo.
             
-            echo Verificando node_modules existe...
+            echo Verificando node_modules...
             if not exist "node_modules" (
-              echo ❌ Directorio node_modules no existe después de la instalación
+              echo ERROR: node_modules no existe
               exit /b 1
             )
-            echo ✅ Directorio node_modules existe
+            echo OK: node_modules existe
+            echo.
             
-            echo Verificando instalación de jest...
+            echo Verificando jest...
             if exist "node_modules\\.bin\\jest.cmd" (
-              echo ✅ Jest instalado correctamente en node_modules/.bin/jest.cmd
+              echo OK: jest.cmd encontrado
             ) else if exist "node_modules\\.bin\\jest" (
-              echo ✅ Jest instalado correctamente en node_modules/.bin/jest
+              echo OK: jest encontrado
             ) else (
-              echo ⚠️ Jest no encontrado en node_modules/.bin
-              echo Instalando jest explícitamente...
-              call npm install jest --save-dev
-              if errorlevel 1 (
-                echo ❌ Error al instalar jest
-                exit /b 1
-              )
+              echo WARNING: jest no encontrado, instalando...
+              call npm install jest --save-dev --no-save
             )
+            echo.
             
-            echo Verificando instalación de jest-junit...
+            echo Verificando jest-junit...
             if exist "node_modules\\jest-junit" (
-              echo ✅ jest-junit instalado correctamente
+              echo OK: jest-junit encontrado
             ) else (
-              echo ⚠️ jest-junit no encontrado, instalando...
-              call npm install jest-junit --save-dev
+              echo WARNING: jest-junit no encontrado, instalando...
+              call npm install jest-junit --save-dev --no-save
               if errorlevel 1 (
-                echo ❌ Error al instalar jest-junit
+                echo ERROR: No se pudo instalar jest-junit
                 exit /b 1
               )
             )
+            echo.
             
-            echo Verificando que jest-junit esté en node_modules...
-            dir /b node_modules\\jest-junit 2>nul
-            if errorlevel 1 (
-              echo ⚠️ jest-junit no encontrado después de instalación
-            ) else (
-              echo ✅ jest-junit verificado en node_modules
-            )
-            
-            echo ✅ Dependencias instaladas correctamente
+            echo OK: Dependencias instaladas correctamente
           '''
         }
       }
@@ -129,29 +115,54 @@ pipeline {
           bat '''
             @echo off
             echo Ejecutando tests unitarios...
+            echo.
+            
             echo Agregando node_modules/.bin al PATH...
-            set PATH=%PATH%;%CD%\\node_modules\\.bin
+            set PATH=%CD%\\node_modules\\.bin;%PATH%
+            echo.
             
             echo Verificando jest...
             if exist "node_modules\\.bin\\jest.cmd" (
-              echo ✅ Jest encontrado en node_modules/.bin
+              echo OK: jest.cmd encontrado
+              set JEST_CMD=node_modules\\.bin\\jest.cmd
+            ) else if exist "node_modules\\.bin\\jest" (
+              echo OK: jest encontrado
+              set JEST_CMD=node_modules\\.bin\\jest
             ) else (
-              echo ⚠️ Jest no encontrado, usando npx...
+              echo WARNING: jest no encontrado en node_modules/.bin
+              set JEST_CMD=
             )
+            echo.
             
-            echo Ejecutando tests con npx jest directamente...
-            call npx jest --ci --reporters=default --reporters=jest-junit
+            echo Verificando jest-junit...
+            if exist "node_modules\\jest-junit" (
+              echo OK: jest-junit encontrado
+            ) else (
+              echo ERROR: jest-junit no encontrado
+              exit /b 1
+            )
+            echo.
+            
+            echo Ejecutando tests con npm test...
+            call npm test
             set TEST_EXIT=%ERRORLEVEL%
             
             if %TEST_EXIT% NEQ 0 (
-              echo ⚠️ Tests fallaron (código: %TEST_EXIT%), intentando con npm test como fallback...
-              call npm test
-              set TEST_EXIT=%ERRORLEVEL%
+              echo WARNING: npm test fallo (codigo: %TEST_EXIT%)
+              if defined JEST_CMD (
+                echo Intentando con jest directamente...
+                call %JEST_CMD% --ci --reporters=default --reporters=jest-junit
+                set TEST_EXIT=%ERRORLEVEL%
+              ) else (
+                echo Intentando con npx --yes jest...
+                call npx --yes jest --ci --reporters=default --reporters=jest-junit
+                set TEST_EXIT=%ERRORLEVEL%
+              )
               if %TEST_EXIT% NEQ 0 (
-                echo ⚠️ Algunos tests unitarios fallaron, pero continuando...
+                echo WARNING: Algunos tests unitarios fallaron, pero continuando...
               )
             ) else (
-              echo ✅ Tests ejecutados exitosamente con npx jest
+              echo OK: Tests ejecutados exitosamente
             )
             
             echo Verificando archivos de resultados...
