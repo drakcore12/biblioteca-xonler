@@ -119,8 +119,13 @@ pipeline {
             if exist "node_modules\\jest-junit" (
               echo OK: jest-junit encontrado
             ) else (
-              echo ERROR: jest-junit no encontrado
-              exit /b 1
+              echo WARNING: jest-junit no encontrado, intentando instalar...
+              call npm install jest jest-junit --save-dev --no-save
+              if exist "node_modules\\jest-junit" (
+                echo OK: jest-junit instalado correctamente
+              ) else (
+                echo WARNING: jest-junit sigue sin estar disponible, continuando SIN reporter JUnit
+              )
             )
             echo.
             
