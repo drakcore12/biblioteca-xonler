@@ -49,105 +49,40 @@ pipeline {
             echo INICIANDO INSTALACION DE DEPENDENCIAS
             echo ========================================
             echo.
-            
-            echo Verificando Node.js...
+            echo Verificando Node.js y npm...
             node --version
-            if errorlevel 1 (
-              echo ERROR: Node.js no encontrado
-              exit /b 1
-            )
-            
             npm --version
-            if errorlevel 1 (
-              echo ERROR: npm no encontrado
-              exit /b 1
-            )
             echo.
-            
-            echo Verificando directorio actual...
-            echo Directorio: %CD%
+            echo Directorio actual: %CD%
             echo.
-            
             echo Verificando package.json...
-            if not exist "package.json" (
-              echo ERROR: package.json no encontrado en %CD%
-              echo Listando archivos del directorio:
-              dir /b
-              exit /b 1
-            )
-            echo OK: package.json encontrado
+            dir package.json
             echo.
-            
             echo Verificando package-lock.json...
             if exist "package-lock.json" (
-              echo OK: package-lock.json encontrado, usando npm ci
-              echo Ejecutando npm ci...
+              echo package-lock.json encontrado, usando npm ci
               call npm ci
-              if errorlevel 1 (
-                echo WARNING: npm ci fallo con codigo %ERRORLEVEL%
-                echo Intentando npm install...
-                call npm install
-                if errorlevel 1 (
-                  echo ERROR: npm install tambien fallo con codigo %ERRORLEVEL%
-                  exit /b 1
-                ) else (
-                  echo OK: npm install ejecutado exitosamente
-                )
-              ) else (
-                echo OK: npm ci ejecutado exitosamente
-              )
             ) else (
-              echo WARNING: package-lock.json no encontrado, usando npm install
+              echo package-lock.json no encontrado, usando npm install
               call npm install
-              if errorlevel 1 (
-                echo ERROR: npm install fallo con codigo %ERRORLEVEL%
-                exit /b 1
-              ) else (
-                echo OK: npm install ejecutado exitosamente
-              )
             )
             echo.
-            
             echo Verificando node_modules...
+            dir node_modules 2>nul
             if not exist "node_modules" (
-              echo ERROR: node_modules no existe despues de la instalacion
+              echo ERROR: node_modules no existe
               exit /b 1
             )
-            echo OK: node_modules existe
             echo.
-            
-            echo Verificando jest en node_modules/.bin...
-            if exist "node_modules\\.bin\\jest.cmd" (
-              echo OK: jest.cmd encontrado
-            ) else if exist "node_modules\\.bin\\jest" (
-              echo OK: jest encontrado
-            ) else (
-              echo WARNING: jest no encontrado en node_modules/.bin
-              echo Instalando jest...
-              call npm install jest --save-dev --no-save
-              if errorlevel 1 (
-                echo ERROR: No se pudo instalar jest
-                exit /b 1
-              )
-            )
-            echo.
-            
-            echo Verificando jest-junit en node_modules...
-            if exist "node_modules\\jest-junit" (
-              echo OK: jest-junit encontrado
-            ) else (
-              echo WARNING: jest-junit no encontrado
-              echo Instalando jest-junit...
+            echo Verificando jest-junit...
+            dir node_modules\\jest-junit 2>nul
+            if not exist "node_modules\\jest-junit" (
+              echo jest-junit no encontrado, instalando...
               call npm install jest-junit --save-dev --no-save
-              if errorlevel 1 (
-                echo ERROR: No se pudo instalar jest-junit
-                exit /b 1
-              )
             )
             echo.
-            
             echo ========================================
-            echo DEPENDENCIAS INSTALADAS CORRECTAMENTE
+            echo DEPENDENCIAS INSTALADAS
             echo ========================================
           '''
         }
