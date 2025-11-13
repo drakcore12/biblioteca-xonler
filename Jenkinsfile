@@ -45,55 +45,99 @@ pipeline {
           echo "📦 Instalando dependencias..."
           bat '''
             @echo off
+            setlocal
+            
+            echo ========================================
+            echo INICIANDO INSTALACION DE DEPENDENCIAS
+            echo ========================================
+            echo.
+            
             echo Verificando Node.js...
             node --version
+            if errorlevel 1 (
+              echo ERROR: Node.js no encontrado
+              exit /b 1
+            )
+            
             npm --version
+            if errorlevel 1 (
+              echo ERROR: npm no encontrado
+              exit /b 1
+            )
+            echo.
+            
+            echo Verificando directorio actual...
+            cd
+            echo Directorio: %CD%
             echo.
             
             echo Verificando package.json...
             if not exist "package.json" (
-              echo ERROR: package.json no encontrado
+              echo ERROR: package.json no encontrado en %CD%
+              dir /b
               exit /b 1
             )
             echo OK: package.json encontrado
             echo.
             
-            echo Instalando dependencias con npm ci...
-            call npm ci
-            if errorlevel 1 (
-              echo WARNING: npm ci fallo, intentando npm install...
+            echo Verificando package-lock.json...
+            if exist "package-lock.json" (
+              echo OK: package-lock.json encontrado, usando npm ci
+              echo Ejecutando npm ci...
+              call npm ci
+              if errorlevel 1 (
+                echo WARNING: npm ci fallo con codigo %ERRORLEVEL%
+                echo Intentando npm install...
+                call npm install
+                if errorlevel 1 (
+                  echo ERROR: npm install tambien fallo con codigo %ERRORLEVEL%
+                  exit /b 1
+                )
+              ) else (
+                echo OK: npm ci ejecutado exitosamente
+              )
+            ) else (
+              echo WARNING: package-lock.json no encontrado, usando npm install
               call npm install
               if errorlevel 1 (
-                echo ERROR: No se pudieron instalar las dependencias
+                echo ERROR: npm install fallo con codigo %ERRORLEVEL%
                 exit /b 1
+              ) else (
+                echo OK: npm install ejecutado exitosamente
               )
             )
             echo.
             
             echo Verificando node_modules...
             if not exist "node_modules" (
-              echo ERROR: node_modules no existe
+              echo ERROR: node_modules no existe despues de la instalacion
               exit /b 1
             )
             echo OK: node_modules existe
             echo.
             
-            echo Verificando jest...
+            echo Verificando jest en node_modules/.bin...
             if exist "node_modules\\.bin\\jest.cmd" (
               echo OK: jest.cmd encontrado
             ) else if exist "node_modules\\.bin\\jest" (
               echo OK: jest encontrado
             ) else (
-              echo WARNING: jest no encontrado, instalando...
+              echo WARNING: jest no encontrado en node_modules/.bin
+              echo Instalando jest...
               call npm install jest --save-dev --no-save
+              if errorlevel 1 (
+                echo ERROR: No se pudo instalar jest
+                exit /b 1
+              )
             )
             echo.
             
-            echo Verificando jest-junit...
+            echo Verificando jest-junit en node_modules...
             if exist "node_modules\\jest-junit" (
               echo OK: jest-junit encontrado
             ) else (
-              echo WARNING: jest-junit no encontrado, instalando...
+              echo WARNING: jest-junit no encontrado
+              echo Instalando jest-junit...
               call npm install jest-junit --save-dev --no-save
               if errorlevel 1 (
                 echo ERROR: No se pudo instalar jest-junit
@@ -102,7 +146,9 @@ pipeline {
             )
             echo.
             
-            echo OK: Dependencias instaladas correctamente
+            echo ========================================
+            echo DEPENDENCIAS INSTALADAS CORRECTAMENTE
+            echo ========================================
           '''
         }
       }
