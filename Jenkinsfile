@@ -394,11 +394,13 @@ pipeline {
       }
       post {
         always {
-          echo "📊 Estado final de contenedores:"
-          bat '''
-            @echo off
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
-          '''
+          script {
+            echo "📊 Estado final de contenedores:"
+            bat '''
+              @echo off
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
+            '''
+          }
         }
         success {
           echo "✅ Despliegue exitoso"
