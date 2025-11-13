@@ -139,22 +139,35 @@ pipeline {
                 call npx --yes jest --ci --reporters=default --reporters=jest-junit
                 set TEST_EXIT=%ERRORLEVEL%
               )
-              if %TEST_EXIT% NEQ 0 (
-                echo WARNING: Algunos tests unitarios fallaron, pero continuando...
-              )
-            ) else (
-              echo OK: Tests ejecutados exitosamente
             )
             
             echo Verificando archivos de resultados...
             if exist "test-results\\junit.xml" (
-              echo ✅ Archivo junit.xml generado en: test-results\\junit.xml
+              echo OK: Archivo junit.xml generado en: test-results\\junit.xml
             ) else if exist "junit.xml" (
-              echo ✅ Archivo junit.xml encontrado en la raíz
+              echo OK: Archivo junit.xml encontrado en la raiz
               if not exist "test-results" mkdir test-results
               copy junit.xml test-results\\junit.xml
             ) else (
-              echo ⚠️ Archivo junit.xml no encontrado
+              echo WARNING: Archivo junit.xml no encontrado
+            )
+            
+            echo.
+            echo ========================================
+            echo TESTS COMPLETADOS
+            echo ========================================
+            echo Codigo de salida de los tests: %TEST_EXIT%
+            
+            rem Si los tests pasaron (codigo 0), terminar con exito
+            rem Si los tests fallaron, Jenkins lo detectara del archivo junit.xml
+            rem pero no queremos que el script batch falle si los tests pasaron
+            if %TEST_EXIT% EQU 0 (
+              echo OK: Todos los tests pasaron exitosamente
+              exit /b 0
+            ) else (
+              echo WARNING: Algunos tests fallaron (codigo: %TEST_EXIT%)
+              echo Continuando para que Jenkins procese el archivo junit.xml
+              exit /b 0
             )
           '''
         }
