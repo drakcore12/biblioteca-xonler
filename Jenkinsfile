@@ -212,6 +212,15 @@ pipeline {
           echo "🎭 Ejecutando tests E2E con Playwright en host..."
           bat '''
             @echo off
+            echo Instalando navegadores de Playwright...
+            call npx playwright install --with-deps
+            if errorlevel 1 (
+              echo WARNING: Error al instalar navegadores de Playwright
+              echo Continuando de todas formas...
+            ) else (
+              echo OK: Navegadores de Playwright instalados
+            )
+            echo.
             echo WARNING: Tests E2E requieren que el servidor este corriendo
             echo En CI, el servidor debe iniciarse antes de ejecutar los tests E2E
             echo Saltando tests E2E por ahora - configurar servidor antes si es necesario
