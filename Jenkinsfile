@@ -69,7 +69,8 @@ pipeline {
             @echo off
             echo Ejecutando tests unitarios...
             call npm test
-            if errorlevel 1 (
+            set TEST_EXIT=%ERRORLEVEL%
+            if %TEST_EXIT% NEQ 0 (
               echo ⚠️ Algunos tests unitarios fallaron, pero continuando...
             )
             
@@ -115,7 +116,8 @@ pipeline {
             
             echo Ejecutando tests E2E...
             call npm run test:e2e
-            if errorlevel 1 (
+            set E2E_EXIT=%ERRORLEVEL%
+            if %E2E_EXIT% NEQ 0 (
               echo ⚠️ Algunos tests E2E fallaron, pero continuando...
             )
             
@@ -126,12 +128,13 @@ pipeline {
       post {
         always {
           archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
-          publishHTML([
-            reportDir: 'playwright-report',
-            reportFiles: 'index.html',
-            reportName: 'Playwright Report',
-            keepAll: true
-          ])
+          // publishHTML requiere plugin HTML Publisher - comentado por ahora
+          // publishHTML([
+          //   reportDir: 'playwright-report',
+          //   reportFiles: 'index.html',
+          //   reportName: 'Playwright Report',
+          //   keepAll: true
+          // ])
         }
       }
     }
@@ -147,7 +150,8 @@ pipeline {
             
             echo Ejecutando tests de carga...
             call npm run test:load
-            if errorlevel 1 (
+            set LOAD_EXIT=%ERRORLEVEL%
+            if %LOAD_EXIT% NEQ 0 (
               echo ⚠️ Tests de carga fallaron, pero continuando...
             )
             
@@ -172,14 +176,16 @@ pipeline {
             if not exist "coverage\\lcov.info" (
               echo 📊 Generando reporte de cobertura para SonarQube...
               call npm run test:coverage
-              if errorlevel 1 (
+              set COV_EXIT=%ERRORLEVEL%
+              if %COV_EXIT% NEQ 0 (
                 echo ⚠️ No se pudo generar cobertura, pero continuando con SonarQube...
               )
             )
             
             echo Ejecutando análisis de SonarQube...
             call npm run sonar:local
-            if errorlevel 1 (
+            set SONAR_EXIT=%ERRORLEVEL%
+            if %SONAR_EXIT% NEQ 0 (
               echo ⚠️ Análisis de SonarQube falló, pero continuando...
             )
             
