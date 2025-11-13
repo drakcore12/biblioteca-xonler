@@ -205,7 +205,7 @@ pipeline {
             )
             
             echo Iniciando contenedores con Docker Compose...
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" compose up -d
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d
             if errorlevel 1 (
               echo ⚠️ Error al iniciar contenedores, pero continuando...
               exit /b 0
@@ -215,7 +215,7 @@ pipeline {
             timeout /t 10 /nobreak >nul
             
             echo Verificando estado de los contenedores...
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" compose ps
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
             
             echo ✅ Despliegue completado (verificar logs si hay problemas)
           '''
@@ -226,7 +226,7 @@ pipeline {
           echo "📊 Estado final de contenedores:"
           bat '''
             @echo off
-            "C:\Program Files\Docker\Docker\resources\bin\docker.exe" compose ps
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
           '''
         }
         success {
