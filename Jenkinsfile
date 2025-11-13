@@ -13,18 +13,13 @@ pipeline {
 
   stages {
     stage('Instalar dependencias') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          args '-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker:ro'
-        }
-      }
       steps {
         script {
           echo "📦 Instalando dependencias..."
           sh '''
-            # Instalar docker-compose si no está disponible
-            apk add --no-cache docker-cli docker-compose || true
+            # Verificar que Node.js está disponible
+            node --version
+            npm --version
             
             npm ci
             if [ $? -ne 0 ]; then
@@ -145,13 +140,6 @@ pipeline {
     }
 
     stage('Tests Unitarios') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-          reuseNode true
-        }
-      }
       steps {
         script {
           echo "🧪 Ejecutando tests unitarios..."
@@ -195,20 +183,10 @@ pipeline {
     }
 
     stage('Tests E2E') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-          reuseNode true
-        }
-      }
       steps {
         script {
           echo "🎭 Ejecutando tests E2E con Playwright..."
           sh '''
-            # Instalar dependencias del sistema para Playwright
-            apk add --no-cache libc6-compat || true
-            
             # Asegurar que los directorios existen
             mkdir -p test-results playwright-report || true
             
@@ -235,13 +213,6 @@ pipeline {
     }
 
     stage('Tests de Carga') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-          reuseNode true
-        }
-      }
       steps {
         script {
           echo "⚡ Ejecutando tests de carga con Artillery..."
@@ -266,13 +237,6 @@ pipeline {
     }
 
     stage('Análisis SonarQube') {
-      agent {
-        docker {
-          image 'node:20-alpine'
-          args '-v /var/run/docker.sock:/var/run/docker.sock'
-          reuseNode true
-        }
-      }
       steps {
         script {
           echo "🔍 Ejecutando análisis de código con SonarQube..."

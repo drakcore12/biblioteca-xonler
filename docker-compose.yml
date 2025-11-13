@@ -226,7 +226,9 @@ services:
 
   # Jenkins - CI/CD
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: .
+      dockerfile: Dockerfile.jenkins
     container_name: jenkins
     restart: unless-stopped
     ports:
@@ -247,7 +249,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
 
   sonarqube:
     image: sonarqube:community

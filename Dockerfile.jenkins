@@ -1,0 +1,29 @@
+# Dockerfile personalizado para Jenkins con Node.js
+FROM jenkins/jenkins:lts
+
+# Cambiar a root para instalar paquetes
+USER root
+
+# Instalar Node.js 20
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest
+
+# Instalar Docker CLI y Docker Compose
+RUN apt-get update && \
+    apt-get install -y \
+    docker.io \
+    docker-compose \
+    curl \
+    git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Verificar instalaciones
+RUN node --version && \
+    npm --version && \
+    docker --version
+
+# Volver al usuario jenkins
+USER jenkins
+
