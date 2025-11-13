@@ -12,6 +12,23 @@ pipeline {
   }
 
   stages {
+    stage('Preparación') {
+      steps {
+        script {
+          echo "🧹 Limpiando contenedores anteriores..."
+          sh '''
+            # Detener y eliminar contenedores existentes para evitar conflictos
+            docker compose down --remove-orphans || true
+            
+            # Limpiar contenedores huérfanos por nombre
+            docker rm -f pg-main web-app sonarqube db-init-sonar 2>/dev/null || true
+            
+            echo "✅ Limpieza completada"
+          '''
+        }
+      }
+    }
+
     stage('Instalar dependencias') {
       steps {
         script {
@@ -32,11 +49,62 @@ pipeline {
       }
     }
 
+    stage('Validaciones Rápidas') {
+      parallel {
+        stage('Tests Unitarios') {
+          steps {
+            script {
+              echo "🧪 Ejecutando tests unitarios (sin contenedores)..."
+              sh '''
+                # Asegurar que el directorio test-results existe
+                mkdir -p test-results || true
+                
+                # Ejecutar tests unitarios (no necesitan app corriendo)
+                npm test || {
+                  echo "⚠️ Algunos tests unitarios fallaron, pero continuando..."
+                }
+                
+                # Verificar que el archivo se generó
+                if [ -f "test-results/junit.xml" ]; then
+                  echo "✅ Archivo junit.xml generado en: test-results/junit.xml"
+                elif [ -f "junit.xml" ]; then
+                  echo "✅ Archivo junit.xml encontrado en la raíz"
+                  mkdir -p test-results
+                  cp junit.xml test-results/junit.xml || true
+                else
+                  echo "⚠️ Archivo junit.xml no encontrado"
+                fi
+              '''
+            }
+          }
+          post {
+            always {
+              script {
+                def junitFile = 'test-results/junit.xml'
+                if (fileExists(junitFile)) {
+                  junit junitFile
+                } else if (fileExists('junit.xml')) {
+                  junit 'junit.xml'
+                } else {
+                  echo "⚠️ No se encontró archivo junit.xml para publicar"
+                }
+              }
+              archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+            }
+          }
+        }
+      }
+    }
+
     stage('Iniciar contenedores') {
       steps {
         script {
           echo "🚀 Iniciando contenedores..."
           sh '''
+            # Asegurar que estamos en el directorio correcto
+            cd ${WORKSPACE}
+            
+            # Iniciar contenedores necesarios para tests de integración
             docker compose up -d db app sonarqube db-init-sonar
             echo "⏳ Esperando a que los contenedores se inicien..."
             sleep 10
@@ -139,99 +207,60 @@ pipeline {
       }
     }
 
-    stage('Tests Unitarios') {
-      steps {
-        script {
-          echo "🧪 Ejecutando tests unitarios..."
-          sh '''
-            # Asegurar que el directorio test-results existe
-            mkdir -p test-results || true
-            
-            # Ejecutar tests (sin condicional - siempre continúa)
-            npm test || {
-              echo "⚠️ Algunos tests unitarios fallaron, pero continuando..."
-            }
-            
-            # Verificar que el archivo se generó
-            if [ -f "test-results/junit.xml" ]; then
-              echo "✅ Archivo junit.xml generado en: test-results/junit.xml"
-            elif [ -f "junit.xml" ]; then
-              echo "✅ Archivo junit.xml encontrado en la raíz"
-              mkdir -p test-results
-              cp junit.xml test-results/junit.xml || true
-            else
-              echo "⚠️ Archivo junit.xml no encontrado"
-            fi
-          '''
-        }
-      }
-      post {
-        always {
-          script {
-            def junitFile = 'test-results/junit.xml'
-            if (fileExists(junitFile)) {
-              junit junitFile
-            } else if (fileExists('junit.xml')) {
-              junit 'junit.xml'
-            } else {
-              echo "⚠️ No se encontró archivo junit.xml para publicar"
+    stage('Tests de Integración') {
+      parallel {
+        stage('Tests E2E') {
+          steps {
+            script {
+              echo "🎭 Ejecutando tests E2E con Playwright..."
+              sh '''
+                # Asegurar que los directorios existen
+                mkdir -p test-results playwright-report || true
+                
+                # Ejecutar tests E2E (sin condicional - siempre continúa)
+                npm run test:e2e || {
+                  echo "⚠️ Algunos tests E2E fallaron, pero continuando..."
+                }
+                
+                echo "✅ Tests E2E completados"
+              '''
             }
           }
-          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
-        }
-      }
-    }
-
-    stage('Tests E2E') {
-      steps {
-        script {
-          echo "🎭 Ejecutando tests E2E con Playwright..."
-          sh '''
-            # Asegurar que los directorios existen
-            mkdir -p test-results playwright-report || true
-            
-            # Ejecutar tests E2E (sin condicional - siempre continúa)
-            npm run test:e2e || {
-              echo "⚠️ Algunos tests E2E fallaron, pero continuando..."
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
+              publishHTML([
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Playwright Report',
+                keepAll: true
+              ])
             }
-            
-            echo "✅ Tests E2E completados"
-          '''
+          }
         }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
-          publishHTML([
-            reportDir: 'playwright-report',
-            reportFiles: 'index.html',
-            reportName: 'Playwright Report',
-            keepAll: true
-          ])
-        }
-      }
-    }
 
-    stage('Tests de Carga') {
-      steps {
-        script {
-          echo "⚡ Ejecutando tests de carga con Artillery..."
-          sh '''
-            # Asegurar que los directorios existen
-            mkdir -p test-results || true
-            
-            # Ejecutar tests de carga (sin condicional - siempre continúa)
-            npm run test:load || {
-              echo "⚠️ Tests de carga fallaron, pero continuando..."
+        stage('Tests de Carga') {
+          steps {
+            script {
+              echo "⚡ Ejecutando tests de carga con Artillery..."
+              sh '''
+                # Asegurar que los directorios existen
+                mkdir -p test-results || true
+                
+                # Ejecutar tests de carga (sin condicional - siempre continúa)
+                npm run test:load || {
+                  echo "⚠️ Tests de carga fallaron, pero continuando..."
+                }
+                
+                echo "✅ Tests de carga completados"
+              '''
             }
-            
-            echo "✅ Tests de carga completados"
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+            }
+          }
         }
       }
     }
@@ -268,10 +297,14 @@ pipeline {
     stage('Limpiar') {
       steps {
         script {
-          echo "🧹 Limpiando..."
+          echo "🧹 Limpiando contenedores y recursos..."
           sh '''
-            # Opcional: detener contenedores al final
-            # docker compose down || true
+            # Detener contenedores de test (mantener volúmenes para debugging si es necesario)
+            docker compose down || true
+            
+            # Opcional: limpiar imágenes no utilizadas (comentado para evitar borrar imágenes en uso)
+            # docker image prune -f || true
+            
             echo "✅ Limpieza completada"
           '''
         }
