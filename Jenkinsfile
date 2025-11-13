@@ -45,22 +45,41 @@ pipeline {
           echo "📦 Instalando dependencias..."
           bat '''
             @echo off
+            setlocal enabledelayedexpansion
+            
             echo Verificando Node.js...
             node --version
             npm --version
             
-            echo Instalando dependencias...
-            call npm ci
-            set CI_EXIT=%ERRORLEVEL%
-            if %CI_EXIT% NEQ 0 (
-              echo ⚠️ npm ci falló (código: %CI_EXIT%), intentando npm install...
-              call npm install
-              set INSTALL_EXIT=%ERRORLEVEL%
-              if %INSTALL_EXIT% NEQ 0 (
-                echo ❌ Error al instalar dependencias (código: %INSTALL_EXIT%)
+            echo Verificando package.json...
+            if not exist "package.json" (
+              echo ❌ package.json no encontrado
+              exit /b 1
+            )
+            echo ✅ package.json encontrado
+            
+            echo Instalando dependencias con npm ci...
+            call npm ci --verbose
+            set CI_EXIT=!ERRORLEVEL!
+            echo Código de salida de npm ci: !CI_EXIT!
+            
+            if !CI_EXIT! NEQ 0 (
+              echo ⚠️ npm ci falló (código: !CI_EXIT!), intentando npm install...
+              call npm install --verbose
+              set INSTALL_EXIT=!ERRORLEVEL!
+              echo Código de salida de npm install: !INSTALL_EXIT!
+              if !INSTALL_EXIT! NEQ 0 (
+                echo ❌ Error al instalar dependencias (código: !INSTALL_EXIT!)
                 exit /b 1
               )
             )
+            
+            echo Verificando node_modules existe...
+            if not exist "node_modules" (
+              echo ❌ Directorio node_modules no existe después de la instalación
+              exit /b 1
+            )
+            echo ✅ Directorio node_modules existe
             
             echo Verificando instalación de jest...
             if exist "node_modules\\.bin\\jest.cmd" (
@@ -69,22 +88,32 @@ pipeline {
               echo ✅ Jest instalado correctamente en node_modules/.bin/jest
             ) else (
               echo ⚠️ Jest no encontrado en node_modules/.bin
-              echo Verificando package.json...
-              type package.json | findstr jest
-              echo Instalando jest y jest-junit explícitamente...
-              call npm install --save-dev jest jest-junit
+              echo Instalando jest explícitamente...
+              call npm install jest --save-dev
               if errorlevel 1 (
                 echo ❌ Error al instalar jest
                 exit /b 1
               )
             )
             
-            echo Verificando node_modules existe...
-            if exist "node_modules" (
-              echo ✅ Directorio node_modules existe
+            echo Verificando instalación de jest-junit...
+            if exist "node_modules\\jest-junit" (
+              echo ✅ jest-junit instalado correctamente
             ) else (
-              echo ❌ Directorio node_modules no existe
-              exit /b 1
+              echo ⚠️ jest-junit no encontrado, instalando...
+              call npm install jest-junit --save-dev
+              if errorlevel 1 (
+                echo ❌ Error al instalar jest-junit
+                exit /b 1
+              )
+            )
+            
+            echo Verificando que jest-junit esté en node_modules...
+            dir /b node_modules\\jest-junit 2>nul
+            if errorlevel 1 (
+              echo ⚠️ jest-junit no encontrado después de instalación
+            ) else (
+              echo ✅ jest-junit verificado en node_modules
             )
             
             echo ✅ Dependencias instaladas correctamente
