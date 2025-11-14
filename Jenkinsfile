@@ -107,15 +107,25 @@ pipeline {
             echo.
             echo Reconstruyendo imagen de app con codigo fresco...
             echo Esto puede tardar varios minutos, especialmente copiando node_modules...
+            echo Ejecutando build...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build --progress=plain app
             set BUILD_EXIT=%ERRORLEVEL%
             echo.
-            echo Codigo de salida del build: %BUILD_EXIT%
+            echo ========================================
+            echo Build completado - Codigo de salida: %BUILD_EXIT%
+            echo ========================================
             if %BUILD_EXIT% NEQ 0 (
               echo ERROR: Fallo al construir imagen
               exit /b 1
             )
             echo ✅ Imagen construida exitosamente
+            echo Verificando que la imagen existe...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
+            if errorlevel 1 (
+              echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
+            ) else (
+              echo ✅ Imagen verificada correctamente
+            )
             echo.
             echo Verificando si los contenedores están corriendo...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
