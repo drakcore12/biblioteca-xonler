@@ -54,7 +54,7 @@ global.console = { ...console, warn: jest.fn(), error: jest.fn() };
 // =========================
 
 const serviceCode = fs.readFileSync(
-  path.join(__dirname, '../../../public/services/admin-biblioteca.services.js'),
+  path.join(__dirname, '../../../../public/services/admin-biblioteca.services.js'),
   'utf8'
 );
 

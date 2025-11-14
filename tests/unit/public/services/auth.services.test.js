@@ -65,6 +65,35 @@ global.console = {
   warn: jest.fn()
 };
 
+// Mock de location para evitar error de navegación en jsdom
+// Se debe hacer ANTES de cargar el módulo porque el servicio usa this.runtime.location
+const mockLocation = {
+  replace: jest.fn(),
+  href: '',
+  pathname: '',
+  search: '',
+  hash: '',
+};
+Object.defineProperty(global, 'location', {
+  value: mockLocation,
+  configurable: true,
+  writable: true,
+});
+if (typeof globalThis !== 'undefined') {
+  Object.defineProperty(globalThis, 'location', {
+    value: mockLocation,
+    configurable: true,
+    writable: true,
+  });
+}
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'location', {
+    value: mockLocation,
+    configurable: true,
+    writable: true,
+  });
+}
+
 // ============================================================================
 // IMPORTAR MÓDULO
 // ============================================================================
@@ -202,7 +231,7 @@ describe('auth.services.js', () => {
 
   describe('logout', () => {
     it('debe limpiar todos los datos de autenticación', () => {
-      // Nota: No podemos mockear location.replace en jsdom porque es de solo lectura
+      // Nota: location.replace ya está mockeado globalmente antes de cargar el módulo
       // El test verifica que se limpian los datos de storage, que es la funcionalidad principal
       // La redirección se probará en tests de integración/E2E
       
