@@ -120,11 +120,14 @@ pipeline {
               echo Esperando 20 segundos para que el servidor inicie...
               ping 127.0.0.1 -n 21 >nul
             ) else (
-              echo Los contenedores ya están corriendo, usando imagen actualizada
+              echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
+              echo Esperando 20 segundos para que el servidor reinicie...
+              ping 127.0.0.1 -n 21 >nul
             )
             echo Verificando estado de contenedores...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
-            echo ✅ Imagen de app reconstruida y contenedores verificados
+            echo ✅ Imagen de app reconstruida y contenedor app reiniciado
           '''
         }
       }
