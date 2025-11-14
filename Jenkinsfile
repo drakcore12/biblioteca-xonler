@@ -106,7 +106,12 @@ pipeline {
             git log -1 --oneline
             echo.
             echo Reconstruyendo imagen de app con codigo fresco...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build app
+            echo Esto puede tardar varios minutos, especialmente copiando node_modules...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build --progress=plain app
+            if errorlevel 1 (
+              echo ERROR: Fallo al construir imagen
+              exit /b 1
+            )
             echo Deteniendo y eliminando contenedores app y db...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose rm -f -s app db 2>nul
             echo Eliminando contenedores directamente si existen...
