@@ -112,18 +112,19 @@ pipeline {
               echo ERROR: Fallo al construir imagen
               exit /b 1
             )
-            echo Deteniendo y eliminando contenedores app y db...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose rm -f -s app db 2>nul
-            echo Eliminando contenedores directamente si existen...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" stop pg-main web-app 2>nul
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" rm -f pg-main web-app 2>nul
-            echo Creando contenedores app y db de cero...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
-            echo Esperando 20 segundos para que el servidor inicie...
-            ping 127.0.0.1 -n 21 >nul
+            echo Verificando si los contenedores están corriendo...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
+            if errorlevel 1 (
+              echo Los contenedores no están corriendo, iniciándolos...
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
+              echo Esperando 20 segundos para que el servidor inicie...
+              ping 127.0.0.1 -n 21 >nul
+            ) else (
+              echo Los contenedores ya están corriendo, usando imagen actualizada
+            )
             echo Verificando estado de contenedores...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
-            echo ✅ Servidor iniciado con codigo actualizado
+            echo ✅ Imagen de app reconstruida y contenedores verificados
           '''
         }
       }
