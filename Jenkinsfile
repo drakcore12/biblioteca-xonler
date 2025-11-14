@@ -108,10 +108,15 @@ pipeline {
             echo Reconstruyendo imagen de app con codigo fresco...
             echo Esto puede tardar varios minutos, especialmente copiando node_modules...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose build --progress=plain app
-            if errorlevel 1 (
+            set BUILD_EXIT=%ERRORLEVEL%
+            echo.
+            echo Codigo de salida del build: %BUILD_EXIT%
+            if %BUILD_EXIT% NEQ 0 (
               echo ERROR: Fallo al construir imagen
               exit /b 1
             )
+            echo ✅ Imagen construida exitosamente
+            echo.
             echo Verificando si los contenedores están corriendo...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
             if errorlevel 1 (
