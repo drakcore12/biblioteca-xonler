@@ -238,10 +238,19 @@ pipeline {
             echo.
             echo [2/4] Verificando contenedor de SonarQube...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube > temp_sonar_status.txt 2>&1
-            findstr /i "Up" temp_sonar_status.txt | findstr /i "healthy" >nul 2>&1
-            set SONAR_STATUS=%ERRORLEVEL%
+            findstr /i "Up" temp_sonar_status.txt >nul
+            if errorlevel 1 (
+              set SONAR_UP=0
+            ) else (
+              findstr /i "healthy" temp_sonar_status.txt >nul
+              if errorlevel 1 (
+                set SONAR_UP=0
+              ) else (
+                set SONAR_UP=1
+              )
+            )
             del temp_sonar_status.txt 2>nul
-            if %SONAR_STATUS% NEQ 0 (
+            if %SONAR_UP% EQU 0 (
               echo ⚠️ ADVERTENCIA: Contenedor sonarqube no está corriendo o no está healthy
               echo    Intentando iniciar contenedor...
               "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
