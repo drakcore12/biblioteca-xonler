@@ -36,26 +36,57 @@ services:
       PGPORT: 5432
     command: >
       sh -c "
-        export PGPASSWORD=$${POSTGRES_PASSWORD} &&
+        set -e
+        export PGPASSWORD=$${POSTGRES_PASSWORD}
+        echo '⏳ Esperando a que PostgreSQL esté completamente listo...'
         until pg_isready -h db -p 5432 -U $${POSTGRES_USER} -d postgres; do
-          echo '⏳ Esperando a que PostgreSQL esté listo...'
+          echo '   PostgreSQL aún no está listo, esperando...'
           sleep 2
-        done &&
-        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"
+        done
+        echo '✅ PostgreSQL está listo'
+        sleep 2
+        echo '🔧 Creando/actualizando usuario sonar...'
+        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -v ON_ERROR_STOP=1 -c \"
           DO \\$\\$
           BEGIN
             IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'sonar') THEN
               CREATE ROLE sonar WITH LOGIN ENCRYPTED PASSWORD '$${SONAR_DB_PASSWORD}';
+              RAISE NOTICE 'Usuario sonar creado';
             ELSE
               ALTER ROLE sonar WITH PASSWORD '$${SONAR_DB_PASSWORD}';
+              RAISE NOTICE 'Contraseña del usuario sonar actualizada';
             END IF;
           END
           \\$\\$;
-        \" &&
-        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'sonarqube'\" | grep -q 1 ||
-        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"CREATE DATABASE sonarqube OWNER sonar;\" &&
-        psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -c \"GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;\" &&
-        echo '✅ Configuración de SonarQube completada'
+        \"
+        if [ $$? -ne 0 ]; then
+          echo '❌ ERROR: Fallo al crear/actualizar usuario sonar'
+          exit 1
+        fi
+        echo '✅ Usuario sonar configurado correctamente'
+        echo '🔧 Verificando/creando base de datos sonarqube...'
+        DB_EXISTS=$$(psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='sonarqube'\")
+        if [ \"$$DB_EXISTS\" != \"1\" ]; then
+          echo '   Creando base de datos sonarqube...'
+          psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -v ON_ERROR_STOP=1 -c \"CREATE DATABASE sonarqube OWNER sonar;\"
+          if [ $$? -ne 0 ]; then
+            echo '❌ ERROR: Fallo al crear base de datos sonarqube'
+            exit 1
+          fi
+          psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -v ON_ERROR_STOP=1 -c \"GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;\"
+          echo '✅ Base de datos sonarqube creada'
+        else
+          echo '✅ Base de datos sonarqube ya existe'
+          psql -h db -p 5432 -U $${POSTGRES_USER} -d postgres -v ON_ERROR_STOP=1 -c \"GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;\"
+        fi
+        echo '🔧 Verificando conexión con usuario sonar...'
+        PGPASSWORD=$${SONAR_DB_PASSWORD} psql -h db -p 5432 -U sonar -d sonarqube -c 'SELECT 1;' > /dev/null 2>&1
+        if [ $$? -eq 0 ]; then
+          echo '✅ Conexión con usuario sonar verificada correctamente'
+        else
+          echo '⚠️ ADVERTENCIA: No se pudo verificar la conexión con usuario sonar'
+        fi
+        echo '✅ Configuración de SonarQube completada exitosamente'
       "
     networks:
       - default
