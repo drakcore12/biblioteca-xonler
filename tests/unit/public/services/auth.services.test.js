@@ -101,9 +101,10 @@ if (typeof window !== 'undefined') {
 // El módulo no exporta la clase directamente, crea una instancia singleton
 // Necesitamos cargar el módulo para que cree la instancia en globalThis
 // Babel transformará el ES module a CommonJS
-// Usar jest.resetModules() para asegurar que el módulo se carga limpio
-jest.resetModules();
-require('../../../../public/services/auth.services.js');
+// Usar jest.isolateModules() para aislar el módulo y evitar problemas de cleanup
+jest.isolateModules(() => {
+  require('../../../../public/services/auth.services.js');
+});
 
 // La clase AuthService está definida en el módulo pero no exportada
 // El módulo crea una instancia en globalThis.authService
@@ -131,6 +132,16 @@ describe('auth.services.js', () => {
     // Si no existe, el módulo debería haberla creado al cargar
     if (!authService) {
       throw new Error('authService no está disponible en globalThis');
+    }
+  });
+
+  afterAll(() => {
+    // Limpiar cualquier timer o handle que pueda quedar
+    jest.clearAllTimers();
+    jest.restoreAllMocks();
+    // Limpiar la instancia global si es necesario
+    if (globalThis.authService) {
+      delete globalThis.authService;
     }
   });
 
