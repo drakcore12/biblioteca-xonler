@@ -1,6 +1,9 @@
 pipeline {
   agent {
-    label 'windows'
+    node {
+      label 'windows'
+      customWorkspace 'C:\\Users\\MIGUEL\\Documents\\Proyectos-Cursor\\biblioteca-xonler-main'
+    }
   }
 
   environment {
