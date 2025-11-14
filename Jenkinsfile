@@ -59,33 +59,38 @@ pipeline {
       }
     }
 
-    stage('Tests Unitarios') {
-      steps {
-        script {
+        stage('Tests Unitarios') {
+          steps {
+            script {
           echo "🧪 Ejecutando tests unitarios..."
           bat '''
             @echo off
             cd /d %WORKSPACE%
             call npm test
+            set TEST_EXIT=%ERRORLEVEL%
             if not exist "test-results" mkdir test-results
             if exist "junit.xml" copy junit.xml test-results\\junit.xml
-            exit /b 0
-          '''
-        }
-      }
-      post {
-        always {
-          script {
-            def junitFile = 'test-results/junit.xml'
-            if (fileExists(junitFile)) {
-              junit junitFile
-            } else if (fileExists('junit.xml')) {
-              junit 'junit.xml'
-            } else {
-              echo "⚠️ No se encontró archivo junit.xml para publicar"
+            if %TEST_EXIT% NEQ 0 (
+              echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
+              exit /b %TEST_EXIT%
+            )
+            echo ✅ Tests unitarios completados exitosamente
+              '''
             }
           }
-          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+          post {
+            always {
+              script {
+                def junitFile = 'test-results/junit.xml'
+                if (fileExists(junitFile)) {
+                  junit junitFile
+                } else if (fileExists('junit.xml')) {
+                  junit 'junit.xml'
+                } else {
+                  echo "⚠️ No se encontró archivo junit.xml para publicar"
+                }
+              }
+              archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
         }
       }
     }
@@ -119,9 +124,9 @@ pipeline {
       }
     }
 
-    stage('Tests E2E') {
-      steps {
-        script {
+        stage('Tests E2E') {
+          steps {
+            script {
           echo "🎭 Ejecutando tests E2E..."
           bat '''
             @echo off
@@ -131,12 +136,12 @@ pipeline {
             if not exist "playwright-report" mkdir playwright-report
             call npm run test:e2e
             echo ✅ Tests E2E completados
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
+              '''
+            }
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
           // publishHTML requiere plugin HTML Publisher - comentado por ahora
           // publishHTML([
           //   reportDir: 'playwright-report',
@@ -144,13 +149,13 @@ pipeline {
           //   reportName: 'Playwright Report',
           //   keepAll: true
           // ])
+            }
+          }
         }
-      }
-    }
 
-    stage('Tests de Carga') {
-      steps {
-        script {
+        stage('Tests de Carga') {
+          steps {
+            script {
           echo "⚡ Ejecutando tests de carga..."
           bat '''
             @echo off
@@ -158,12 +163,12 @@ pipeline {
             if not exist "test-results" mkdir test-results
             call npm run test:load
             echo ✅ Tests de carga completados
-          '''
-        }
-      }
-      post {
-        always {
-          archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+              '''
+            }
+          }
+          post {
+            always {
+              archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
         }
       }
     }
