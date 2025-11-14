@@ -29,7 +29,7 @@ scenarios:
             - statusCode: [200, 301, 302]
       - think: 2
       - get:
-          url: "/pages/guest/libros.html"
+          url: "/pages/guest/bibliotecas.html"
           expect:
             - statusCode: [200, 301, 302]
 
