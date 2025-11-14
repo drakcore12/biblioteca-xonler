@@ -175,8 +175,9 @@ class AdminBibliotecaService {
   async obtenerCategorias() {
     try {
       const response = await this.obtenerTodosLosLibros({ limit: 1000 });
-      const categorias = [...new Set(response.data.map(libro => libro.categoria))];
-      return categorias.sort((a, b) => (a || '').localeCompare(b || ''));
+      // Convertir null/undefined a string vacío antes de crear el Set
+      const categorias = [...new Set(response.data.map(libro => libro.categoria || ''))];
+      return categorias.sort((a, b) => a.localeCompare(b));
     } catch (error) {
       console.error('Error obteniendo categorías:', error);
       return [];
