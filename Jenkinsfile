@@ -59,33 +59,40 @@ pipeline {
       }
     }
 
-        stage('Tests Unitarios') {
-          steps {
-            script {
+    stage('Tests Unitarios') {
+      steps {
+        script {
           echo "🧪 Ejecutando tests unitarios..."
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo Ejecutando Jest tests...
             call npm test
+            set TEST_EXIT=%ERRORLEVEL%
             if not exist "test-results" mkdir test-results
             if exist "junit.xml" copy junit.xml test-results\\junit.xml
+            if %TEST_EXIT% NEQ 0 (
+              echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
+              exit /b %TEST_EXIT%
+            )
+            echo ✅ Tests unitarios completados exitosamente
             exit /b 0
-              '''
+          '''
+        }
+      }
+      post {
+        always {
+          script {
+            def junitFile = 'test-results/junit.xml'
+            if (fileExists(junitFile)) {
+              junit junitFile
+            } else if (fileExists('junit.xml')) {
+              junit 'junit.xml'
+            } else {
+              echo "⚠️ No se encontró archivo junit.xml para publicar"
             }
           }
-          post {
-            always {
-              script {
-                def junitFile = 'test-results/junit.xml'
-                if (fileExists(junitFile)) {
-                  junit junitFile
-                } else if (fileExists('junit.xml')) {
-                  junit 'junit.xml'
-                } else {
-                  echo "⚠️ No se encontró archivo junit.xml para publicar"
-                }
-              }
-              archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
         }
       }
     }
