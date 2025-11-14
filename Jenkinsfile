@@ -222,7 +222,7 @@ pipeline {
             rem 2. Verificar que el contenedor de SonarQube esté corriendo
             echo.
             echo [2/4] Verificando contenedor de SonarQube...
-            powershell -Command "$output = & 'C:\Program Files\Docker\Docker\resources\bin\docker.exe' compose ps sonarqube 2>&1; if ($output -match 'Up' -and $output -match 'healthy') { exit 0 } else { exit 1 }" >nul 2>&1
+            powershell -Command "$output = & 'C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe' compose ps sonarqube 2>&1; if ($output -match 'Up' -and $output -match 'healthy') { exit 0 } else { exit 1 }" >nul 2>&1
             if %ERRORLEVEL% NEQ 0 (
               echo ⚠️ ADVERTENCIA: Contenedor sonarqube no está corriendo o no está healthy
               echo    Intentando iniciar contenedor...
