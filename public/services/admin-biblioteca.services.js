@@ -224,5 +224,10 @@ class AdminBibliotecaService {
   }
 }
 
+// Hacer la clase disponible globalmente para tests
+if (typeof globalThis !== 'undefined') {
+  globalThis.AdminBibliotecaService = AdminBibliotecaService;
+}
+
 // Crear instancia global
 globalThis.adminBibliotecaService = new AdminBibliotecaService();

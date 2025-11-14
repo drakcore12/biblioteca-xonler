@@ -72,11 +72,13 @@ const context = {
 vm.createContext(context);
 vm.runInContext(serviceCode, context);
 
-// Obtener la clase desde el contexto (está definida pero no exportada)
+// Obtener la clase desde el contexto
+// La clase ahora está disponible en globalThis.AdminBibliotecaService
 const AdminBibliotecaService = context.AdminBibliotecaService || 
+  context.globalThis?.AdminBibliotecaService ||
   (() => {
-    // Si no está disponible directamente, usar la instancia global y obtener su constructor
-    const instance = context.adminBibliotecaService;
+    // Fallback: obtener desde la instancia global
+    const instance = context.adminBibliotecaService || context.globalThis?.adminBibliotecaService;
     return instance ? instance.constructor : null;
   })();
 
@@ -90,11 +92,14 @@ describe('admin-biblioteca.services.js', () => {
     mockSessionStorage.getItem.mockReturnValue(null);
     
     // Crear nueva instancia para cada test
-    if (AdminBibliotecaService) {
+    if (AdminBibliotecaService && typeof AdminBibliotecaService === 'function') {
       service = new AdminBibliotecaService();
     } else {
       // Fallback: usar la instancia global
-      service = context.adminBibliotecaService;
+      service = context.adminBibliotecaService || context.globalThis?.adminBibliotecaService;
+      if (!service) {
+        throw new Error('No se pudo obtener AdminBibliotecaService del contexto');
+      }
     }
   });
 
