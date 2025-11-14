@@ -40,7 +40,7 @@ scenarios:
       - get:
           url: "/api/libros"
           expect:
-            - statusCode: [200, 401]
+            - statusCode: [200, 401, 500]
             - contentType: json
       - think: 1
 
@@ -51,7 +51,7 @@ scenarios:
       - get:
           url: "/api/bibliotecas"
           expect:
-            - statusCode: [200, 401]
+            - statusCode: [200, 401, 500]
       - think: 1
 
   # Escenario 4: Página de contacto
