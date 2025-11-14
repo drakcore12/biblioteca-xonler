@@ -66,32 +66,16 @@ global.console = {
 };
 
 // Mock de location para evitar error de navegación en jsdom
+// location ya está definida en jsdom y no es configurable, así que solo mockeamos replace
 // Se debe hacer ANTES de cargar el módulo porque el servicio usa this.runtime.location
-const mockLocation = {
-  replace: jest.fn(),
-  href: '',
-  pathname: '',
-  search: '',
-  hash: '',
-};
-Object.defineProperty(global, 'location', {
-  value: mockLocation,
-  configurable: true,
-  writable: true,
-});
-if (typeof globalThis !== 'undefined') {
-  Object.defineProperty(globalThis, 'location', {
-    value: mockLocation,
-    configurable: true,
-    writable: true,
-  });
+if (typeof global !== 'undefined' && global.location) {
+  global.location.replace = jest.fn();
 }
-if (typeof window !== 'undefined') {
-  Object.defineProperty(window, 'location', {
-    value: mockLocation,
-    configurable: true,
-    writable: true,
-  });
+if (typeof globalThis !== 'undefined' && globalThis.location) {
+  globalThis.location.replace = jest.fn();
+}
+if (typeof window !== 'undefined' && window.location) {
+  window.location.replace = jest.fn();
 }
 
 // ============================================================================
