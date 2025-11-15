@@ -211,7 +211,7 @@ pipeline {
             
             rem 1. Verificar token en .env
             echo.
-            echo [1/4] Verificando token de SonarQube...
+            echo [1/3] Verificando token de SonarQube...
             if not exist ".env" (
               echo ❌ ERROR: Archivo .env no encontrado
               goto skip_sonar
@@ -230,9 +230,9 @@ pipeline {
             rem Cargar token
             for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
             
-            rem 2. Verificar e iniciar contenedor (método simple)
+            rem 2. Iniciar contenedor SonarQube
             echo.
-            echo [2/4] Verificando contenedor SonarQube...
+            echo [2/3] Iniciando contenedor SonarQube...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --no-deps sonarqube
             if errorlevel 1 (
               echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
@@ -242,30 +242,9 @@ pipeline {
             ping 127.0.0.1 -n 61 >nul
             echo ✅ Contenedor iniciado
             
-            rem 3. Verificar respuesta de SonarQube (con reintentos)
+            rem 3. Generar cobertura
             echo.
-            echo [3/4] Verificando API de SonarQube...
-            set API_CHECK=0
-            for /L %%i in (1,1,5) do (
-              powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 10 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
-              if not errorlevel 1 (
-                set API_CHECK=1
-                goto api_ok
-              )
-              echo    Intento %%i/5 falló, esperando 10 segundos...
-              ping 127.0.0.1 -n 11 >nul
-            )
-            :api_ok
-            if %API_CHECK% EQU 0 (
-              echo ⚠️ ADVERTENCIA: SonarQube no responde después de 5 intentos
-              echo    Continuando de todas formas...
-            ) else (
-              echo ✅ SonarQube está respondiendo
-            )
-            
-            rem 4. Generar cobertura
-            echo.
-            echo [4/4] Generando cobertura de tests...
+            echo [3/3] Generando cobertura de tests...
             echo    La cobertura mide qué porcentaje del código está cubierto por tests.
             echo    SonarQube usa este reporte para mostrar métricas de calidad.
             call npm run test:coverage
