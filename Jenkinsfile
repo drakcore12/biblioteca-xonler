@@ -239,19 +239,29 @@ pipeline {
               goto skip_sonar
             )
             echo ⏳ Esperando 60 segundos para que SonarQube esté listo...
-            timeout /t 60 /nobreak >nul
+            ping 127.0.0.1 -n 61 >nul
             echo ✅ Contenedor iniciado
             
-            rem 3. Verificar respuesta de SonarQube
+            rem 3. Verificar respuesta de SonarQube (con reintentos)
             echo.
             echo [3/4] Verificando API de SonarQube...
-            powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 10 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
-            if errorlevel 1 (
-              echo ❌ ERROR: SonarQube no responde
-              goto skip_sonar
+            set API_CHECK=0
+            for /L %%i in (1,1,5) do (
+              powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 10 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
+              if not errorlevel 1 (
+                set API_CHECK=1
+                goto api_ok
+              )
+              echo    Intento %%i/5 falló, esperando 10 segundos...
+              ping 127.0.0.1 -n 11 >nul
             )
-            
-            echo ✅ SonarQube está respondiendo
+            :api_ok
+            if %API_CHECK% EQU 0 (
+              echo ⚠️ ADVERTENCIA: SonarQube no responde después de 5 intentos
+              echo    Continuando de todas formas...
+            ) else (
+              echo ✅ SonarQube está respondiendo
+            )
             
             rem 4. Generar cobertura
             echo.
