@@ -2,6 +2,69 @@ const { pool } = require('../config/database');
 const AppError = require('../utils/app-error');
 
 /**
+ * Construye condiciones WHERE y parámetros para la consulta de bibliotecas
+ * @param {string|null} searchTerm - Término de búsqueda
+ * @param {number|null} colegioIdValue - ID del colegio
+ * @returns {{whereClause: string, params: Array, paramIndex: number}}
+ */
+function buildWhereConditions(searchTerm, colegioIdValue) {
+  const conditions = [];
+  const params = [];
+  let paramIndex = 1;
+
+  if (searchTerm) {
+    conditions.push(`(b.nombre ILIKE $${paramIndex} OR b.direccion ILIKE $${paramIndex})`);
+    params.push(`%${searchTerm}%`);
+    paramIndex++;
+  }
+
+  if (colegioIdValue !== null) {
+    conditions.push(`b.colegio_id = $${paramIndex}`);
+    params.push(colegioIdValue);
+    paramIndex++;
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  return { whereClause, params, paramIndex };
+}
+
+/**
+ * Maneja errores de la base de datos y devuelve respuesta apropiada
+ * @param {Error} e - Error capturado
+ * @param {Object} res - Objeto de respuesta Express
+ * @returns {boolean} True si se manejó el error
+ */
+function handleDatabaseError(e, res) {
+  console.error('❌ obtenerBibliotecas:', e?.message || e);
+  console.error('Stack:', e?.stack);
+
+  if (e?.code === '28P01' || e?.message?.includes('password') || e?.message?.includes('autentificación')) {
+    console.error('🔴 Error de autenticación con PostgreSQL. Verifica las credenciales en .env');
+    res.status(500).json({ 
+      error: 'Error de conexión a la base de datos',
+      details: process.env.NODE_ENV === 'development' ? 'Verifica DB_USER, DB_PASSWORD y que PostgreSQL esté corriendo' : undefined
+    });
+    return true;
+  }
+  
+  if (e?.code === 'ECONNREFUSED' || e?.message?.includes('connect')) {
+    console.error('🔴 No se puede conectar a PostgreSQL. Verifica que el servidor esté corriendo.');
+    res.status(500).json({ 
+      error: 'Error de conexión a la base de datos',
+      details: process.env.NODE_ENV === 'development' ? 'Verifica DB_HOST, DB_PORT y que PostgreSQL esté corriendo' : undefined
+    });
+    return true;
+  }
+  
+  if (e instanceof AppError) {
+    res.status(e.statusCode).json({ error: e.message });
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * GET /api/bibliotecas
  * Query params opcionales: q, colegio_id, limit=50, offset=0
  */
@@ -12,27 +75,11 @@ async function obtenerBibliotecas(req, res) {
     const offset = Math.max(Number.parseInt(req.query.offset ?? '0', 10), 0);
 
     // Normalizar parámetros de búsqueda
-    const searchTerm = q && q.trim() ? q.trim() : null;
+    const searchTerm = q?.trim() || null;
     const colegioIdValue = colegio_id ? Number.parseInt(colegio_id, 10) : null;
 
-    // Construir condiciones WHERE dinámicamente para evitar problemas con NULL
-    const conditions = [];
-    const params = [];
-    let paramIndex = 1;
-
-    if (searchTerm) {
-      conditions.push(`(b.nombre ILIKE $${paramIndex} OR b.direccion ILIKE $${paramIndex})`);
-      params.push(`%${searchTerm}%`);
-      paramIndex++;
-    }
-
-    if (colegioIdValue !== null) {
-      conditions.push(`b.colegio_id = $${paramIndex}`);
-      params.push(colegioIdValue);
-      paramIndex++;
-    }
-
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    // Construir condiciones WHERE
+    const { whereClause, params, paramIndex } = buildWhereConditions(searchTerm, colegioIdValue);
 
     const sql = `
       SELECT b.id, b.nombre, b.direccion, b.colegio_id,
@@ -58,42 +105,23 @@ async function obtenerBibliotecas(req, res) {
     params.push(limit, offset);
     const { rows } = await pool.query(sql, params);
 
-    // total para paginación (opcional)
+    // total para paginación
     const countSql = `
       SELECT COUNT(*)::int AS total
       FROM public.bibliotecas b
       ${whereClause}
     `;
-    const countParams = params.slice(0, -2); // Remover limit y offset
+    const countParams = params.slice(0, -2);
     const { rows: countRows } = await pool.query(countSql, countParams);
 
     res.json({ data: rows, paginacion: { total: countRows[0]?.total || 0, limit, offset } });
   } catch (e) {
-    console.error('❌ obtenerBibliotecas:', e?.message || e);
-    console.error('Stack:', e?.stack);
-    
-    // Detectar errores de conexión a la base de datos
-    if (e?.code === '28P01' || e?.message?.includes('password') || e?.message?.includes('autentificación')) {
-      console.error('🔴 Error de autenticación con PostgreSQL. Verifica las credenciales en .env');
-      return res.status(500).json({ 
-        error: 'Error de conexión a la base de datos',
-        details: process.env.NODE_ENV === 'development' ? 'Verifica DB_USER, DB_PASSWORD y que PostgreSQL esté corriendo' : undefined
+    if (!handleDatabaseError(e, res)) {
+      res.status(500).json({ 
+        error: 'Error listando bibliotecas', 
+        details: process.env.NODE_ENV === 'development' ? e.message : undefined 
       });
     }
-    
-    if (e?.code === 'ECONNREFUSED' || e?.message?.includes('connect')) {
-      console.error('🔴 No se puede conectar a PostgreSQL. Verifica que el servidor esté corriendo.');
-      return res.status(500).json({ 
-        error: 'Error de conexión a la base de datos',
-        details: process.env.NODE_ENV === 'development' ? 'Verifica DB_HOST, DB_PORT y que PostgreSQL esté corriendo' : undefined
-      });
-    }
-    
-    if (e instanceof AppError) {
-      return res.status(e.statusCode).json({ error: e.message });
-    }
-    
-    res.status(500).json({ error: 'Error listando bibliotecas', details: process.env.NODE_ENV === 'development' ? e.message : undefined });
   }
 }
 
@@ -182,7 +210,7 @@ async function obtenerLibrosPorBiblioteca(req, res) {
     `;
     const { rows: countRows } = await pool.query(countSql, [id, q, categoria]);
 
-    res.json({ data: rows, paginacion: { total: countRows[0].total, limit, offset } });
+    res.json({ data: rows, paginacion: { total: countRows[0]?.total || 0, limit, offset } });
   } catch (e) {
     console.error('❌ obtenerLibrosPorBiblioteca:', e);
     res.status(500).json({ error: 'Error listando libros de la biblioteca' });

@@ -74,7 +74,7 @@ function processSpecificFields(form, fieldNames, data) {
  */
 function processAllFields(form, data) {
   // Solo procesar elementos de formulario válidos
-  const validInputTypes = ['input', 'select', 'textarea'];
+  const validInputTypes = new Set(['input', 'select', 'textarea']);
   
   for (const element of form.querySelectorAll('[name], [id]')) {
     const name = element.name || element.id;
@@ -84,7 +84,7 @@ function processAllFields(form, data) {
     
     // Saltar elementos que no son inputs válidos (divs, spans, labels, etc.)
     const tagName = element.tagName.toLowerCase();
-    if (!validInputTypes.includes(tagName) && 
+    if (!validInputTypes.has(tagName) && 
         element.type !== 'checkbox' && 
         element.type !== 'radio') {
       continue;
