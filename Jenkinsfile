@@ -233,7 +233,7 @@ pipeline {
             rem 2. Verificar e iniciar contenedor (método simple)
             echo.
             echo [2/4] Verificando contenedor SonarQube...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --no-deps sonarqube
             if errorlevel 1 (
               echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
               goto skip_sonar
