@@ -23,20 +23,17 @@ pipeline {
     stage('Preparación') {
       steps {
         script {
-          echo "📁 Preparando workspace..."
+          echo "📁 Preparación"
           bat '''
             @echo off
-            echo Verificando directorio de trabajo...
             cd /d %WORKSPACE%
-            echo Directorio actual: %CD%
-            
-            echo Creando directorios necesarios...
+            echo.
+            echo [PREPARACIÓN] Creando directorios...
             if not exist "logs" mkdir logs
             if not exist "logs\\encrypted" mkdir logs\\encrypted
             if not exist "test-results" mkdir test-results
             if not exist "coverage" mkdir coverage
-            
-            echo ✅ Preparación completada
+            echo [PREPARACIÓN] ✅ Completado
           '''
         }
       }
@@ -45,15 +42,19 @@ pipeline {
     stage('Instalar dependencias') {
       steps {
         script {
-          echo "📦 Instalando dependencias..."
+          echo "📦 Instalación de dependencias"
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo.
+            echo [DEPENDENCIAS] Node: 
             node --version
+            echo [DEPENDENCIAS] NPM: 
             npm --version
+            echo [DEPENDENCIAS] Instalando paquetes...
             call npm ci
             if errorlevel 1 call npm install
-            echo ✅ Dependencias instaladas
+            echo [DEPENDENCIAS] ✅ Completado
           '''
         }
       }
@@ -62,77 +63,55 @@ pipeline {
     stage('Análisis SonarQube') {
       steps {
         script {
-          echo "🔍 Ejecutando análisis SonarQube..."
+          echo "🔍 Análisis SonarQube"
           bat '''
             @echo off
             cd /d %WORKSPACE%
-            
-            echo ========================================
-            echo VERIFICACIONES PREVIAS
-            echo ========================================
-            
-            rem 1. Verificar token en .env
             echo.
-            echo [1/2] Verificando token de SonarQube...
+            echo ========================================
+            echo [SONARQUBE] VERIFICACIONES
+            echo ========================================
+            
+            rem Verificar token
             if not exist ".env" (
-              echo ❌ ERROR: Archivo .env no encontrado
+              echo [SONARQUBE] ❌ .env no encontrado
               goto skip_sonar
             )
-            
             findstr /C:"SONAR_TOKEN=" .env >nul 2>&1
             if errorlevel 1 (
-              echo ❌ ERROR: SONAR_TOKEN no encontrado en .env
-              echo.
-              echo 💡 Solución: Agregar en .env: SONAR_TOKEN=tu_token
-              echo.
+              echo [SONARQUBE] ❌ SONAR_TOKEN no encontrado
               goto skip_sonar
             )
-            
-            echo ✅ Token encontrado
-            rem Cargar token
+            echo [SONARQUBE] ✅ Token verificado
             for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
             
-            rem 2. Iniciar contenedor SonarQube
-            echo.
-            echo [2/2] Iniciando contenedor SonarQube...
+            rem Iniciar contenedor
+            echo [SONARQUBE] Iniciando contenedor...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --no-deps sonarqube
             if errorlevel 1 (
-              echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+              echo [SONARQUBE] ❌ No se pudo iniciar contenedor
               goto skip_sonar
             )
-            echo ⏳ Esperando 60 segundos para que SonarQube esté listo...
+            echo [SONARQUBE] ⏳ Esperando 60s...
             ping 127.0.0.1 -n 61 >nul
-            echo ✅ Contenedor iniciado
+            echo [SONARQUBE] ✅ Contenedor iniciado
             
-            rem 3. Ejecutar análisis de SonarQube (incluye tests unitarios y cobertura)
+            rem Ejecutar análisis
             echo.
             echo ========================================
-            echo EJECUTANDO ANÁLISIS SONARQUBE
+            echo [SONARQUBE] EJECUTANDO ANÁLISIS
             echo ========================================
-            echo SonarQube ejecutará los tests unitarios y generará cobertura automáticamente
-            echo.
-            
             call npm run sonar:local
             if errorlevel 1 (
-              echo.
-              echo ⚠️ ADVERTENCIA: Análisis SonarQube falló
-              echo    Posibles causas:
-              echo    - Token inválido o expirado
-              echo    - SonarQube no está completamente operativo
-              echo    - Problemas de red o conectividad
-              echo.
-              echo ⚠️ Continuando con el pipeline...
+              echo [SONARQUBE] ⚠️ Análisis falló, continuando...
               exit /b 0
             )
-            
-            echo.
-            echo ✅ Análisis completado exitosamente
-            echo 📊 Resultados: http://localhost:9000/dashboard?id=biblioteca-xonler
+            echo [SONARQUBE] ✅ Análisis completado
+            echo [SONARQUBE] 📊 http://localhost:9000/dashboard?id=biblioteca-xonler
             exit /b 0
             
             :skip_sonar
-            echo.
-            echo ⚠️ Saltando análisis SonarQube...
+            echo [SONARQUBE] ⚠️ Saltando análisis...
             exit /b 0
           '''
         }
@@ -147,19 +126,23 @@ pipeline {
     stage('Tests Unitarios') {
       steps {
         script {
-          echo "🧪 Ejecutando tests unitarios..."
+          echo "🧪 Tests Unitarios"
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo.
+            echo ========================================
+            echo [TESTS UNITARIOS] EJECUTANDO
+            echo ========================================
             call npm test
             set TEST_EXIT=%ERRORLEVEL%
             if not exist "test-results" mkdir test-results
             if exist "junit.xml" copy junit.xml test-results\\junit.xml
             if %TEST_EXIT% NEQ 0 (
-              echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
+              echo [TESTS UNITARIOS] ❌ Fallaron (código: %TEST_EXIT%)
               exit /b %TEST_EXIT%
             )
-            echo ✅ Tests unitarios completados exitosamente
+            echo [TESTS UNITARIOS] ✅ Completado
           '''
         }
       }
@@ -171,8 +154,6 @@ pipeline {
               junit junitFile
             } else if (fileExists('junit.xml')) {
               junit 'junit.xml'
-            } else {
-              echo "⚠️ No se encontró archivo junit.xml para publicar"
             }
           }
           archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
@@ -183,51 +164,37 @@ pipeline {
     stage('Iniciar Servidor') {
       steps {
         script {
-          echo "🚀 Iniciando servidor..."
+          echo "🚀 Iniciar Servidor"
           bat '''
             @echo off
             cd /d %WORKSPACE%
-            echo Commit actual del repositorio:
-            git log -1 --oneline
             echo.
-            echo Reconstruyendo imagen de app con codigo fresco...
-            echo Esto puede tardar varios minutos, especialmente copiando node_modules...
-            echo Ejecutando build...
+            echo ========================================
+            echo [SERVIDOR] CONSTRUCCIÓN E INICIO
+            echo ========================================
+            echo [SERVIDOR] Commit: 
+            git log -1 --oneline
+            echo [SERVIDOR] Reconstruyendo imagen app...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose --progress=plain build app
             set BUILD_EXIT=%ERRORLEVEL%
-            echo.
-            echo ========================================
-            echo Build completado - Codigo de salida: %BUILD_EXIT%
-            echo ========================================
             if %BUILD_EXIT% NEQ 0 (
-              echo ERROR: Fallo al construir imagen
+              echo [SERVIDOR] ❌ Build falló
               exit /b 1
             )
-            echo ✅ Imagen construida exitosamente
-            echo Verificando que la imagen existe...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
-            if errorlevel 1 (
-              echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
-            ) else (
-              echo ✅ Imagen verificada correctamente
-            )
-            echo.
-            echo Verificando si los contenedores están corriendo...
+            echo [SERVIDOR] ✅ Imagen construida
+            
+            echo [SERVIDOR] Verificando contenedores...
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
             if errorlevel 1 (
-              echo Los contenedores no están corriendo, iniciándolos...
+              echo [SERVIDOR] Iniciando contenedores...
               "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
-              echo Esperando 20 segundos para que el servidor inicie...
               ping 127.0.0.1 -n 21 >nul
             ) else (
-              echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
+              echo [SERVIDOR] Reiniciando app...
               "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
-              echo Esperando 20 segundos para que el servidor reinicie...
               ping 127.0.0.1 -n 21 >nul
             )
-            echo Verificando estado de contenedores...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
-            echo ✅ Imagen de app reconstruida y contenedor app reiniciado
+            echo [SERVIDOR] ✅ Servidor iniciado
           '''
         }
       }
@@ -236,15 +203,21 @@ pipeline {
     stage('Tests E2E') {
       steps {
         script {
-          echo "🎭 Ejecutando tests E2E..."
+          echo "🎭 Tests E2E"
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo.
+            echo ========================================
+            echo [TESTS E2E] EJECUTANDO
+            echo ========================================
+            echo [TESTS E2E] Instalando Playwright...
             call npx playwright install --with-deps
             if not exist "test-results" mkdir test-results
             if not exist "playwright-report" mkdir playwright-report
+            echo [TESTS E2E] Ejecutando tests...
             call npm run test:e2e
-            echo ✅ Tests E2E completados
+            echo [TESTS E2E] ✅ Completado
           '''
         }
       }
@@ -258,13 +231,18 @@ pipeline {
     stage('Tests de Carga') {
       steps {
         script {
-          echo "⚡ Ejecutando tests de carga..."
+          echo "⚡ Tests de Carga"
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo.
+            echo ========================================
+            echo [TESTS CARGA] EJECUTANDO
+            echo ========================================
             if not exist "test-results" mkdir test-results
+            echo [TESTS CARGA] Ejecutando Artillery...
             call npm run test:load
-            echo ✅ Tests de carga completados
+            echo [TESTS CARGA] ✅ Completado
           '''
         }
       }
@@ -279,19 +257,23 @@ pipeline {
     stage('Despliegue (CD)') {
       steps {
         script {
-          echo "🚀 Verificando despliegue..."
+          echo "🚀 Despliegue"
           bat '''
             @echo off
             cd /d %WORKSPACE%
+            echo.
+            echo ========================================
+            echo [DESPLIEGUE] VERIFICACIÓN
+            echo ========================================
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
-            echo ✅ Despliegue verificado
+            echo [DESPLIEGUE] ✅ Verificado
           '''
         }
       }
       post {
         always {
           script {
-            echo "📊 Estado final de contenedores:"
+            echo "📊 Estado contenedores:"
             bat '''
               @echo off
               "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps
@@ -302,7 +284,7 @@ pipeline {
           echo "✅ Despliegue exitoso"
         }
         failure {
-          echo "⚠️ Despliegue tuvo problemas, pero pipeline continúa"
+          echo "⚠️ Despliegue con problemas"
         }
       }
     }
