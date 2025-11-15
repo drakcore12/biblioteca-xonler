@@ -40,18 +40,21 @@ jobs:
         run: |
           echo "NODE_ENV=test" >> $GITHUB_ENV
           echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/biblioteca_test" >> $GITHUB_ENV
+          echo "DB_HOST=localhost" >> $GITHUB_ENV
+          echo "DB_PORT=5432" >> $GITHUB_ENV
+          echo "DB_NAME=biblioteca_test" >> $GITHUB_ENV
+          echo "DB_USER=postgres" >> $GITHUB_ENV
+          echo "DB_PASSWORD=postgres" >> $GITHUB_ENV
           echo "JWT_SECRET=test-secret-key" >> $GITHUB_ENV
 
       - name: Ejecutar pruebas unitarias (Jest)
         run: npm test
-        continue-on-error: true
 
       - name: Instalar Playwright
         run: npx playwright install --with-deps
 
       - name: Ejecutar pruebas E2E (Playwright)
-        run: npx playwright test
-        continue-on-error: true
+        run: npm run test:e2e
 
       - name: Subir reportes de Playwright
         if: always()

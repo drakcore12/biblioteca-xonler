@@ -43,20 +43,23 @@ jobs:
         env:
           NODE_ENV: test
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/biblioteca_test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: biblioteca_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
           JWT_SECRET: test-secret-key
         run: npm run test:coverage
 
       - name: SonarQube Scan
         uses: sonarsource/sonarqube-scan-action@master
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        # Opcional: Si usas SonarCloud, descomenta estas líneas:
-        # env:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #   SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        #   SONAR_HOST_URL: https://sonarcloud.io
+        # Nota: Si SONAR_TOKEN o SONAR_HOST_URL no están configurados, este paso fallará
+        # pero el workflow continuará gracias a continue-on-error
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v3
