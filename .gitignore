@@ -1,31 +1,69 @@
+# ========================================
 # Variables de entorno
+# ========================================
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+.env.test
+.env.sonar
 
+# ========================================
 # Dependencias
+# ========================================
 node_modules/
 # package-lock.json debe estar en el repo para versiones consistentes
+.pnp/
+.pnp.js
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
 
+# ========================================
 # Build y distribución
+# ========================================
 dist/
 build/
+out/
+.next/
+.nuxt/
+.cache/
 
+# ========================================
 # IDE y editores
+# ========================================
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+.cursor/
 
+# ========================================
 # Logs
+# ========================================
 *.log
 logs/
 *.log.*
 server.log
+server-e2e.log
 cloudflare.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
+# ========================================
 # Testing
+# ========================================
 coverage/
 .nyc_output/
 test-results/
@@ -36,33 +74,65 @@ cloudflare-url.env
 temp_url.txt
 junit.xml
 *.test.cjs
+test-output.txt
+test-output.json
 
+# ========================================
 # Archivos temporales
+# ========================================
 tmp/
 temp/
 *.tmp
 *.temp
+*.cache
+.cache/
 
+# ========================================
 # Archivos de procesos
+# ========================================
 server.pid
 cloudflare.pid
+*.pid.lock
 
+# ========================================
 # Backups y archivos sensibles
+# ========================================
 backups/
 secure/
 encryption-config.json
 security-report.json
+*.key
+*.pem
+*.cert
+*.crt
+secrets.yaml
+secrets.yml
 
-# Kubernetes Secrets (NO versionar secrets reales)
+# ========================================
+# Kubernetes Secrets
+# ========================================
+# NO versionar secrets reales
 k8s/secrets.yaml
+k8s/secrets.yml
 # Mantener secrets.yaml.example como template
 
+# ========================================
 # Sistema operativo
+# ========================================
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 desktop.ini
+$RECYCLE.BIN/
 
-# CI/CD (mantener estos archivos)
+# ========================================
+# CI/CD
+# ========================================
+# Mantener estos archivos en el repo:
 # !Jenkinsfile
 # !.github/
 # !tests/artillery-config.yml
@@ -70,16 +140,61 @@ desktop.ini
 # !playwright.config.js
 # !babel.config.js
 
+# ========================================
 # SonarQube
+# ========================================
 .sonar/
 .scannerwork/
 sonar-project.properties.local
-.env.sonar
+.sonarqube/
 
+# ========================================
 # Artillery
+# ========================================
 artillery-report.json
 artillery-*.json
+artillery-*.html
 
+# ========================================
 # Jenkins Agent
+# ========================================
 jenkins-agent/
 *.jar
+agent.jar
+
+# ========================================
+# Docker
+# ========================================
+.docker/
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ========================================
+# Base de datos local
+# ========================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ========================================
+# Archivos de configuración local
+# ========================================
+config.local.json
+config.local.js
+*.local.json
+*.local.js
+
+# ========================================
+# Documentación generada
+# ========================================
+# Mantener docs/assets/ para imágenes del README
+# docs/generated/
+# docs/build/
+
+# ========================================
+# Archivos de monitoreo y métricas
+# ========================================
+prometheus-data/
+grafana-data/
+*.prom
