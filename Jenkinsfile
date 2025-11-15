@@ -233,46 +233,39 @@ pipeline {
             rem 2. Verificar contenedor (método simplificado)
             echo.
             echo [2/4] Verificando contenedor SonarQube...
+            set DOCKER_CMD=docker
             where docker.exe >nul 2>&1
             if errorlevel 1 (
-              echo ❌ ERROR: Docker no encontrado en PATH
-              echo    Usando ruta completa...
-              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
+              set DOCKER_CMD="C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"
+            )
+            
+            %DOCKER_CMD% compose ps sonarqube > temp_sonar_check.txt 2>&1
+            findstr /i "Up" temp_sonar_check.txt >nul
+            if errorlevel 1 (
+              echo ⚠️ Contenedor no está corriendo. Iniciando...
+              %DOCKER_CMD% compose up -d sonarqube
               if errorlevel 1 (
-                echo ⚠️ Contenedor no está healthy. Iniciando...
-                "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
-                if errorlevel 1 (
-                  echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
-                  goto skip_sonar
-                )
-                echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
-                timeout /t 60 /nobreak >nul
-                
-                "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
-                if errorlevel 1 (
-                  echo ❌ ERROR: SonarQube no inició correctamente
-                  goto skip_sonar
-                )
+                echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+                del temp_sonar_check.txt 2>nul
+                goto skip_sonar
               )
+              echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
+              timeout /t 60 /nobreak >nul
             ) else (
-              docker compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
+              findstr /i "healthy" temp_sonar_check.txt >nul
               if errorlevel 1 (
-                echo ⚠️ Contenedor no está healthy. Iniciando...
-                docker compose up -d sonarqube
+                echo ⚠️ Contenedor no está healthy. Reiniciando...
+                %DOCKER_CMD% compose restart sonarqube
                 if errorlevel 1 (
-                  echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+                  echo ❌ ERROR: No se pudo reiniciar contenedor sonarqube
+                  del temp_sonar_check.txt 2>nul
                   goto skip_sonar
                 )
                 echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
                 timeout /t 60 /nobreak >nul
-                
-                docker compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
-                if errorlevel 1 (
-                  echo ❌ ERROR: SonarQube no inició correctamente
-                  goto skip_sonar
-                )
               )
             )
+            del temp_sonar_check.txt 2>nul
             
             echo ✅ Contenedor está corriendo healthy
             
