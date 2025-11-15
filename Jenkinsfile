@@ -240,12 +240,11 @@ pipeline {
             set SONAR_UP=0
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube > temp_sonar_status.txt 2>&1
             findstr /i "Up" temp_sonar_status.txt >nul
-            if not errorlevel 1 (
-              findstr /i "healthy" temp_sonar_status.txt >nul
-              if not errorlevel 1 (
-                set SONAR_UP=1
-              )
-            )
+            if errorlevel 1 goto sonar_not_up
+            findstr /i "healthy" temp_sonar_status.txt >nul
+            if errorlevel 1 goto sonar_not_up
+            set SONAR_UP=1
+            :sonar_not_up
             del temp_sonar_status.txt 2>nul
             if %SONAR_UP% EQU 0 (
               echo ⚠️ ADVERTENCIA: Contenedor sonarqube no está corriendo o no está healthy
