@@ -39,6 +39,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Esperar a que PostgreSQL esté listo
+        run: |
+          echo "Esperando a que PostgreSQL esté listo (los servicios de GitHub Actions tienen healthcheck automático)..."
+          sleep 5
+
       - name: Run tests with coverage
         env:
           NODE_ENV: test
@@ -52,6 +57,7 @@ jobs:
         run: npm run test:coverage
 
       - name: SonarQube Scan
+        id: sonar-scan
         uses: sonarsource/sonarqube-scan-action@master
         continue-on-error: true
         env:
@@ -62,9 +68,20 @@ jobs:
         # pero el workflow continuará gracias a continue-on-error
 
       - name: Upload coverage reports
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: coverage-report
           path: coverage/
           retention-days: 30
+
+      - name: Finalizar job
+        if: always()
+        run: |
+          if [ "${{ steps.sonar-scan.outcome }}" == "failure" ]; then
+            echo "⚠️ SonarQube scan falló (probablemente porque los secrets no están configurados)"
+            echo "✅ Continuando sin error - el scan es opcional"
+          else
+            echo "✅ SonarQube scan completado exitosamente"
+          fi
 
