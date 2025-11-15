@@ -209,117 +209,107 @@ pipeline {
             echo VERIFICACIONES PREVIAS
             echo ========================================
             
-            rem 1. Verificar que el token esté configurado en .env
+            rem 1. Verificar token en .env
             echo.
-            echo [1/4] Verificando token de SonarQube en .env...
-            set TOKEN_FOUND=0
-            if exist ".env" (
-              findstr /C:"SONAR_TOKEN=" .env >nul 2>&1
-              if %ERRORLEVEL% EQU 0 (
-                echo ✅ Token encontrado en .env
-                set TOKEN_FOUND=1
-                rem Cargar token desde .env
-                for /f "usebackq tokens=1,* delims==" %%a in (".env") do (
-                  if "%%a"=="SONAR_TOKEN" set SONAR_TOKEN=%%b
-                )
-              )
+            echo [1/4] Verificando token de SonarQube...
+            if not exist ".env" (
+              echo ❌ ERROR: Archivo .env no encontrado
+              goto skip_sonar
             )
             
-            if %TOKEN_FOUND% EQU 0 (
-              echo ❌ ERROR: Token de SonarQube no encontrado en .env
+            findstr /C:"SONAR_TOKEN=" .env >nul 2>&1
+            if errorlevel 1 (
+              echo ❌ ERROR: SONAR_TOKEN no encontrado en .env
               echo.
               echo 💡 Solución: Agregar en .env: SONAR_TOKEN=tu_token
               echo.
-              echo ⚠️ Continuando sin análisis de SonarQube...
-              exit /b 0
+              goto skip_sonar
             )
             
-            rem 2. Verificar que el contenedor de SonarQube esté corriendo
+            echo ✅ Token encontrado
+            rem Cargar token
+            for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
+            
+            rem 2. Verificar contenedor (método simplificado)
             echo.
-            echo [2/4] Verificando contenedor de SonarQube...
-            set SONAR_UP=0
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube > temp_sonar_status.txt 2>&1
-            findstr /i "Up" temp_sonar_status.txt >nul
-            set HAS_UP=%ERRORLEVEL%
-            findstr /i "healthy" temp_sonar_status.txt >nul
-            set HAS_HEALTHY=%ERRORLEVEL%
-            del temp_sonar_status.txt 2>nul
-            if %HAS_UP% EQU 0 (
-              if %HAS_HEALTHY% EQU 0 (
-                set SONAR_UP=1
-              )
-            )
-            if %SONAR_UP% EQU 0 (
-              echo ⚠️ ADVERTENCIA: Contenedor sonarqube no está corriendo o no está healthy
-              echo    Intentando iniciar contenedor...
-              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
+            echo [2/4] Verificando contenedor SonarQube...
+            where docker.exe >nul 2>&1
+            if errorlevel 1 (
+              echo ❌ ERROR: Docker no encontrado en PATH
+              echo    Usando ruta completa...
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
               if errorlevel 1 (
-                echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
-                echo ⚠️ Continuando sin análisis de SonarQube...
-                exit /b 0
-              )
-              echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
-              set MAX_WAIT=12
-              set WAIT_COUNT=0
-              :wait_sonar
-              ping 127.0.0.1 -n 11 >nul
-              set /a WAIT_COUNT+=1
-              powershell -Command "try { $response = Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 5; exit 0 } catch { exit 1 }" >nul 2>&1
-              if errorlevel 1 (
-                if %WAIT_COUNT% LSS %MAX_WAIT% (
-                  echo    Esperando... (%WAIT_COUNT%/%MAX_WAIT%)
-                  goto wait_sonar
-                ) else (
-                  echo ❌ ERROR: SonarQube no respondió después de %MAX_WAIT% intentos
-                  echo ⚠️ Continuando sin análisis de SonarQube...
-                  exit /b 0
+                echo ⚠️ Contenedor no está healthy. Iniciando...
+                "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
+                if errorlevel 1 (
+                  echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+                  goto skip_sonar
+                )
+                echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
+                timeout /t 60 /nobreak >nul
+                
+                "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
+                if errorlevel 1 (
+                  echo ❌ ERROR: SonarQube no inició correctamente
+                  goto skip_sonar
                 )
               )
             ) else (
-              echo ✅ Contenedor sonarqube está corriendo y healthy
+              docker compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
+              if errorlevel 1 (
+                echo ⚠️ Contenedor no está healthy. Iniciando...
+                docker compose up -d sonarqube
+                if errorlevel 1 (
+                  echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+                  goto skip_sonar
+                )
+                echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
+                timeout /t 60 /nobreak >nul
+                
+                docker compose ps sonarqube | findstr /i "Up.*healthy" >nul 2>&1
+                if errorlevel 1 (
+                  echo ❌ ERROR: SonarQube no inició correctamente
+                  goto skip_sonar
+                )
+              )
             )
             
-            rem 3. Verificar que SonarQube esté respondiendo
+            echo ✅ Contenedor está corriendo healthy
+            
+            rem 3. Verificar respuesta de SonarQube
             echo.
-            echo [3/4] Verificando que SonarQube esté respondiendo...
-            powershell -Command "try { $response = Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 5; exit 0 } catch { exit 1 }" >nul 2>&1
+            echo [3/4] Verificando API de SonarQube...
+            powershell -Command "try { Invoke-WebRequest -Uri 'http://localhost:9000/api/system/status' -UseBasicParsing -TimeoutSec 10 | Out-Null; exit 0 } catch { exit 1 }" >nul 2>&1
             if errorlevel 1 (
-              echo ❌ ERROR: SonarQube no está respondiendo en http://localhost:9000
-              echo ⚠️ Continuando sin análisis de SonarQube...
-              exit /b 0
-            ) else (
-              echo ✅ SonarQube está respondiendo correctamente
+              echo ❌ ERROR: SonarQube no responde
+              goto skip_sonar
             )
             
-            rem 4. Generar cobertura de tests
+            echo ✅ SonarQube está respondiendo
+            
+            rem 4. Generar cobertura
             echo.
             echo [4/4] Generando cobertura de tests...
             echo    La cobertura mide qué porcentaje del código está cubierto por tests.
             echo    SonarQube usa este reporte para mostrar métricas de calidad.
             call npm run test:coverage
             if errorlevel 1 (
-              echo ⚠️ ADVERTENCIA: Fallo al generar cobertura, continuando sin ella...
+              echo ⚠️ Cobertura falló, continuando sin ella...
             ) else (
               echo ✅ Cobertura generada correctamente
             )
             
+            rem 5. Ejecutar análisis
             echo.
             echo ========================================
-            echo EJECUTANDO ANÁLISIS DE SONARQUBE
+            echo EJECUTANDO ANÁLISIS SONARQUBE
             echo ========================================
             echo.
             
-            rem 5. Ejecutar análisis de SonarQube
             call npm run sonar:local
-            set SONAR_EXIT=%ERRORLEVEL%
-            
-            if %SONAR_EXIT% EQU 0 (
+            if errorlevel 1 (
               echo.
-              echo ✅ Análisis SonarQube completado exitosamente
-              echo 📊 Ver resultados en: http://localhost:9000/dashboard?id=biblioteca-xonler
-            ) else (
-              echo.
-              echo ⚠️ ADVERTENCIA: Análisis SonarQube falló (código: %SONAR_EXIT%)
+              echo ⚠️ ADVERTENCIA: Análisis SonarQube falló
               echo    Posibles causas:
               echo    - Token inválido o expirado
               echo    - SonarQube no está completamente operativo
@@ -328,6 +318,16 @@ pipeline {
               echo ⚠️ Continuando con el pipeline...
               exit /b 0
             )
+            
+            echo.
+            echo ✅ Análisis completado exitosamente
+            echo 📊 Resultados: http://localhost:9000/dashboard?id=biblioteca-xonler
+            exit /b 0
+            
+            :skip_sonar
+            echo.
+            echo ⚠️ Saltando análisis SonarQube...
+            exit /b 0
           '''
         }
       }
