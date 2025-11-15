@@ -230,44 +230,17 @@ pipeline {
             rem Cargar token
             for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
             
-            rem 2. Verificar contenedor (método simplificado)
+            rem 2. Verificar e iniciar contenedor (método simple)
             echo.
             echo [2/4] Verificando contenedor SonarQube...
-            set DOCKER_CMD=docker
-            where docker.exe >nul 2>&1
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d sonarqube
             if errorlevel 1 (
-              set DOCKER_CMD="C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe"
+              echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+              goto skip_sonar
             )
-            
-            %DOCKER_CMD% compose ps sonarqube > temp_sonar_check.txt 2>&1
-            findstr /i "Up" temp_sonar_check.txt >nul
-            if errorlevel 1 (
-              echo ⚠️ Contenedor no está corriendo. Iniciando...
-              %DOCKER_CMD% compose up -d sonarqube
-              if errorlevel 1 (
-                echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
-                del temp_sonar_check.txt 2>nul
-                goto skip_sonar
-              )
-              echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
-              timeout /t 60 /nobreak >nul
-            ) else (
-              findstr /i "healthy" temp_sonar_check.txt >nul
-              if errorlevel 1 (
-                echo ⚠️ Contenedor no está healthy. Reiniciando...
-                %DOCKER_CMD% compose restart sonarqube
-                if errorlevel 1 (
-                  echo ❌ ERROR: No se pudo reiniciar contenedor sonarqube
-                  del temp_sonar_check.txt 2>nul
-                  goto skip_sonar
-                )
-                echo ⏳ Esperando a que SonarQube esté listo (puede tardar 1-2 minutos)...
-                timeout /t 60 /nobreak >nul
-              )
-            )
-            del temp_sonar_check.txt 2>nul
-            
-            echo ✅ Contenedor está corriendo healthy
+            echo ⏳ Esperando 60 segundos para que SonarQube esté listo...
+            timeout /t 60 /nobreak >nul
+            echo ✅ Contenedor iniciado
             
             rem 3. Verificar respuesta de SonarQube
             echo.
