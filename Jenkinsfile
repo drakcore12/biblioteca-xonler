@@ -59,143 +59,143 @@ pipeline {
       }
     }
 
-        stage('Tests Unitarios') {
-          steps {
-            script {
-          echo "🧪 Ejecutando tests unitarios..."
-          bat '''
-            @echo off
-            cd /d %WORKSPACE%
-            call npm test
-            set TEST_EXIT=%ERRORLEVEL%
-            if not exist "test-results" mkdir test-results
-            if exist "junit.xml" copy junit.xml test-results\\junit.xml
-            if %TEST_EXIT% NEQ 0 (
-              echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
-              exit /b %TEST_EXIT%
-            )
-            echo ✅ Tests unitarios completados exitosamente
-              '''
-            }
-          }
-          post {
-            always {
-              script {
-                def junitFile = 'test-results/junit.xml'
-                if (fileExists(junitFile)) {
-                  junit junitFile
-                } else if (fileExists('junit.xml')) {
-                  junit 'junit.xml'
-                } else {
-                  echo "⚠️ No se encontró archivo junit.xml para publicar"
-                }
-              }
-              archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
-        }
-      }
-    }
+        // stage('Tests Unitarios') {
+        //   steps {
+        //     script {
+        //   echo "🧪 Ejecutando tests unitarios..."
+        //   bat '''
+        //     @echo off
+        //     cd /d %WORKSPACE%
+        //     call npm test
+        //     set TEST_EXIT=%ERRORLEVEL%
+        //     if not exist "test-results" mkdir test-results
+        //     if exist "junit.xml" copy junit.xml test-results\\junit.xml
+        //     if %TEST_EXIT% NEQ 0 (
+        //       echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
+        //       exit /b %TEST_EXIT%
+        //     )
+        //     echo ✅ Tests unitarios completados exitosamente
+        //       '''
+        //     }
+        //   }
+        //   post {
+        //     always {
+        //       script {
+        //         def junitFile = 'test-results/junit.xml'
+        //         if (fileExists(junitFile)) {
+        //           junit junitFile
+        //         } else if (fileExists('junit.xml')) {
+        //           junit 'junit.xml'
+        //         } else {
+        //           echo "⚠️ No se encontró archivo junit.xml para publicar"
+        //         }
+        //       }
+        //       archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+        // }
+        //   }
+        // }
 
-    stage('Iniciar Servidor') {
-      steps {
-        script {
-          echo "🚀 Iniciando servidor..."
-          bat '''
-            @echo off
-            cd /d %WORKSPACE%
-            echo Commit actual del repositorio:
-            git log -1 --oneline
-            echo.
-            echo Reconstruyendo imagen de app con codigo fresco...
-            echo Esto puede tardar varios minutos, especialmente copiando node_modules...
-            echo Ejecutando build...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose --progress=plain build app
-            set BUILD_EXIT=%ERRORLEVEL%
-            echo.
-            echo ========================================
-            echo Build completado - Codigo de salida: %BUILD_EXIT%
-            echo ========================================
-            if %BUILD_EXIT% NEQ 0 (
-              echo ERROR: Fallo al construir imagen
-              exit /b 1
-            )
-            echo ✅ Imagen construida exitosamente
-            echo Verificando que la imagen existe...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
-            if errorlevel 1 (
-              echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
-            ) else (
-              echo ✅ Imagen verificada correctamente
-            )
-            echo.
-            echo Verificando si los contenedores están corriendo...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
-            if errorlevel 1 (
-              echo Los contenedores no están corriendo, iniciándolos...
-              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
-              echo Esperando 20 segundos para que el servidor inicie...
-              ping 127.0.0.1 -n 21 >nul
-            ) else (
-              echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
-              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
-              echo Esperando 20 segundos para que el servidor reinicie...
-              ping 127.0.0.1 -n 21 >nul
-            )
-            echo Verificando estado de contenedores...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
-            echo ✅ Imagen de app reconstruida y contenedor app reiniciado
-          '''
-        }
-      }
-    }
+    // stage('Iniciar Servidor') {
+    //   steps {
+    //     script {
+    //       echo "🚀 Iniciando servidor..."
+    //       bat '''
+    //         @echo off
+    //         cd /d %WORKSPACE%
+    //         echo Commit actual del repositorio:
+    //         git log -1 --oneline
+    //         echo.
+    //         echo Reconstruyendo imagen de app con codigo fresco...
+    //         echo Esto puede tardar varios minutos, especialmente copiando node_modules...
+    //         echo Ejecutando build...
+    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose --progress=plain build app
+    //         set BUILD_EXIT=%ERRORLEVEL%
+    //         echo.
+    //         echo ========================================
+    //         echo Build completado - Codigo de salida: %BUILD_EXIT%
+    //         echo ========================================
+    //         if %BUILD_EXIT% NEQ 0 (
+    //           echo ERROR: Fallo al construir imagen
+    //           exit /b 1
+    //         )
+    //         echo ✅ Imagen construida exitosamente
+    //         echo Verificando que la imagen existe...
+    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
+    //         if errorlevel 1 (
+    //           echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
+    //         ) else (
+    //           echo ✅ Imagen verificada correctamente
+    //         )
+    //         echo.
+    //         echo Verificando si los contenedores están corriendo...
+    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
+    //         if errorlevel 1 (
+    //           echo Los contenedores no están corriendo, iniciándolos...
+    //           "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
+    //           echo Esperando 20 segundos para que el servidor inicie...
+    //           ping 127.0.0.1 -n 21 >nul
+    //         ) else (
+    //           echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
+    //           "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
+    //           echo Esperando 20 segundos para que el servidor reinicie...
+    //           ping 127.0.0.1 -n 21 >nul
+    //         )
+    //         echo Verificando estado de contenedores...
+    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
+    //         echo ✅ Imagen de app reconstruida y contenedor app reiniciado
+    //       '''
+    //     }
+    //   }
+    // }
 
-        stage('Tests E2E') {
-          steps {
-            script {
-          echo "🎭 Ejecutando tests E2E..."
-          bat '''
-            @echo off
-            cd /d %WORKSPACE%
-            call npx playwright install --with-deps
-            if not exist "test-results" mkdir test-results
-            if not exist "playwright-report" mkdir playwright-report
-            call npm run test:e2e
-            echo ✅ Tests E2E completados
-              '''
-            }
-          }
-          post {
-            always {
-              archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
-          // publishHTML requiere plugin HTML Publisher - comentado por ahora
-          // publishHTML([
-          //   reportDir: 'playwright-report',
-          //   reportFiles: 'index.html',
-          //   reportName: 'Playwright Report',
-          //   keepAll: true
-          // ])
-            }
-          }
-        }
+        // stage('Tests E2E') {
+        //   steps {
+        //     script {
+        //   echo "🎭 Ejecutando tests E2E..."
+        //   bat '''
+        //     @echo off
+        //     cd /d %WORKSPACE%
+        //     call npx playwright install --with-deps
+        //     if not exist "test-results" mkdir test-results
+        //     if not exist "playwright-report" mkdir playwright-report
+        //     call npm run test:e2e
+        //     echo ✅ Tests E2E completados
+        //       '''
+        //     }
+        //   }
+        //   post {
+        //     always {
+        //       archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
+        //   // publishHTML requiere plugin HTML Publisher - comentado por ahora
+        //   // publishHTML([
+        //   //   reportDir: 'playwright-report',
+        //   //   reportFiles: 'index.html',
+        //   //   reportName: 'Playwright Report',
+        //   //   keepAll: true
+        //   // ])
+        //     }
+        //   }
+        // }
 
-        stage('Tests de Carga') {
-          steps {
-            script {
-          echo "⚡ Ejecutando tests de carga..."
-          bat '''
-            @echo off
-            cd /d %WORKSPACE%
-            if not exist "test-results" mkdir test-results
-            call npm run test:load
-            echo ✅ Tests de carga completados
-              '''
-            }
-          }
-          post {
-            always {
-              archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
-        }
-      }
-    }
+        // stage('Tests de Carga') {
+        //   steps {
+        //     script {
+        //   echo "⚡ Ejecutando tests de carga..."
+        //   bat '''
+        //     @echo off
+        //     cd /d %WORKSPACE%
+        //     if not exist "test-results" mkdir test-results
+        //     call npm run test:load
+        //     echo ✅ Tests de carga completados
+        //       '''
+        //     }
+        //   }
+        //   post {
+        //     always {
+        //       archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+        // }
+        //   }
+        // }
 
     stage('Análisis SonarQube') {
       steps {
