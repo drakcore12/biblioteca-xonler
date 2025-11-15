@@ -180,58 +180,58 @@ pipeline {
       }
     }
 
-    // stage('Iniciar Servidor') {
-    //   steps {
-    //     script {
-    //       echo "🚀 Iniciando servidor..."
-    //       bat '''
-    //         @echo off
-    //         cd /d %WORKSPACE%
-    //         echo Commit actual del repositorio:
-    //         git log -1 --oneline
-    //         echo.
-    //         echo Reconstruyendo imagen de app con codigo fresco...
-    //         echo Esto puede tardar varios minutos, especialmente copiando node_modules...
-    //         echo Ejecutando build...
-    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose --progress=plain build app
-    //         set BUILD_EXIT=%ERRORLEVEL%
-    //         echo.
-    //         echo ========================================
-    //         echo Build completado - Codigo de salida: %BUILD_EXIT%
-    //         echo ========================================
-    //         if %BUILD_EXIT% NEQ 0 (
-    //           echo ERROR: Fallo al construir imagen
-    //           exit /b 1
-    //         )
-    //         echo ✅ Imagen construida exitosamente
-    //         echo Verificando que la imagen existe...
-    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
-    //         if errorlevel 1 (
-    //           echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
-    //         ) else (
-    //           echo ✅ Imagen verificada correctamente
-    //         )
-    //         echo.
-    //         echo Verificando si los contenedores están corriendo...
-    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
-    //         if errorlevel 1 (
-    //           echo Los contenedores no están corriendo, iniciándolos...
-    //           "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
-    //           echo Esperando 20 segundos para que el servidor inicie...
-    //           ping 127.0.0.1 -n 21 >nul
-    //         ) else (
-    //           echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
-    //           "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
-    //           echo Esperando 20 segundos para que el servidor reinicie...
-    //           ping 127.0.0.1 -n 21 >nul
-    //         )
-    //         echo Verificando estado de contenedores...
-    //         "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
-    //         echo ✅ Imagen de app reconstruida y contenedor app reiniciado
-    //       '''
-    //     }
-    //   }
-    // }
+    stage('Iniciar Servidor') {
+      steps {
+        script {
+          echo "🚀 Iniciando servidor..."
+          bat '''
+            @echo off
+            cd /d %WORKSPACE%
+            echo Commit actual del repositorio:
+            git log -1 --oneline
+            echo.
+            echo Reconstruyendo imagen de app con codigo fresco...
+            echo Esto puede tardar varios minutos, especialmente copiando node_modules...
+            echo Ejecutando build...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose --progress=plain build app
+            set BUILD_EXIT=%ERRORLEVEL%
+            echo.
+            echo ========================================
+            echo Build completado - Codigo de salida: %BUILD_EXIT%
+            echo ========================================
+            if %BUILD_EXIT% NEQ 0 (
+              echo ERROR: Fallo al construir imagen
+              exit /b 1
+            )
+            echo ✅ Imagen construida exitosamente
+            echo Verificando que la imagen existe...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" images | findstr /i "biblioteca-xonler-main-app" >nul
+            if errorlevel 1 (
+              echo ⚠️ ADVERTENCIA: Imagen no encontrada después del build
+            ) else (
+              echo ✅ Imagen verificada correctamente
+            )
+            echo.
+            echo Verificando si los contenedores están corriendo...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db | findstr /i "Up" >nul
+            if errorlevel 1 (
+              echo Los contenedores no están corriendo, iniciándolos...
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d app db
+              echo Esperando 20 segundos para que el servidor inicie...
+              ping 127.0.0.1 -n 21 >nul
+            ) else (
+              echo Los contenedores ya están corriendo, reiniciando app para usar nueva imagen...
+              "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose restart app
+              echo Esperando 20 segundos para que el servidor reinicie...
+              ping 127.0.0.1 -n 21 >nul
+            )
+            echo Verificando estado de contenedores...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps app db
+            echo ✅ Imagen de app reconstruida y contenedor app reiniciado
+          '''
+        }
+      }
+    }
 
     stage('Tests E2E') {
       steps {
