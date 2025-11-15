@@ -4,6 +4,8 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-13+-blue.svg)](https://postgresql.org/)
 [![Express](https://img.shields.io/badge/Express-5.1.0-lightgrey.svg)](https://expressjs.com/)
 [![License](https://img.shields.io/badge/License-ISC-yellow.svg)](LICENSE)
+[![CI - Pruebas Automatizadas](https://github.com/drakcore12/biblioteca-xonler/actions/workflows/ci.yml/badge.svg)](https://github.com/drakcore12/biblioteca-xonler/actions/workflows/ci.yml)
+[![SonarQube Analysis](https://github.com/drakcore12/biblioteca-xonler/actions/workflows/sonar.yml/badge.svg)](https://github.com/drakcore12/biblioteca-xonler/actions/workflows/sonar.yml)
 
 ## 📋 ¿Qué es Biblioteca Xonler?
 
@@ -286,8 +288,17 @@ Si quieres que el túnel se mantenga activo permanentemente y arranque con Windo
 - **qrcode** (v1.5.4) - Generación de códigos QR
 - **speakeasy** (v2.0.0) - Implementación de 2FA/TOTP
 
-### Desarrollo
+### Desarrollo y Testing
 - **nodemon** (v3.0.0) - Reinicio automático del servidor en desarrollo
+- **Jest** - Framework de testing unitario
+- **Playwright** - Framework de testing E2E (End-to-End)
+- **Artillery** - Herramienta de testing de carga y rendimiento
+- **SonarQube** - Análisis estático de código y calidad
+
+### CI/CD
+- **GitHub Actions** - Integración continua y despliegue automático
+- **Jenkins** - Pipeline de CI/CD para entornos locales
+- **Docker** - Contenedorización de servicios
 
 ## ✨ ¿Qué puede hacer este sistema?
 
@@ -330,6 +341,12 @@ Si quieres que el túnel se mantenga activo permanentemente y arranque con Windo
 | **Git** | Sistema para guardar y controlar versiones del código (como "historial" de Word) |
 | **Puerto 3000** | "Dirección" donde tu computadora escucha las peticiones web |
 | **localhost** | Dirección de tu propia computadora (127.0.0.1) |
+| **CI/CD** | Integración Continua / Despliegue Continuo - Automatiza tests y despliegues |
+| **Jest** | Herramienta para probar que el código funciona correctamente |
+| **Playwright** | Herramienta para probar que la aplicación funciona como usuario real |
+| **SonarQube** | Herramienta que revisa la calidad del código y encuentra problemas |
+| **GitHub Actions** | Sistema que ejecuta tests automáticamente cuando subes código |
+| **Jenkins** | Sistema similar a GitHub Actions pero para servidores propios |
 
 ## 🏗️ ¿Cómo está organizado el proyecto?
 
@@ -346,6 +363,15 @@ Si quieres que el túnel se mantenga activo permanentemente y arranque con Windo
 │   ├── 📁 pages/             # Páginas HTML
 │   ├── 📁 services/          # Código JavaScript del frontend
 │   └── 📁 css/               # Estilos y diseño
+├── 📁 tests/                 # Tests automatizados
+│   ├── 📁 unit/              # Tests unitarios (Jest)
+│   └── 📁 e2e/               # Tests end-to-end (Playwright)
+├── 📁 .github/                # Configuración de GitHub
+│   └── 📁 workflows/         # GitHub Actions workflows
+├── 📄 Jenkinsfile            # Pipeline de Jenkins
+├── 📄 sonar-project.properties # Configuración de SonarQube
+├── 📄 jest.config.js         # Configuración de Jest
+├── 📄 playwright.config.js   # Configuración de Playwright
 ├── 📄 db.sql                 # Estructura de la base de datos
 ├── 📄 package.json           # Lista de herramientas necesarias
 └── 📄 README.md              # Este archivo
@@ -358,6 +384,83 @@ El sistema guarda información en estas "carpetas" principales:
 - **libros** - Catálogo de todos los libros
 - **prestamos** - Registro de quién pidió qué libro
 - **colegios** - Información de los colegios
+
+## 🧪 Testing y CI/CD
+
+### Ejecutar Tests Localmente
+
+#### Tests Unitarios
+```bash
+# Ejecutar todos los tests unitarios
+npm test
+
+# Ejecutar tests con cobertura
+npm run test:coverage
+
+# Ejecutar tests en modo watch (desarrollo)
+npm run test:watch
+```
+
+#### Tests E2E (End-to-End)
+```bash
+# Ejecutar tests E2E con Playwright
+npm run test:e2e
+
+# Ejecutar tests E2E con interfaz gráfica
+npm run test:e2e:ui
+```
+
+#### Tests de Carga
+```bash
+# Ejecutar tests de carga con Artillery
+npm run test:load
+```
+
+### CI/CD Pipeline
+
+El proyecto incluye pipelines automatizados para garantizar la calidad del código:
+
+#### GitHub Actions
+- **CI - Pruebas Automatizadas**: Ejecuta tests unitarios y E2E en cada push y pull request
+- **SonarQube Analysis**: Analiza la calidad del código y genera reportes de cobertura
+
+Los workflows se ejecutan automáticamente en:
+- Push a las ramas `main` y `develop`
+- Pull requests hacia `main` y `develop`
+
+#### Jenkins Pipeline
+El proyecto incluye un `Jenkinsfile` configurado para:
+1. **Preparación**: Creación de directorios necesarios
+2. **Instalación de dependencias**: `npm ci`
+3. **Tests Unitarios**: Ejecución con cobertura
+4. **Análisis SonarQube**: Análisis de calidad de código
+5. **Iniciar Servidor**: Construcción y despliegue con Docker
+6. **Tests E2E**: Validación end-to-end con Playwright
+7. **Tests de Carga**: Validación de rendimiento con Artillery
+8. **Despliegue**: Verificación final del despliegue
+
+### SonarQube
+
+El proyecto está configurado para análisis de calidad de código con SonarQube:
+
+```bash
+# Análisis local (requiere SonarQube corriendo en localhost:9000)
+npm run sonar:local
+
+# Análisis con SonarCloud
+npm run sonar:cloud
+```
+
+**Nota**: Para usar SonarQube en GitHub Actions, configura los siguientes secrets:
+- `SONAR_TOKEN`: Token de autenticación de SonarQube
+- `SONAR_HOST_URL`: URL de tu instancia de SonarQube
+
+### Reportes de Cobertura
+
+Los reportes de cobertura se generan automáticamente en:
+- **Directorio**: `coverage/`
+- **Formato**: HTML (abre `coverage/index.html` en tu navegador)
+- **Formato LCOV**: `coverage/lcov.info` (para SonarQube)
 
 ## 📖 Cómo usar el sistema
 
@@ -524,3 +627,25 @@ Este proyecto está bajo la Licencia ISC. Puedes usarlo, modificarlo y distribui
 **📚 Biblioteca Xonler** - Conectando el conocimiento a través de las bibliotecas escolares ✨
 
 *Última actualización: Diciembre 2024*
+
+---
+
+## 📊 Estado del Proyecto
+
+### ✅ Calidad de Código
+- ✅ Tests unitarios configurados con Jest
+- ✅ Tests E2E configurados con Playwright
+- ✅ Tests de carga configurados con Artillery
+- ✅ Análisis estático de código con SonarQube
+- ✅ Cobertura de código monitoreada
+- ✅ CI/CD automatizado con GitHub Actions y Jenkins
+
+### 🔄 Pipelines Activos
+- **GitHub Actions**: Ejecuta automáticamente en cada push/PR
+- **Jenkins**: Pipeline completo para desarrollo y producción
+- **SonarQube**: Análisis de calidad en cada commit
+
+### 📈 Métricas
+- Cobertura de código: Monitoreada en cada build
+- Calidad de código: Analizada con SonarQube
+- Tests automatizados: Unitarios, E2E y de carga
