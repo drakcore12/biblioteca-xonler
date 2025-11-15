@@ -60,6 +60,45 @@ pipeline {
       }
     }
 
+    stage('Tests Unitarios') {
+      steps {
+        script {
+          echo "🧪 Tests Unitarios"
+          bat '''
+            @echo off
+            cd /d %WORKSPACE%
+            echo.
+            echo ========================================
+            echo [TESTS UNITARIOS] EJECUTANDO
+            echo ========================================
+            rem IMPORTANTE: ejecutar con coverage
+            call npm test -- --coverage
+            set TEST_EXIT=%ERRORLEVEL%
+            if not exist "test-results" mkdir test-results
+            if exist "junit.xml" copy junit.xml test-results\\junit.xml
+            if %TEST_EXIT% NEQ 0 (
+              echo [TESTS UNITARIOS] ❌ Fallaron (código: %TEST_EXIT%)
+              exit /b %TEST_EXIT%
+            )
+            echo [TESTS UNITARIOS] ✅ Completado
+          '''
+        }
+      }
+      post {
+        always {
+          script {
+            def junitFile = 'test-results/junit.xml'
+            if (fileExists(junitFile)) {
+              junit junitFile
+            } else if (fileExists('junit.xml')) {
+              junit 'junit.xml'
+            }
+          }
+          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+        }
+      }
+    }
+
     stage('Análisis SonarQube') {
       steps {
         script {
@@ -119,44 +158,6 @@ pipeline {
       post {
         always {
           archiveArtifacts artifacts: '.scannerwork/**/*,coverage/**/*', allowEmptyArchive: true
-        }
-      }
-    }
-
-    stage('Tests Unitarios') {
-      steps {
-        script {
-          echo "🧪 Tests Unitarios"
-          bat '''
-            @echo off
-            cd /d %WORKSPACE%
-            echo.
-            echo ========================================
-            echo [TESTS UNITARIOS] EJECUTANDO
-            echo ========================================
-            call npm test
-            set TEST_EXIT=%ERRORLEVEL%
-            if not exist "test-results" mkdir test-results
-            if exist "junit.xml" copy junit.xml test-results\\junit.xml
-            if %TEST_EXIT% NEQ 0 (
-              echo [TESTS UNITARIOS] ❌ Fallaron (código: %TEST_EXIT%)
-              exit /b %TEST_EXIT%
-            )
-            echo [TESTS UNITARIOS] ✅ Completado
-          '''
-        }
-      }
-      post {
-        always {
-          script {
-            def junitFile = 'test-results/junit.xml'
-            if (fileExists(junitFile)) {
-              junit junitFile
-            } else if (fileExists('junit.xml')) {
-              junit 'junit.xml'
-            }
-          }
-          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
         }
       }
     }
