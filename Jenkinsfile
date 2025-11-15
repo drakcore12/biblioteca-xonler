@@ -59,41 +59,126 @@ pipeline {
       }
     }
 
-        // stage('Tests Unitarios') {
-        //   steps {
-        //     script {
-        //   echo "🧪 Ejecutando tests unitarios..."
-        //   bat '''
-        //     @echo off
-        //     cd /d %WORKSPACE%
-        //     call npm test
-        //     set TEST_EXIT=%ERRORLEVEL%
-        //     if not exist "test-results" mkdir test-results
-        //     if exist "junit.xml" copy junit.xml test-results\\junit.xml
-        //     if %TEST_EXIT% NEQ 0 (
-        //       echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
-        //       exit /b %TEST_EXIT%
-        //     )
-        //     echo ✅ Tests unitarios completados exitosamente
-        //       '''
-        //     }
-        //   }
-        //   post {
-        //     always {
-        //       script {
-        //         def junitFile = 'test-results/junit.xml'
-        //         if (fileExists(junitFile)) {
-        //           junit junitFile
-        //         } else if (fileExists('junit.xml')) {
-        //           junit 'junit.xml'
-        //         } else {
-        //           echo "⚠️ No se encontró archivo junit.xml para publicar"
-        //         }
-        //       }
-        //       archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
-        // }
-        //   }
-        // }
+    stage('Análisis SonarQube') {
+      steps {
+        script {
+          echo "🔍 Ejecutando análisis SonarQube..."
+          bat '''
+            @echo off
+            cd /d %WORKSPACE%
+            
+            echo ========================================
+            echo VERIFICACIONES PREVIAS
+            echo ========================================
+            
+            rem 1. Verificar token en .env
+            echo.
+            echo [1/2] Verificando token de SonarQube...
+            if not exist ".env" (
+              echo ❌ ERROR: Archivo .env no encontrado
+              goto skip_sonar
+            )
+            
+            findstr /C:"SONAR_TOKEN=" .env >nul 2>&1
+            if errorlevel 1 (
+              echo ❌ ERROR: SONAR_TOKEN no encontrado en .env
+              echo.
+              echo 💡 Solución: Agregar en .env: SONAR_TOKEN=tu_token
+              echo.
+              goto skip_sonar
+            )
+            
+            echo ✅ Token encontrado
+            rem Cargar token
+            for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
+            
+            rem 2. Iniciar contenedor SonarQube
+            echo.
+            echo [2/2] Iniciando contenedor SonarQube...
+            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --no-deps sonarqube
+            if errorlevel 1 (
+              echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
+              goto skip_sonar
+            )
+            echo ⏳ Esperando 60 segundos para que SonarQube esté listo...
+            ping 127.0.0.1 -n 61 >nul
+            echo ✅ Contenedor iniciado
+            
+            rem 3. Ejecutar análisis de SonarQube (incluye tests unitarios y cobertura)
+            echo.
+            echo ========================================
+            echo EJECUTANDO ANÁLISIS SONARQUBE
+            echo ========================================
+            echo SonarQube ejecutará los tests unitarios y generará cobertura automáticamente
+            echo.
+            
+            call npm run sonar:local
+            if errorlevel 1 (
+              echo.
+              echo ⚠️ ADVERTENCIA: Análisis SonarQube falló
+              echo    Posibles causas:
+              echo    - Token inválido o expirado
+              echo    - SonarQube no está completamente operativo
+              echo    - Problemas de red o conectividad
+              echo.
+              echo ⚠️ Continuando con el pipeline...
+              exit /b 0
+            )
+            
+            echo.
+            echo ✅ Análisis completado exitosamente
+            echo 📊 Resultados: http://localhost:9000/dashboard?id=biblioteca-xonler
+            exit /b 0
+            
+            :skip_sonar
+            echo.
+            echo ⚠️ Saltando análisis SonarQube...
+            exit /b 0
+          '''
+        }
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: '.scannerwork/**/*,coverage/**/*', allowEmptyArchive: true
+        }
+      }
+    }
+
+    stage('Tests Unitarios') {
+      steps {
+        script {
+          echo "🧪 Ejecutando tests unitarios..."
+          bat '''
+            @echo off
+            cd /d %WORKSPACE%
+            call npm test
+            set TEST_EXIT=%ERRORLEVEL%
+            if not exist "test-results" mkdir test-results
+            if exist "junit.xml" copy junit.xml test-results\\junit.xml
+            if %TEST_EXIT% NEQ 0 (
+              echo ERROR: Tests unitarios fallaron con codigo %TEST_EXIT%
+              exit /b %TEST_EXIT%
+            )
+            echo ✅ Tests unitarios completados exitosamente
+          '''
+        }
+      }
+      post {
+        always {
+          script {
+            def junitFile = 'test-results/junit.xml'
+            if (fileExists(junitFile)) {
+              junit junitFile
+            } else if (fileExists('junit.xml')) {
+              junit 'junit.xml'
+            } else {
+              echo "⚠️ No se encontró archivo junit.xml para publicar"
+            }
+          }
+          archiveArtifacts artifacts: 'test-results/junit.xml,junit.xml', allowEmptyArchive: true
+        }
+      }
+    }
 
     // stage('Iniciar Servidor') {
     //   steps {
@@ -148,150 +233,48 @@ pipeline {
     //   }
     // }
 
-        // stage('Tests E2E') {
-        //   steps {
-        //     script {
-        //   echo "🎭 Ejecutando tests E2E..."
-        //   bat '''
-        //     @echo off
-        //     cd /d %WORKSPACE%
-        //     call npx playwright install --with-deps
-        //     if not exist "test-results" mkdir test-results
-        //     if not exist "playwright-report" mkdir playwright-report
-        //     call npm run test:e2e
-        //     echo ✅ Tests E2E completados
-        //       '''
-        //     }
-        //   }
-        //   post {
-        //     always {
-        //       archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
-        //   // publishHTML requiere plugin HTML Publisher - comentado por ahora
-        //   // publishHTML([
-        //   //   reportDir: 'playwright-report',
-        //   //   reportFiles: 'index.html',
-        //   //   reportName: 'Playwright Report',
-        //   //   keepAll: true
-        //   // ])
-        //     }
-        //   }
-        // }
-
-        // stage('Tests de Carga') {
-        //   steps {
-        //     script {
-        //   echo "⚡ Ejecutando tests de carga..."
-        //   bat '''
-        //     @echo off
-        //     cd /d %WORKSPACE%
-        //     if not exist "test-results" mkdir test-results
-        //     call npm run test:load
-        //     echo ✅ Tests de carga completados
-        //       '''
-        //     }
-        //   }
-        //   post {
-        //     always {
-        //       archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
-        // }
-        //   }
-        // }
-
-    stage('Análisis SonarQube') {
+    stage('Tests E2E') {
       steps {
         script {
-          echo "🔍 Ejecutando análisis SonarQube..."
+          echo "🎭 Ejecutando tests E2E..."
           bat '''
             @echo off
             cd /d %WORKSPACE%
-            
-            echo ========================================
-            echo VERIFICACIONES PREVIAS
-            echo ========================================
-            
-            rem 1. Verificar token en .env
-            echo.
-            echo [1/3] Verificando token de SonarQube...
-            if not exist ".env" (
-              echo ❌ ERROR: Archivo .env no encontrado
-              goto skip_sonar
-            )
-            
-            findstr /C:"SONAR_TOKEN=" .env >nul 2>&1
-            if errorlevel 1 (
-              echo ❌ ERROR: SONAR_TOKEN no encontrado en .env
-              echo.
-              echo 💡 Solución: Agregar en .env: SONAR_TOKEN=tu_token
-              echo.
-              goto skip_sonar
-            )
-            
-            echo ✅ Token encontrado
-            rem Cargar token
-            for /f "tokens=1,* delims==" %%a in ('findstr "SONAR_TOKEN" .env') do set SONAR_TOKEN=%%b
-            
-            rem 2. Iniciar contenedor SonarQube
-            echo.
-            echo [2/3] Iniciando contenedor SonarQube...
-            "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose up -d --no-deps sonarqube
-            if errorlevel 1 (
-              echo ❌ ERROR: No se pudo iniciar contenedor sonarqube
-              goto skip_sonar
-            )
-            echo ⏳ Esperando 60 segundos para que SonarQube esté listo...
-            ping 127.0.0.1 -n 61 >nul
-            echo ✅ Contenedor iniciado
-            
-            rem 3. Generar cobertura
-            echo.
-            echo [3/3] Generando cobertura de tests...
-            echo    La cobertura mide qué porcentaje del código está cubierto por tests.
-            echo    SonarQube usa este reporte para mostrar métricas de calidad.
-            call npm run test:coverage
-            if errorlevel 1 (
-              echo ⚠️ Cobertura falló, continuando sin ella...
-            ) else (
-              echo ✅ Cobertura generada correctamente
-            )
-            
-            rem 5. Ejecutar análisis
-            echo.
-            echo ========================================
-            echo EJECUTANDO ANÁLISIS SONARQUBE
-            echo ========================================
-            echo.
-            
-            call npm run sonar:local
-            if errorlevel 1 (
-              echo.
-              echo ⚠️ ADVERTENCIA: Análisis SonarQube falló
-              echo    Posibles causas:
-              echo    - Token inválido o expirado
-              echo    - SonarQube no está completamente operativo
-              echo    - Problemas de red o conectividad
-              echo.
-              echo ⚠️ Continuando con el pipeline...
-              exit /b 0
-            )
-            
-            echo.
-            echo ✅ Análisis completado exitosamente
-            echo 📊 Resultados: http://localhost:9000/dashboard?id=biblioteca-xonler
-            exit /b 0
-            
-            :skip_sonar
-            echo.
-            echo ⚠️ Saltando análisis SonarQube...
-            exit /b 0
+            call npx playwright install --with-deps
+            if not exist "test-results" mkdir test-results
+            if not exist "playwright-report" mkdir playwright-report
+            call npm run test:e2e
+            echo ✅ Tests E2E completados
           '''
         }
       }
       post {
         always {
-          archiveArtifacts artifacts: '.scannerwork/**/*,coverage/**/*', allowEmptyArchive: true
+          archiveArtifacts artifacts: 'test-results/**/*,playwright-report/**/*', allowEmptyArchive: true
         }
       }
     }
+
+    stage('Tests de Carga') {
+      steps {
+        script {
+          echo "⚡ Ejecutando tests de carga..."
+          bat '''
+            @echo off
+            cd /d %WORKSPACE%
+            if not exist "test-results" mkdir test-results
+            call npm run test:load
+            echo ✅ Tests de carga completados
+          '''
+        }
+      }
+      post {
+        always {
+          archiveArtifacts artifacts: 'test-results/**/*', allowEmptyArchive: true
+        }
+      }
+    }
+
 
     stage('Despliegue (CD)') {
       steps {
