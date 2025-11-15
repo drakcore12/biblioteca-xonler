@@ -237,18 +237,17 @@ pipeline {
             rem 2. Verificar que el contenedor de SonarQube esté corriendo
             echo.
             echo [2/4] Verificando contenedor de SonarQube...
+            set SONAR_UP=0
             "C:\\Program Files\\Docker\\Docker\\resources\\bin\\docker.exe" compose ps sonarqube > temp_sonar_status.txt 2>&1
             findstr /i "Up" temp_sonar_status.txt >nul
             set HAS_UP=%ERRORLEVEL%
             findstr /i "healthy" temp_sonar_status.txt >nul
             set HAS_HEALTHY=%ERRORLEVEL%
             del temp_sonar_status.txt 2>nul
-            if %HAS_UP% NEQ 0 (
-              set SONAR_UP=0
-            ) else if %HAS_HEALTHY% NEQ 0 (
-              set SONAR_UP=0
-            ) else (
-              set SONAR_UP=1
+            if %HAS_UP% EQU 0 (
+              if %HAS_HEALTHY% EQU 0 (
+                set SONAR_UP=1
+              )
             )
             if %SONAR_UP% EQU 0 (
               echo ⚠️ ADVERTENCIA: Contenedor sonarqube no está corriendo o no está healthy
